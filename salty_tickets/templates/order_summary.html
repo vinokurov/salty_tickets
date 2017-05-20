@@ -1,0 +1,19 @@
+<ul class="list-group">
+    {% for product in order.order_products %}
+    <li class="list-group-item"><small>{{product.product.name}}: £{{product.price}}</small></li>
+    {% endfor %}
+    <li class="list-group-item"><small>Transaction fee: £{{order.transaction_fee}}</small></li>
+    <li class="list-group-item"><b>Total: £{{price}}</b></li>
+</ul>
+
+           <script id="stripe_checkout"
+              src="https://checkout.stripe.com/checkout.js" class="stripe-button"
+              data-key="pk_test_JINxJqXoY58hgW37stGd09hK"
+              data-amount="{{price*100}}"
+              data-name="Salty Jitterbugs"
+              data-description="2 widgets"
+              data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
+              data-locale="auto"
+              data-zip-code="true"
+              data-currency="gbp">
+           </script>

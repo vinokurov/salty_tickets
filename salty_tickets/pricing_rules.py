@@ -1,0 +1,69 @@
+from .models import Event, ProductParameter, Order, OrderProduct, Product
+
+__author__ = 'vnkrv'
+
+# salty_recipes
+# salty_recipes
+
+def get_salty_recipes_price(form):
+    price_aerieals_one_day = 50
+    price_aerials_both_days = 90
+    price_shag_one_day = 35
+    price_shag_both_days = 50
+
+    total = 0
+    if form.saturday_aerials.going.data and form.sunday_aerials.going.data:
+        total += price_aerials_both_days
+    elif form.saturday_aerials.going.data or form.sunday_aerials.going.data:
+        total += price_aerieals_one_day
+
+    if form.saturday_shag.going.data and form.sunday_shag.going.data:
+        total += price_shag_both_days
+    elif form.saturday_shag.going.data or form.sunday_shag.going.data:
+        total += price_shag_one_day
+
+    return total
+
+
+def get_order_for_event(event, form):
+    assert isinstance(event, Event)
+    user_order = Order()
+
+    for product in event.products:
+        product_form = form.get_product_by_key(product.product_key)
+        if product_form.going.data:
+            weekend_key = product.parameters.filter(ProductParameter.parameter_name == "weekend_key").first().parameter_value
+
+            # check if we can apply weekend discount
+            discount_related_products = event.products.join(ProductParameter).filter(
+                                        ProductParameter.parameter_name == "weekend_key",
+                                        ProductParameter.parameter_value == weekend_key
+            ).all()
+
+            # TODO: should also include previously ordered and paid products
+            discount_applies = [form.get_product_by_key(p.product_key).going.data
+                                for p in discount_related_products].count(False) == 0
+            print(weekend_key)
+            print(discount_related_products)
+            print([form.get_product_by_key(p.product_key).going.data for p in discount_related_products])
+            if discount_applies:
+                price_str = product.parameters.filter(ProductParameter.parameter_name == "price_weekend").first().parameter_value
+            else:
+                price_str = product.parameters.filter(ProductParameter.parameter_name == "base_price").first().parameter_value
+
+            price = float(price_str)
+            user_order.order_products.append(OrderProduct(product, price))
+            print(product.name, price, discount_applies)
+
+    products_price = user_order.products_price
+    print(products_price)
+    user_order.transaction_fee = transaction_fee(products_price)
+    total_price = products_price + float(user_order.transaction_fee)
+    user_order.total_price = "%.2f" % total_price
+
+    return user_order
+
+
+def transaction_fee(price):
+    return "%.2f" % (price*0.015 + 0.2)
+

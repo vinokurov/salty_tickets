@@ -1,0 +1,22 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% macro render_workshop_form_field(form_field) %}
+<div class="panel panel-default">
+   <div class="panel-heading">
+       {{ wtf.form_field(form_field.going) }}
+        <small>
+                {{ form_field.info }}
+        </small>
+   </div>
+   <div class="panel-body">
+    {%- for subfield in form_field %}
+      {% if not bootstrap_is_hidden_field(subfield) and subfield != form_field.going -%}
+        {{ wtf.form_field(subfield,
+                      form_type=form_type,
+                      horizontal_columns=horizontal_columns,
+                      button_map=button_map) }}
+      {%- endif %}
+    {%- endfor %}
+   </div>
+</div>
+{%- endmacro %}
