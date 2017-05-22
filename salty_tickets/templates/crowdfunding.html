@@ -1,0 +1,197 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "slt.html" as slt %}
+
+{%- extends "bootstrap/base.html" %}
+
+{% block scripts %}
+{{ super() }}
+
+<script src="https://checkout.stripe.com/checkout.js"></script>
+
+
+<script>
+    var handler = StripeCheckout.configure({
+      key: 'pk_test_JINxJqXoY58hgW37stGd09hK',
+      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+      locale: 'auto',
+      token: function(token) {
+        // You can access the token ID with `token.id`.
+        // Get the token ID to your server-side code for use.
+        console.log(token)
+        $('#{{ form.stripe_token.id }}').val(token.id);
+        $('form').submit()
+      }
+    });
+
+    // Close Checkout on page navigation:
+    window.addEventListener('popstate', function() {
+      handler.close();
+    });
+
+    $('body').on('click', '.btn-default.slt-toggle', function(event) {
+        $(this).toggleClass('btn-default');
+        $(this).toggleClass('btn-success');
+    });
+    $('body').on('click', '.btn-success.slt-toggle', function(event) {
+        $(this).toggleClass('btn-success');
+        $(this).toggleClass('btn-default');
+    });
+
+    var form_changed = false;
+    var form_changed_element = 'form';
+
+    $('body').on('keyup change', '.form-control', function(e) {
+        form_changed = true;
+        form_changed_element = '#'+e.target.id;
+        setTimeout(update_total_price, 5000);
+    });
+
+    $('body').on('focusout', '.form-control', update_total_price)
+
+    function update_total_price(e) {
+        if(form_changed) {
+            form_changed = false;
+            console.log('focusout');
+            var url = "{{ url_for('crowdfunding_checkout', event_key=event.event_key) }}"; // send the form data here.
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('form').serialize(), // serializes the form's elements.
+                success: function (data) {
+                    console.log(data);  // display the returned data in the console.
+                    $('div#order_summary').html(data.order_summary_html);
+                    show_form_validation_errors(data.errors);
+                }
+            });
+        }
+    }
+
+    function show_form_validation_errors(form_errors) {
+        for(var form_field_id in form_errors)
+        {
+            console.log(form_field_id, form_errors[form_field_id]);
+            $('#'+form_field_id).addClass('has-error');
+        }
+    }
+
+    $('body').on('click', 'button#checkout', function(e) {
+        var url = "{{ url_for('crowdfunding_checkout', event_key=event.event_key) }}"; // send the form data here.
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: $('form').serialize(), // serializes the form's elements.
+            success: function (data) {
+                console.log(data);  // display the returned data in the console.
+                if(data.stripe.amount) {
+                    handler.open({
+                        name: 'Demo Site',
+                        description: '2 widgets\r\n<br> test',
+                        zipCode: true,
+                        currency: 'gbp',
+                        amount: data.stripe.amount,
+                        email: data.stripe.email,
+                        zipCode: true,
+                        billingAddress: true,
+                        allowRememberMe: false
+                    })
+                }
+            }
+        });
+        e.preventDefault(); // block the traditional submission of the form.
+    });
+
+
+// http://stackoverflow.com/questions/3860351/relative-position-in-dom-of-elements-in-jquery
+// What this does is .add() the additional element (or selector)
+// (which jQuery keeps in document order) and then checks if it's the second of the two.
+
+(function($) {
+  $.fn.isBefore = function(elem) {
+    if(typeof(elem) == "string") elem = $(elem);
+    return this.add(elem).index(elem) > 0;
+  }
+})(jQuery)
+</script>
+
+{%- endblock %}
+
+
+{% block styles %}
+{{ super() }}
+<style>
+.bg-grey {
+    background-color: #f6f6f6;
+}
+.bg-black {
+    background-color: #000000;
+
+.container-fluid {
+    padding: 60px 50px;
+}
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+   <!--<div class="container">-->
+      <div class="jumbotron">
+          <div class="container">
+        <h1>{{ event.name }}</h1>
+          </div>
+      </div>
+     {% if request.args.get('legacy') -%}
+       {{wtf.quick_form(form, novalidate=True)}}
+     {%- else -%}
+       <form class="form form-vertical" method="post" role="form">
+           <div id="form_fields">
+               <div class="container-fluid bg-grey">
+                   <div class="container">
+                       <h2> Your details</h2>
+              {{ form.hidden_tag() }}
+              {{ wtf.form_errors(form) }}
+
+              {{ form.stripe_token }}
+              {{ slt.name_field(form.name) }}
+              {{ slt.email_field(form.email) }}
+              {{ wtf.form_field(form.comment) }}
+              {{wtf.form_field(form.show_comment) }}
+              {{wtf.form_field(form.show_contribution) }}
+                       </div>
+               </div>
+                <div class="container-fluid">
+                    <div class="container">
+                        <h2> Your participation</h2>
+               {% for product_key in form.product_keys %}
+                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key)) }}
+               {% endfor %}
+
+              {# {{ wtf.form_field(form.submit) }} #}
+               </div>
+                    </div>
+               <div class="container-fluid">
+                   <div class="container">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">Order Summary</div>
+                            <div class="pannel-body">
+                                <div id="order_summary"></div>
+                                <div class="form-group form-vertical">
+                                    <button type="button" id="checkout" class="btn btn-primary form-control" autocomplete="off">
+                                      Checkout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                   </div>
+               </div>
+           </div>
+        </form>
+     {%- endif %}
+
+<div class="container-fluid bg-black">
+    <div class="row">
+           <small>Implemented by Alexander Vinokurov</small>
+    </div>
+</div>
+
+{%- endblock %}

@@ -13,6 +13,7 @@ class Event(Base):
     event_key = Column(String(50), unique=False, nullable=False)
     name = Column(String(50), nullable=False)
     info = Column(String)
+    event_type = Column(String(25))
     start_date = Column(DateTime, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
 
@@ -33,6 +34,9 @@ class Product(Base):
     name = Column(String(50))
     type = Column(String(50), nullable=False)
     info = Column(String)
+    price = Column(Float, default=0)
+    max_available = Column(Integer, default=0)
+    image_url = Column(String(255))
     parameters = relationship('ProductParameter', lazy='dynamic')
 
     def __init__(self, name, product_type, parameters_dict=None, **kwargs):
@@ -119,7 +123,7 @@ class OrderProduct(Base):
 class OrderProductDetail(Base):
     __tablename__ = 'order_product_details'
     id = Column(Integer, primary_key=True)
-    product_order_id = Column(Integer, ForeignKey('order_products.id'))
+    order_product_id = Column(Integer, ForeignKey('order_products.id'))
     field_name = Column(String(50), nullable=False)
     field_value = Column(String(50), nullable=False)
 
@@ -127,3 +131,11 @@ class OrderProductDetail(Base):
         self.field_name = field_name,
         self.field_value = field_value
         super(OrderProductDetail, self).__init__(**kwargs)
+
+
+class OrderProductRegistrationsMapping:
+    __tablename__ = 'order_product_registrations_mapping'
+    id = Column(Integer, primary_key=True)
+    order_product_id = Column(Integer, ForeignKey('order_products.id'))
+    registration_id = Column(Integer, ForeignKey('registrations.id'))
+

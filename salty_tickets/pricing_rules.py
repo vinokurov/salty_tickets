@@ -1,3 +1,4 @@
+from .products import get_product_by_model
 from .models import Event, ProductParameter, Order, OrderProduct, Product
 
 __author__ = 'vnkrv'
@@ -64,6 +65,39 @@ def get_order_for_event(event, form):
     return user_order
 
 
+def get_order_for_crowdfunding_event(event, form):
+    assert isinstance(event, Event)
+    user_order = Order()
+
+    for product_model in event.products:
+        print(product_model)
+        product = get_product_by_model(product_model)
+        product_form = form.get_product_by_key(product_model.product_key)
+        price = product.get_total_price(product_form)
+        if price > 0:
+            user_order.order_products.append(OrderProduct(product, price))
+
+    products_price = user_order.products_price
+    print(products_price)
+    user_order.transaction_fee = transaction_fee(products_price)
+    total_price = products_price + float(user_order.transaction_fee)
+    user_order.total_price = "%.2f" % total_price
+
+    return user_order
+
+
 def transaction_fee(price):
     return "%.2f" % (price*0.015 + 0.2)
+
+
+def get_total_raised(event):
+    assert isinstance(event, Event)
+    return sum([o.total_price for o in event.registrations.join(Order).all()])
+
+
+def get_stripe_properties(event, order, form):
+    stripe_props = {}
+    stripe_props['email'] = form.email.data
+    stripe_props['amount'] = int(float(order.total_price)*100)
+    return stripe_props
 

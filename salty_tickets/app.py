@@ -2,9 +2,10 @@ from flask import url_for, jsonify
 from werkzeug.utils import redirect
 
 from .database import db_session
-from .forms import create_event_form
-from .pricing_rules import get_salty_recipes_price, get_order_for_event
-from .models import Event
+from .forms import create_event_form, create_crowdfunding_form
+from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
+    get_order_for_crowdfunding_event, get_stripe_properties
+from .models import Event, Order
 from flask import Flask, render_template, flash, escape
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
@@ -20,13 +21,13 @@ app.secret_key = 'devtest'
 @app.route('/')
 def index():
     # return render_template('index.html')
-    event = Event.query.filter_by(active=True).order_by(Event.start_date).first()
+    event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
     if event:
-        return redirect(url_for('example_form', event_key=event.event_key))
+        return redirect(url_for('register_form', event_key=event.event_key))
 
 
 @app.route('/register/<string:event_key>', methods=('GET', 'POST'))
-def example_form(event_key):
+def register_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
     print(event.name)
     form = create_event_form(event)()
@@ -50,6 +51,47 @@ def total_price(event_key):
         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
     else:
         return jsonify({})
+
+
+@app.route('/crowdfunding')
+def crowdfunding_index():
+    event = Event.query.filter_by(active=True, event_type='crowdfunding').order_by(Event.start_date).first()
+    if event:
+        return redirect(url_for('crowdfunding_form', event_key=event.event_key))
+
+
+@app.route('/crowdfunding/<string:event_key>', methods=('GET', 'POST'))
+def crowdfunding_form(event_key):
+    event = Event.query.filter_by(event_key=event_key).first()
+    print(event.name)
+    form = create_crowdfunding_form(event)()
+
+    total_raised = get_total_raised(event)
+
+    if form.validate_on_submit():
+        user_order = get_order_for_crowdfunding_event(event, form)
+        db_session.add(user_order)
+        db_session.commit()
+        return 'your token: {}'.format(form.stripe_token.data)
+
+    return render_template('crowdfunding.html', event=event, form=form, total_raised=total_raised)
+
+
+@app.route('/crowdfunding/checkout/<string:event_key>', methods=['POST'])
+def crowdfunding_checkout(event_key):
+    event = Event.query.filter_by(event_key=event_key).first()
+    form = create_crowdfunding_form(event)()
+
+    redurn_dict = dict(errors={})
+
+    if form.validate_on_submit():
+        user_order = get_order_for_crowdfunding_event(event, form)
+        redurn_dict['stripe'] = get_stripe_properties(event, user_order, form)
+        redurn_dict['order_summary_html'] = render_template('order_summary.html', user_order=user_order)
+    else:
+        redurn_dict['order_summary_html'] = render_template('order_summary.html', user_order=Order(total_price=0))
+        redurn_dict['errors'] = form.errors
+    return jsonify(redurn_dict)
 
 
 @app.teardown_appcontext

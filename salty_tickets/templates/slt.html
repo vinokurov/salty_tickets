@@ -2,21 +2,102 @@
 
 {% macro render_workshop_form_field(form_field) %}
 <div class="panel panel-default">
-   <div class="panel-heading">
-       {{ wtf.form_field(form_field.going) }}
-        <small>
-                {{ form_field.info }}
-        </small>
-   </div>
+{% if form_field.product_type == 'DonateProduct' %}
+  {{ donate_product(form_field) }}
+{% elif form_field.product_type == 'MarketingProduct' %}
+  {{ marketing_product(form_field) }}
+{% else %}
    <div class="panel-body">
     {%- for subfield in form_field %}
-      {% if not bootstrap_is_hidden_field(subfield) and subfield != form_field.going -%}
+      {% if not bootstrap_is_hidden_field(subfield) and subfield != form_field.add -%}
         {{ wtf.form_field(subfield,
                       form_type=form_type,
                       horizontal_columns=horizontal_columns,
                       button_map=button_map) }}
       {%- endif %}
     {%- endfor %}
-   </div>
+    </div>
+{% endif %}
+
 </div>
 {%- endmacro %}
+
+
+{% macro donate_product(form_field) %}
+       <div class="panel-heading">
+           <label>{{ form_field.product_name }}</label>
+       </div>
+    <div class="panel-body">
+        {{ money_text_field(form_field.amount) }}
+    </div>
+{% endmacro %}
+
+
+{% macro marketing_product(form_field) %}
+       <div class="panel-heading">
+           <div>
+           <label>{{ form_field.product_name }}
+               {% if form_field.available_quantity %}
+                    <span class="badge">{{ form_field.available_quantity }}</span>
+               {% endif %}
+           </label>
+           </div>
+           <div>
+               Price: £{{ form_field.price }}
+           </div>
+       </div>
+    <div class="panel-body">
+        {{ form_field.info }}
+           <div class="form-group form-inline">
+            {{ wtf.form_field(form_field.add) }}
+           </div>
+    </div>
+{% endmacro %}
+
+
+{% macro toggle_btn_checkbox(field) %}
+<div class="btn-group" data-toggle="buttons">
+        <label class="btn btn-default slt-toggle">
+            {{ field(checked=False) }} {{ field.label.text }}
+        </label>
+</div>
+{% endmacro %}
+
+
+{% macro email_field(field) %}
+<div  class="form-group">
+    <label class="sr-only" for="{{field.id}}">Your email</label>
+    <div class="input-group">
+        <div class="input-group-addon">
+            <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+        </div>
+        {{ field(class='form-control', placeholder="Email") }}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro name_field(field) %}
+<div  class="form-group">
+  <label class="sr-only" for="{{field.id}}">Your name</label>
+  <div class="input-group">
+    <div class="input-group-addon">
+        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+    </div>
+    {{ field(class='form-control', placeholder="Name") }}
+</div>
+</div>
+{% endmacro %}
+
+
+{% macro money_text_field(field) %}
+<div class="form-group">
+    {{ field.label(class='sr-only') }}
+    <div class="input-group">
+        <div class="input-group-addon">£</div>
+        <!--<input type="text" class="form-control" id="{{field.id}}" placeholder="{{ field.label.text }}">-->
+        {{ field(placeholder=field.label.text,  class="form-control") }}
+        <div class="input-group-addon">.00</div>
+    </div>
+</div>
+{% endmacro %}

@@ -57,7 +57,7 @@
      {% if request.args.get('legacy') -%}
        {{wtf.quick_form(form, novalidate=True)}}
      {%- else -%}
-       <form class="form form-vertical" method="post" role="form">
+       <form class="form form-inline" method="post" role="form">
            <div id="form_fields">
           {{ form.hidden_tag() }}
           {{ wtf.form_errors(form) }}
