@@ -25,7 +25,7 @@
 
 {% macro donate_product(form_field) %}
        <div class="panel-heading">
-           <label>{{ form_field.product_name }}</label>
+           <h4>{{ form_field.product_name }}</h4>
        </div>
     <div class="panel-body">
         {{ money_text_field(form_field.amount) }}
@@ -35,16 +35,12 @@
 
 {% macro marketing_product(form_field) %}
        <div class="panel-heading">
-           <div>
-           <label>{{ form_field.product_name }}
+           <h4>{{ form_field.product_name }}</h4>
+           <small>
                {% if form_field.available_quantity %}
-                    <span class="badge">{{ form_field.available_quantity }}</span>
+                    Available: {{ form_field.available_quantity }}
                {% endif %}
-           </label>
-           </div>
-           <div>
-               Price: £{{ form_field.price }}
-           </div>
+           </small>
        </div>
     <div class="panel-body">
         {{ form_field.info }}
@@ -53,6 +49,7 @@
     <div class="input-group">
         <div class="input-group-addon primary">ADD</div>
         {{ form_field.add(class='form-control') }}
+        <div class="input-group-addon"> <b>Price: £{{ form_field.price }}</b></div>
     </div>
 </div>
 
