@@ -88,7 +88,7 @@ class RegularPartnerWorkshop(ProductTemplate):
 
 
 class MarketingProduct(ProductTemplate):
-    allow_multiple = True
+    allow_select = None
 
     def get_form(self):
         class MarketingProductForm(NoCsrfForm):
@@ -99,18 +99,16 @@ class MarketingProduct(ProductTemplate):
             available_quantity = self.available_quantity
             product_type = self.__class__.__name__
 
-        if self.allow_multiple:
-            setattr(
-                MarketingProductForm,
-                'add',
-                SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, self.available_quantity+1)])
-            )
+        if self.allow_select:
+            quantity = min(self.available_quantity, int(self.allow_select))
         else:
-            setattr(
-                MarketingProductForm,
-                'add',
-                BooleanField(label='Add')
-            )
+            quantity = self.available_quantity
+
+        setattr(
+            MarketingProductForm,
+            'add',
+            SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, quantity+1)])
+        )
         return MarketingProductForm
 
     @property

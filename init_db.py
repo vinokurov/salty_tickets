@@ -72,7 +72,7 @@ simona_fundraising_event.products.append(
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Shag Private Class with Patrick O\'Brien',
+        name='Collegiate Shag Private Class with Patrick O\'Brien',
         info='Here comes some info',
         price=35,
         max_available=3
@@ -80,11 +80,11 @@ simona_fundraising_event.products.append(
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Photo Shoot with Alexander Vinokurov',
+        name='Photoshoot with Alexander Vinokurov',
         info='Here comes some info',
         price=25,
         max_available=3,
-        allow_multiple=False
+        allow_select=1
     ).model
 )
 
