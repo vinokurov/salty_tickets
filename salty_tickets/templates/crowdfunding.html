@@ -117,7 +117,11 @@
 
 
 {% block styles %}
-{{ super() }}
+{# {{ super() }} #}
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/yeti/bootstrap.min.css" rel="stylesheet">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/paper/bootstrap.min.css" rel="stylesheet">-->
 <style>
 .bg-grey {
     background-color: #f6f6f6;
@@ -176,7 +180,7 @@
                             <div class="pannel-body">
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-primary form-control" autocomplete="off">
+                                    <button type="button" id="checkout" class="btn btn-success form-control" autocomplete="off">
                                       Checkout
                                     </button>
                                 </div>
@@ -188,9 +192,9 @@
         </form>
      {%- endif %}
 
-<div class="container-fluid bg-black">
-    <div class="row">
-           <small>Implemented by Alexander Vinokurov</small>
+<div class="footer">
+    <div class="container">
+           Implemented by Alexander Vinokurov
     </div>
 </div>
 

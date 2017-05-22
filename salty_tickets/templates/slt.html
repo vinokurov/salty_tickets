@@ -48,9 +48,15 @@
        </div>
     <div class="panel-body">
         {{ form_field.info }}
-           <div class="form-group form-inline">
-            {{ wtf.form_field(form_field.add) }}
-           </div>
+
+<div  class="form-group">
+    <div class="input-group">
+        <div class="input-group-addon primary">ADD</div>
+        {{ form_field.add(class='form-control') }}
+    </div>
+</div>
+
+
     </div>
 {% endmacro %}
 
