@@ -2,7 +2,7 @@ from flask_wtf import Form
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, TextAreaField
 from wtforms.validators import Email, DataRequired
 from wtforms import Form as NoCsrfForm
-from .models import Event
+from .models import Event, Registration
 from .products import get_product_by_model
 
 
@@ -15,8 +15,7 @@ class SignupForm(Form):
 
 
 class CrowdfundingSignupForm(SignupForm):
-    show_comment = BooleanField(label='Show comment', default=True)
-    show_contribution = BooleanField(label='Show contribution', default=True)
+    anonymous = BooleanField(label='Contribute anonymously', default=False)
 
 
 def create_event_form(event):
@@ -55,3 +54,15 @@ def create_crowdfunding_form(event):
         product_keys.append(product_key)
     setattr(EventForm, 'product_keys', product_keys)
     return EventForm
+
+
+def get_registration_from_form(event, form):
+    assert isinstance(form, SignupForm)
+    registration_model = Registration(
+        name=form.name.data,
+        email=form.email.data,
+        comment=form.comment.data,
+        event=event
+    )
+    return registration_model
+

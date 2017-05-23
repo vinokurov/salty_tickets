@@ -2,7 +2,7 @@ from flask import url_for, jsonify
 from werkzeug.utils import redirect
 
 from .database import db_session
-from .forms import create_event_form, create_crowdfunding_form
+from .forms import create_event_form, create_crowdfunding_form, get_registration_from_form
 from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties
 from .models import Event, Order
@@ -53,7 +53,9 @@ def total_price(event_key):
         return jsonify({})
 
 
+@app.route('/c')
 @app.route('/crowdfunding')
+@app.route('/crowdfunding/')
 def crowdfunding_index():
     event = Event.query.filter_by(active=True, event_type='crowdfunding').order_by(Event.start_date).first()
     if event:
@@ -66,15 +68,18 @@ def crowdfunding_form(event_key):
     print(event.name)
     form = create_crowdfunding_form(event)()
 
-    total_raised = get_total_raised(event)
+    total_stats = get_total_raised(event)
 
     if form.validate_on_submit():
+        registration = get_registration_from_form(event, form)
         user_order = get_order_for_crowdfunding_event(event, form)
-        db_session.add(user_order)
+        user_order.status = 'Paid'
+        registration.orders.append(user_order)
+        db_session.add(registration)
         db_session.commit()
         return 'your token: {}'.format(form.stripe_token.data)
 
-    return render_template('crowdfunding.html', event=event, form=form, total_raised=total_raised)
+    return render_template('crowdfunding.html', event=event, form=form, total_stats=total_stats)
 
 
 @app.route('/crowdfunding/checkout/<string:event_key>', methods=['POST'])

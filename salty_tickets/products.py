@@ -4,7 +4,7 @@ from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
 from wtforms.validators import Optional
 
-from .models import Product, ProductParameter
+from .models import Product, ProductParameter, OrderProduct
 
 
 class ProductTemplate:
@@ -47,6 +47,9 @@ class ProductTemplate:
 
         product = cls(**kwargs)
         return product
+
+    def get_ordered_product_model(self, product_form):
+        order_product_model = OrderProduct(price=product_form.price)
 
     @property
     def _parameters_dict(self):

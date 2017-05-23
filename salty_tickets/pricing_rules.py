@@ -1,10 +1,9 @@
+from .forms import get_registration_from_form
 from .products import get_product_by_model
 from .models import Event, ProductParameter, Order, OrderProduct, Product
 
 __author__ = 'vnkrv'
 
-# salty_recipes
-# salty_recipes
 
 def get_salty_recipes_price(form):
     price_aerieals_one_day = 50
@@ -75,7 +74,8 @@ def get_order_for_crowdfunding_event(event, form):
         product_form = form.get_product_by_key(product_model.product_key)
         price = product.get_total_price(product_form)
         if price > 0:
-            user_order.order_products.append(OrderProduct(product, price))
+            registration_model = get_registration_from_form(event, form)
+            user_order.order_products.append(OrderProduct(product_model, price, registration=registration_model))
 
     products_price = user_order.products_price
     print(products_price)
@@ -92,7 +92,11 @@ def transaction_fee(price):
 
 def get_total_raised(event):
     assert isinstance(event, Event)
-    return sum([o.total_price for o in event.registrations.join(Order).all()])
+    total_stats = {
+        'amount': sum([sum([o.total_price - o.transaction_fee for o in r.orders]) for r in event.registrations.join(Order).all()]),
+        'contributors': len(event.registrations.join(Order).all())
+    }
+    return total_stats
 
 
 def get_stripe_properties(event, order, form):

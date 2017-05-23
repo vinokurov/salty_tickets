@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean, func
+from sqlalchemy import Text
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import aggregated
 from .database import Base
@@ -12,7 +13,7 @@ class Event(Base):
     id = Column(Integer, primary_key=True)
     event_key = Column(String(50), unique=False, nullable=False)
     name = Column(String(50), nullable=False)
-    info = Column(String)
+    info = Column(Text)
     event_type = Column(String(25))
     start_date = Column(DateTime, nullable=False)
     active = Column(Boolean, nullable=False, default=True)
@@ -33,7 +34,7 @@ class Product(Base):
     event_id = Column(Integer, ForeignKey('events.id'))
     name = Column(String(50))
     type = Column(String(50), nullable=False)
-    info = Column(String)
+    info = Column(Text)
     price = Column(Float, default=0)
     max_available = Column(Integer, default=0)
     image_url = Column(String(255))
@@ -74,8 +75,10 @@ class Registration(Base):
     event_id = Column(Integer, ForeignKey('events.id'))
     name = Column(String(50), nullable=False)
     email = Column(String(120), nullable=False)
+    comment = Column(Text)
     registered_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     orders = relationship("Order", lazy='dynamic')
+    event = relationship("Event", uselist=False)
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -111,6 +114,8 @@ class OrderProduct(Base):
     order = relationship('Order', uselist=False)
     product = relationship('Product', uselist=False)
 
+    registration = relationship('Registration', uselist=False)
+
     def __init__(self, product, price, details_dict=None, **kwargs):
         self.product = product
         self.price = price
@@ -133,9 +138,15 @@ class OrderProductDetail(Base):
         super(OrderProductDetail, self).__init__(**kwargs)
 
 
-class OrderProductRegistrationsMapping:
+class OrderProductRegistrationsMapping(Base):
     __tablename__ = 'order_product_registrations_mapping'
     id = Column(Integer, primary_key=True)
     order_product_id = Column(Integer, ForeignKey('order_products.id'))
     registration_id = Column(Integer, ForeignKey('registrations.id'))
 
+
+class CrowdfundingRegistrationProperties(Base):
+    __tablename__ = 'crowdfunding_registration_properties'
+    id = Column(Integer, primary_key=True)
+    registration_id = Column(Integer, ForeignKey('registrations.id'))
+    anonymous = Column(Boolean, nullable=False, default=False)

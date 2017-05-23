@@ -10,19 +10,6 @@
 
 
 <script>
-    var handler = StripeCheckout.configure({
-      key: 'pk_test_JINxJqXoY58hgW37stGd09hK',
-      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
-      locale: 'auto',
-      token: function(token) {
-        // You can access the token ID with `token.id`.
-        // Get the token ID to your server-side code for use.
-        console.log(token)
-        $('#{{ form.stripe_token.id }}').val(token.id);
-        $('form').submit()
-      }
-    });
-
     // Close Checkout on page navigation:
     window.addEventListener('popstate', function() {
       handler.close();
@@ -81,8 +68,23 @@
             url: url,
             data: $('form').serialize(), // serializes the form's elements.
             success: function (data) {
+
                 console.log(data);  // display the returned data in the console.
+
                 if(data.stripe.amount) {
+                    var handler = StripeCheckout.configure({
+                      key: 'pk_test_JINxJqXoY58hgW37stGd09hK',
+                      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+                      locale: 'auto',
+                      token: function(token) {
+                        // You can access the token ID with `token.id`.
+                        // Get the token ID to your server-side code for use.
+                        console.log(token)
+                        $('#{{ form.stripe_token.id }}').val(token.id);
+                        $('form').submit()
+                      }
+                    });
+
                     handler.open({
                         name: 'Demo Site',
                         description: '2 widgets\r\n<br> test',
@@ -144,6 +146,12 @@
         <h1>{{ event.name }}</h1>
           </div>
       </div>
+      <div class="jumbotron">
+          <div class="container">
+            <h1>TOTAL RAISED: <div class="label label-success">£{{ total_stats['amount'] }}</div></h1>
+            <h3>Contributors: <div class="label label-default">{{ total_stats['contributors'] }}</div></h3>
+          </div>
+      </div>
      {% if request.args.get('legacy') -%}
        {{wtf.quick_form(form, novalidate=True)}}
      {%- else -%}
@@ -159,8 +167,7 @@
               {{ slt.name_field(form.name) }}
               {{ slt.email_field(form.email) }}
               {{ wtf.form_field(form.comment) }}
-              {{wtf.form_field(form.show_comment) }}
-              {{wtf.form_field(form.show_contribution) }}
+              {{wtf.form_field(form.anonymous) }}
                        </div>
                </div>
                 <div class="container-fluid">
@@ -191,6 +198,9 @@
            </div>
         </form>
      {%- endif %}
+
+<h3>Comments</h3>
+<script src="http://www.avatarapi.com/js.aspx?email=alexander.a.vinokurov@gmail.com&size=48"></script>
 
 <div class="footer">
     <div class="container">
