@@ -4,7 +4,12 @@
 {%- extends "bootstrap/base.html" %}
 
 {% block scripts %}
-{{ super() }}
+{# {{ super() }} #}
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
 <script src="https://checkout.stripe.com/checkout.js"></script>
 
@@ -120,7 +125,12 @@
 {% block styles %}
 {# {{ super() }} #}
     <!-- Bootstrap -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/4.0.0-alpha.6/lumen/bootstrap.min.css" rel="stylesheet">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/lumen/bootstrap.min.css" rel="stylesheet">-->
     <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/yeti/bootstrap.min.css" rel="stylesheet">-->
     <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/paper/bootstrap.min.css" rel="stylesheet">-->
 <style>
@@ -142,13 +152,13 @@
    <!--<div class="container">-->
       <div class="jumbotron">
           <div class="container">
-        <h1>{{ event.name }}</h1>
+        <h1 class="display-3">{{ event.name }}</h1>
           </div>
       </div>
       <div class="jumbotron">
           <div class="container">
-            <h1>TOTAL RAISED: <div class="label label-success">£{{ total_stats['amount'] }}</div></h1>
-            <h3>Contributors: <div class="label label-default">{{ total_stats['contributors'] }}</div></h3>
+            <h2 class="display-3">TOTAL RAISED: <div class="badge badge-success">£{{ total_stats['amount'] }}</div></h2>
+            <h3 class="lead">Contributors: <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h3>
           </div>
       </div>
      {% if request.args.get('legacy') -%}
@@ -170,22 +180,26 @@
                        </div>
                </div>
                 <div class="container-fluid">
-                    <div class="container">
+                    <div class="container my-4">
                         <h2> Just Donate</h2>
                     {{ slt.render_workshop_form_field(form.get_product_by_key(form.product_keys[0])) }}
+                    </div>
+                    <div class="container my-4">
                         <h2> Select a Reward</h2>
+                        <div class="card-columns">
                {% for product_key in form.product_keys[1:] %}
                     {{ slt.render_workshop_form_field(form.get_product_by_key(product_key)) }}
                {% endfor %}
+                        </div>
 
               {# {{ wtf.form_field(form.submit) }} #}
                </div>
                     </div>
                <div class="container-fluid">
-                   <div class="container">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">Order Summary</div>
-                            <div class="pannel-body">
+                   <div class="container my-4">
+                        <div class="card card-default">
+                            <div class="card-block">
+                                <h4 class="card-title">Order Summary</h4>
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
                                     <button type="button" id="checkout" class="btn btn-success form-control" autocomplete="off">
@@ -201,18 +215,18 @@
      {%- endif %}
 
                <div class="container-fluid">
-                   <div class="container">
-<h3>Contributors</h3>
+                   <div class="container my-5">
+<h3>Contributors <div class="badge badge-pill badge-default">{{ total_stats['contributors'] }}</div></h3>
 {% for contrib in contributors %}
 {{ slt.render_contributor(contrib) }}
 {% endfor %}
                </div>
            </div>
 
-<div class="footer">
+<nav class="navbar bottom navbar-light bg-faded my-4">
     <div class="container">
-           Implemented by Alexander Vinokurov
+        <small class="text-muted">Implemented by Alexander Vinokurov</small>
     </div>
-</div>
+</nav>
 
 {%- endblock %}

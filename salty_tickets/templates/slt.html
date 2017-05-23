@@ -1,13 +1,13 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
 {% macro render_workshop_form_field(form_field) %}
-<div class="panel panel-default">
+<div class="card card-default">
 {% if form_field.product_type == 'DonateProduct' %}
   {{ donate_product(form_field) }}
 {% elif form_field.product_type == 'MarketingProduct' %}
   {{ marketing_product(form_field) }}
 {% else %}
-   <div class="panel-body">
+   <div class="card-body">
     {%- for subfield in form_field %}
       {% if not bootstrap_is_hidden_field(subfield) and subfield != form_field.add -%}
         {{ wtf.form_field(subfield,
@@ -25,11 +25,11 @@
 
 {% macro donate_product(form_field) %}
 {#
-       <div class="panel-heading">
+       <div class="card-heading">
            <h4>{{ form_field.product_name }}</h4>
        </div>
 #}
-    <div class="panel-body">
+    <div class="card-block">
         {{ money_text_field(form_field.amount) }}
     </div>
 {% endmacro %}
@@ -37,22 +37,25 @@
 
 {% macro marketing_product(form_field) %}
         {% set add_enabled = True %}
-       <div class="panel-heading">
-           <h4>{{ form_field.product_name }}</h4>
-           <small>
+    <img class="card-img-top img-fluid" src="..." alt="Card image cap">
+    <div class="card-block">
+       <!--<div class="card-heading">-->
+           <h4 class="card-title">{{ form_field.product_name }}</h4>
+           <p class="card-text"><small class="text-muted">
                {% if form_field.available_quantity is defined %}
                     {% if form_field.available_quantity <= 0 %}
                         Sold out
                         {% set add_enabled = False %}
                     {% else %}
-                        {% if form_field.available_quantity == 1 %} <span class="glyphicon glyphicon-fire" aria-hidden="true"></span> {% endif %}
+                        {% if form_field.available_quantity == 1 %} <i class="fa fa-fire text-danger" aria-hidden="true"></i> {% endif %}
                         Available: {{ form_field.available_quantity }}
                     {% endif %}
                {% endif %}
-           </small>
-       </div>
-    <div class="panel-body">
-        {{ form_field.info }}
+           </small></p>
+       <!--</div>-->
+
+    <!--<div class="card-block">-->
+        <p class="card-text">{{ form_field.info }}</p>
 
 <div  class="form-group">
     <div class="input-group">
@@ -85,7 +88,7 @@
     <label class="sr-only" for="{{field.id}}">Your email</label>
     <div class="input-group">
         <div class="input-group-addon">
-            <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+            <i class="fa fa-envelope" aria-hidden="true"></i>
         </div>
         {{ field(class='form-control', placeholder="Email") }}
     </div>
@@ -98,7 +101,7 @@
   <label class="sr-only" for="{{field.id}}">Your name</label>
   <div class="input-group">
     <div class="input-group-addon">
-        <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+        <i class="fa fa-user" aria-hidden="true"></i>
     </div>
     {{ field(class='form-control', placeholder="Name") }}
 </div>
@@ -110,7 +113,7 @@
 <div class="form-group">
     {{ field.label(class='sr-only') }}
     <div class="input-group">
-        <div class="input-group-addon">£</div>
+        <div class="input-group-addon"><i class="fa fa-gbp" aria-hidden="true"></i></div>
         <!--<input type="text" class="form-control" id="{{field.id}}" placeholder="{{ field.label.text }}">-->
         {{ field(placeholder=field.label.text,  class="form-control") }}
         <div class="input-group-addon">.00</div>
@@ -120,8 +123,8 @@
 
 
 {% macro render_contributor(registration) %}
-<div class="panel panel-default">
-    <div class="panel-body">
+<div class="card card-default">
+    <div class="card-block">
         {% if registration.crowdfunding_registration_properties.anonymous %}
         <h4>Anonymous</h4>
         {% else %}
@@ -130,7 +133,7 @@
         <p>Contributed: £{{ registration.total_amount_ordered }}</p>
     </div>
     {% if registration.comment %}
-    <div class="panel-footer">
+    <div class="card-footer">
         {{ registration.comment }}
     </div>
     {% endif %}
