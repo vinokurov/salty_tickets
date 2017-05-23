@@ -116,6 +116,7 @@ class MarketingProduct(ProductTemplate):
 
     @property
     def available_quantity(self):
+        # OrderProduct.query()
         return self.max_available
 
     def get_total_price(self, form):

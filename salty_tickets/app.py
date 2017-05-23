@@ -5,7 +5,7 @@ from .database import db_session
 from .forms import create_event_form, create_crowdfunding_form, get_registration_from_form
 from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties
-from .models import Event, Order, CrowdfundingRegistrationProperties
+from .models import Event, Order, CrowdfundingRegistrationProperties, Registration
 from flask import Flask, render_template, flash, escape
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
@@ -86,7 +86,8 @@ def crowdfunding_form(event_key):
 
     print(event.id)
     print(event.registrations.count())
-    return render_template('crowdfunding.html', event=event, form=form, total_stats=total_stats)
+    contributors = event.registrations.order_by(Registration.registered_datetime.desc()).all()
+    return render_template('crowdfunding.html', event=event, form=form, total_stats=total_stats, contributors=contributors)
 
 
 @app.route('/crowdfunding/checkout/<string:event_key>', methods=['POST'])

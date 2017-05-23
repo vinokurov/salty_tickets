@@ -201,8 +201,8 @@
                <div class="container-fluid">
                    <div class="container">
 <h3>Contributors</h3>
-{% for registration in event.registrations %}
-{{ slt.render_contributor(registration) }}
+{% for contrib in contributors %}
+{{ slt.render_contributor(contrib) }}
 {% endfor %}
                </div>
            </div>
