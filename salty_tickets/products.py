@@ -120,13 +120,10 @@ class MarketingProduct(ProductTemplate):
         return self.max_available
 
     def get_total_price(self, form):
-        if isinstance(form.add, BooleanField):
-            if form.add.data:
-                return self.price
-            else:
-                return 0
+        if form.add.data:
+            return self.price
         else:
-            return self.price * int(form.add.data)
+            return 0
 
 
 class DonateProduct(ProductTemplate):
