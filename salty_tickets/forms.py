@@ -50,7 +50,7 @@ def create_crowdfunding_form(event):
     for product_model in event.products:
         product = get_product_by_model(product_model)
         product_key = product_model.product_key
-        setattr(EventForm, product_key, FormField(product.get_form()))
+        setattr(EventForm, product_key, FormField(product.get_form(product_model=product_model)))
         product_keys.append(product_key)
     setattr(EventForm, 'product_keys', product_keys)
     return EventForm

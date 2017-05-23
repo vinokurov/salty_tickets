@@ -93,19 +93,19 @@ class RegularPartnerWorkshop(ProductTemplate):
 class MarketingProduct(ProductTemplate):
     allow_select = None
 
-    def get_form(self):
+    def get_form(self, product_model=None):
         class MarketingProductForm(NoCsrfForm):
             product_name = self.name
             info = self.info
             image_url = self.image_url
             price = self.price
-            available_quantity = self.available_quantity
+            available_quantity = self.get_available_quantity(product_model)
             product_type = self.__class__.__name__
 
         if self.allow_select:
-            quantity = min(self.available_quantity, int(self.allow_select))
+            quantity = min(self.get_available_quantity(product_model), int(self.allow_select))
         else:
-            quantity = self.available_quantity
+            quantity = self.get_available_quantity(product_model)
 
         setattr(
             MarketingProductForm,
@@ -114,10 +114,10 @@ class MarketingProduct(ProductTemplate):
         )
         return MarketingProductForm
 
-    @property
-    def available_quantity(self):
-        # OrderProduct.query()
-        return self.max_available
+    def get_available_quantity(self, product_model):
+        assert isinstance(product_model, Product)
+        ordered_quantity = OrderProduct.query.filter(OrderProduct.product == product_model).count()
+        return max(self.max_available - ordered_quantity, 0)
 
     def get_total_price(self, form):
         if form.add.data:
@@ -129,7 +129,7 @@ class MarketingProduct(ProductTemplate):
 class DonateProduct(ProductTemplate):
     make_public = True
 
-    def get_form(self):
+    def get_form(self, product_model=None):
         class DonateForm(NoCsrfForm):
             product_name = self.name
             info = self.info

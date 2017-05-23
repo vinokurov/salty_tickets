@@ -36,11 +36,18 @@
 
 
 {% macro marketing_product(form_field) %}
+        {% set add_enabled = True %}
        <div class="panel-heading">
            <h4>{{ form_field.product_name }}</h4>
            <small>
-               {% if form_field.available_quantity %}
-                    Available: {{ form_field.available_quantity }}
+               {% if form_field.available_quantity is defined %}
+                    {% if form_field.available_quantity <= 0 %}
+                        Sold out
+                        {% set add_enabled = False %}
+                    {% else %}
+                        {% if form_field.available_quantity == 1 %} <span class="glyphicon glyphicon-fire" aria-hidden="true"></span> {% endif %}
+                        Available: {{ form_field.available_quantity }}
+                    {% endif %}
                {% endif %}
            </small>
        </div>
@@ -50,7 +57,11 @@
 <div  class="form-group">
     <div class="input-group">
         <div class="input-group-addon primary">ADD</div>
-        {{ form_field.add(class='form-control') }}
+        {% if add_enabled %}
+            {{ form_field.add(class='form-control') }}
+        {% else %}
+            {{ form_field.add(class='form-control', disabled=1) }}
+        {% endif %}
         <div class="input-group-addon"> <b>Price: £{{ form_field.price }}</b></div>
     </div>
 </div>
