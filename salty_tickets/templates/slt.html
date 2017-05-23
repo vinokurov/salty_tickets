@@ -24,9 +24,11 @@
 
 
 {% macro donate_product(form_field) %}
+{#
        <div class="panel-heading">
            <h4>{{ form_field.product_name }}</h4>
        </div>
+#}
     <div class="panel-body">
         {{ money_text_field(form_field.amount) }}
     </div>

@@ -171,8 +171,10 @@
                </div>
                 <div class="container-fluid">
                     <div class="container">
-                        <h2> Your participation</h2>
-               {% for product_key in form.product_keys %}
+                        <h2> Just Donate</h2>
+                    {{ slt.render_workshop_form_field(form.get_product_by_key(form.product_keys[0])) }}
+                        <h2> Select a Reward</h2>
+               {% for product_key in form.product_keys[1:] %}
                     {{ slt.render_workshop_form_field(form.get_product_by_key(product_key)) }}
                {% endfor %}
 
