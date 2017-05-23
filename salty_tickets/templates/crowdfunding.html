@@ -87,13 +87,12 @@
 
                     handler.open({
                         name: 'Demo Site',
-                        description: '2 widgets\r\n<br> test',
-                        zipCode: true,
+                        description: 'Simona Crowdfunding',
                         currency: 'gbp',
                         amount: data.stripe.amount,
                         email: data.stripe.email,
-                        zipCode: true,
-                        billingAddress: true,
+                        //zipCode: true,
+                        //billingAddress: true,
                         allowRememberMe: false
                     })
                 }
@@ -199,8 +198,14 @@
         </form>
      {%- endif %}
 
-<h3>Comments</h3>
-<script src="http://www.avatarapi.com/js.aspx?email=alexander.a.vinokurov@gmail.com&size=48"></script>
+               <div class="container-fluid">
+                   <div class="container">
+<h3>Contributors</h3>
+{% for registration in event.registrations %}
+{{ slt.render_contributor(registration) }}
+{% endfor %}
+               </div>
+           </div>
 
 <div class="footer">
     <div class="container">

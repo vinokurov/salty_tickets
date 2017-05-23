@@ -74,7 +74,7 @@ def get_order_for_crowdfunding_event(event, form):
         product_form = form.get_product_by_key(product_model.product_key)
         price = product.get_total_price(product_form)
         if price > 0:
-            registration_model = get_registration_from_form(event, form)
+            registration_model = get_registration_from_form(form)
             user_order.order_products.append(OrderProduct(product_model, price, registration=registration_model))
 
     products_price = user_order.products_price

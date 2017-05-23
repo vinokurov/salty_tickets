@@ -104,3 +104,22 @@
     </div>
 </div>
 {% endmacro %}
+
+
+{% macro render_contributor(registration) %}
+<div class="panel panel-default">
+    <div class="panel-body">
+        {% if registration.crowdfunding_registration_properties.anonymous %}
+        <h4>Anonymous</h4>
+        {% else %}
+        <h4>{{ registration.name }}</h4>
+        {% endif %}
+        <p>Contributed: £{{ registration.total_amount_ordered }}</p>
+    </div>
+    {% if registration.comment %}
+    <div class="panel-footer">
+        {{ registration.comment }}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}

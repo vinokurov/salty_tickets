@@ -56,13 +56,12 @@ def create_crowdfunding_form(event):
     return EventForm
 
 
-def get_registration_from_form(event, form):
+def get_registration_from_form(form):
     assert isinstance(form, SignupForm)
     registration_model = Registration(
         name=form.name.data,
         email=form.email.data,
-        comment=form.comment.data,
-        event=event
+        comment=form.comment.data
     )
     return registration_model
 

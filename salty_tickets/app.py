@@ -5,7 +5,7 @@ from .database import db_session
 from .forms import create_event_form, create_crowdfunding_form, get_registration_from_form
 from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties
-from .models import Event, Order
+from .models import Event, Order, CrowdfundingRegistrationProperties
 from flask import Flask, render_template, flash, escape
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
@@ -71,14 +71,21 @@ def crowdfunding_form(event_key):
     total_stats = get_total_raised(event)
 
     if form.validate_on_submit():
-        registration = get_registration_from_form(event, form)
+        registration = get_registration_from_form(form)
+        print(registration)
         user_order = get_order_for_crowdfunding_event(event, form)
         user_order.status = 'Paid'
         registration.orders.append(user_order)
-        db_session.add(registration)
+        registration.crowdfunding_registration_properties = \
+            CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
+        # db_session.add(registration)
+        # db_session.add(event)
+        event.registrations.append(registration)
         db_session.commit()
-        return 'your token: {}'.format(form.stripe_token.data)
+        return redirect(url_for('crowdfunding_form', event_key=event.event_key))
 
+    print(event.id)
+    print(event.registrations.count())
     return render_template('crowdfunding.html', event=event, form=form, total_stats=total_stats)
 
 
@@ -97,6 +104,11 @@ def crowdfunding_checkout(event_key):
         redurn_dict['order_summary_html'] = render_template('order_summary.html', user_order=Order(total_price=0))
         redurn_dict['errors'] = form.errors
     return jsonify(redurn_dict)
+
+
+@app.route('/crowdfunding/contributors/<string:event_key>', methods=['GET'])
+def crowdfunding_contributors(event_key):
+    pass
 
 
 @app.teardown_appcontext

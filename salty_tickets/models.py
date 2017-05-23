@@ -79,6 +79,11 @@ class Registration(Base):
     registered_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     orders = relationship("Order", lazy='dynamic')
     event = relationship("Event", uselist=False)
+    crowdfunding_registration_properties = relationship('CrowdfundingRegistrationProperties', uselist=False)
+
+    @property
+    def total_amount_ordered(self):
+        return sum([o.total_price - o.transaction_fee for o in self.orders])
 
     def __repr__(self):
         return '<User %r>' % self.name
