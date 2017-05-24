@@ -92,12 +92,13 @@ class RegularPartnerWorkshop(ProductTemplate):
 
 class MarketingProduct(ProductTemplate):
     allow_select = None
+    img_src = None
 
     def get_form(self, product_model=None):
         class MarketingProductForm(NoCsrfForm):
             product_name = self.name
             info = self.info
-            image_url = self.image_url
+            img_src = self.img_src
             price = self.price
             available_quantity = self.get_available_quantity(product_model)
             product_type = self.__class__.__name__

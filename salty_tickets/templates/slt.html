@@ -1,11 +1,11 @@
 {% import "bootstrap/wtf.html" as wtf %}
 
-{% macro render_workshop_form_field(form_field) %}
+{% macro render_workshop_form_field(form_field, event) %}
 <div class="card card-default">
 {% if form_field.product_type == 'DonateProduct' %}
   {{ donate_product(form_field) }}
 {% elif form_field.product_type == 'MarketingProduct' %}
-  {{ marketing_product(form_field) }}
+  {{ marketing_product(form_field, event) }}
 {% else %}
    <div class="card-body">
     {%- for subfield in form_field %}
@@ -35,12 +35,13 @@
 {% endmacro %}
 
 
-{% macro marketing_product(form_field) %}
+{% macro marketing_product(form_field, event) %}
         {% set add_enabled = True %}
-    <img class="card-img-top img-fluid" src="..." alt="Card image cap">
+    <img class="card-img-top img-fluid" src="/static/events/{{event.event_key}}/{{form_field.img_src}}" alt="Card image cap">
     <div class="card-block">
        <!--<div class="card-heading">-->
-           <h4 class="card-title">{{ form_field.product_name }}</h4>
+        <h4 class="card-title"><div class="badge badge-success">£{{ form_field.price }}</div></h4>
+           <h6 class="card-subtitle  mb-2">{{ form_field.product_name }}</h6>
            <p class="card-text"><small class="text-muted">
                {% if form_field.available_quantity is defined %}
                     {% if form_field.available_quantity <= 0 %}
@@ -65,7 +66,7 @@
         {% else %}
             {{ form_field.add(class='form-control', disabled=1) }}
         {% endif %}
-        <div class="input-group-addon"> <b>Price: £{{ form_field.price }}</b></div>
+        <div class="input-group-addon">£{{ form_field.price }}</div>
     </div>
 </div>
 
@@ -126,16 +127,15 @@
 <div class="card card-default">
     <div class="card-block">
         {% if registration.crowdfunding_registration_properties.anonymous %}
-        <h4>Anonymous</h4>
+        <h4>Anonymous <div class="badge badge-success">£{{ registration.total_amount_ordered }}</div></h4>
         {% else %}
-        <h4>{{ registration.name }}</h4>
+        <h4>{{ registration.name }} <div class="badge badge-success">£{{ registration.total_amount_ordered }}</div></h4>
         {% endif %}
-        <p>Contributed: £{{ registration.total_amount_ordered }}</p>
+        {% if registration.comment %}
+            <p class="card-text">
+                {{ registration.comment }}
+            </p>
+        {% endif %}
     </div>
-    {% if registration.comment %}
-    <div class="card-footer">
-        {{ registration.comment }}
-    </div>
-    {% endif %}
 </div>
 {% endmacro %}

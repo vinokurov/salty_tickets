@@ -137,13 +137,6 @@
 .bg-grey {
     background-color: #f6f6f6;
 }
-.bg-black {
-    background-color: #000000;
-
-.container-fluid {
-    padding: 60px 50px;
-}
-}
 </style>
 {% endblock %}
 
@@ -155,6 +148,7 @@
         <h1 class="display-3">{{ event.name }}</h1>
           </div>
       </div>
+{% include "events/simona_de_leo_crowdfunding/info.html" %}
       <div class="jumbotron">
           <div class="container">
             <h2 class="display-3">TOTAL RAISED: <div class="badge badge-success">£{{ total_stats['amount'] }}</div></h2>
@@ -188,7 +182,7 @@
                         <h2> Select a Reward</h2>
                         <div class="card-columns">
                {% for product_key in form.product_keys[1:] %}
-                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key)) }}
+                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key), event) }}
                {% endfor %}
                         </div>
 
@@ -199,11 +193,11 @@
                    <div class="container my-4">
                         <div class="card card-default">
                             <div class="card-block">
-                                <h4 class="card-title">Order Summary</h4>
+                                <h4 class="card-title">Summary</h4>
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-success form-control" autocomplete="off">
-                                      Checkout
+                                    <button type="button" id="checkout" class="btn btn-lg btn-success form-control" autocomplete="off">
+                                      Contribute
                                     </button>
                                 </div>
                             </div>
@@ -216,7 +210,7 @@
 
                <div class="container-fluid">
                    <div class="container my-5">
-<h3>Contributors <div class="badge badge-pill badge-default">{{ total_stats['contributors'] }}</div></h3>
+<h3>Contributors <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h3>
 {% for contrib in contributors %}
 {{ slt.render_contributor(contrib) }}
 {% endfor %}

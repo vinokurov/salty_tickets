@@ -72,35 +72,39 @@ simona_fundraising_event.products.append(
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Shooting a dance video (Alexander Vinokurov)',
+        name='Filming a music/dance video by Alexander Vinokurov',
         info='Here comes some info',
         price=50,
-        max_available=2
+        max_available=2,
+        img_src='rewards/video_vnkrv.jpg'
     ).model
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Vintage dress (Petite Krystal)',
+        name='Vintage dress from Petite Krystal',
         info='Here comes some info',
         price=40,
-        max_available=3
+        max_available=3,
+        img_src='rewards/vintage_dresses.jpg'
     ).model
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Collegiate Shag private class (Patrick O\'Brien)',
+        name='Collegiate Shag private class with Patrick O\'Brien',
         info='Here comes some info',
         price=35,
-        max_available=3
+        max_available=3,
+        img_src="rewards/shag_private_patrick.jpg"
     ).model
 )
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Photoshoot (Alexander Vinokurov)',
+        name='Photoshoot by Alexander Vinokurov',
         info='Here comes some info',
         price=25,
         max_available=3,
-        allow_select=1
+        allow_select=1,
+        img_src='rewards/photoshoot_vnkrv.jpg'
     ).model
 )
 
