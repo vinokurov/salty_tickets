@@ -50,8 +50,8 @@ simona_fundraising_event.products.append(
 simona_fundraising_event.products.append(
     products.MarketingProduct(
         name='Filming a music/dance video by Alexander Vinokurov',
-        info='Feeling like Frank, Ginger & Fred, why don\'t you give a spin to your performance skills making a video. '
-             'Alexander Vinokurov worked with London\'s dancers, venues, events\' competitions and performing troupes. '
+        info='Feel like Frank, Ginger & Fred, why don\'t you give a spin to your performance skills by making a video. '
+             'Alexander Vinokurov has worked with London\'s dancers, venues, events\' competitions and performing troupes. '
              'Get a bespoke video for your dance project or a band. '
              'See more at  his <a href="https://www.youtube.com/channel/UC2VEJE8D1DIIaOC_jHyQHfA" target="_blank">YouTube channel<a>.',
         price=50,
@@ -63,11 +63,11 @@ simona_fundraising_event.products.append(
     products.MarketingProduct(
         name='La Petite Skirt - Vivien',
         info='<p><em>Size: 10/12</em></p>'
-             '<p>La Petite is bespoke brand made in Italy. </p>'
+             '<p>La Petite is a bespoke brand Made in Italy. </p>'
              '<p>"Petite" is an adjective, a point of view, a working method. '
              'Small producers and artisans are the providers of the materials and making fully made in Italy. '
-             'Short production chain, still relying on direct contact, on hand stalks, and endless coffee cups. '
-             'Every garment is the story of a woman, every garment has his name embroidered on the label as it was on '
+             'A short production chain, still relying on direct contact, on hand stalks, and endless coffee cups. '
+             'Every garment is the story of a woman, every garment has its name embroidered on the label as it was on '
              'those handkerchiefs seen only in the hands of grandmothers.</p>',
         price=40,
         max_available=1,
@@ -78,11 +78,11 @@ simona_fundraising_event.products.append(
     products.MarketingProduct(
         name='La Petite Skirt - Silvana',
         info='<p><em>Size: 10/12</em></p>'
-             '<p>La Petite is bespoke brand made in Italy. </p>'
+             '<p>La Petite is a bespoke brand Made in Italy. </p>'
              '<p>"Petite" is an adjective, a point of view, a working method. '
              'Small producers and artisans are the providers of the materials and making fully made in Italy. '
-             'Short production chain, still relying on direct contact, on hand stalks, and endless coffee cups. '
-             'Every garment is the story of a woman, every garment has his name embroidered on the label as it was on '
+             'A short production chain, still relying on direct contact, on hand stalks, and endless coffee cups. '
+             'Every garment is the story of a woman, every garment has its name embroidered on the label as it was on '
              'those handkerchiefs seen only in the hands of grandmothers.</p>',
         price=40,
         max_available=1,
