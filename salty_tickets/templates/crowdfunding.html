@@ -78,7 +78,7 @@
 
                 if(data.stripe.amount) {
                     var handler = StripeCheckout.configure({
-                      key: 'pk_test_JINxJqXoY58hgW37stGd09hK',
+                      key: '{{ config.STRIPE_PK }}',
                       image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
                       locale: 'auto',
                       token: function(token) {
@@ -96,8 +96,8 @@
                         currency: 'gbp',
                         amount: data.stripe.amount,
                         email: data.stripe.email,
-                        //zipCode: true,
-                        //billingAddress: true,
+                        zipCode: true,
+                        billingAddress: true,
                         allowRememberMe: false
                     })
                 }
@@ -145,14 +145,14 @@
    <!--<div class="container">-->
       <div class="jumbotron">
           <div class="container">
-        <h1 class="display-3">{{ event.name }}</h1>
+        <h2 class="display-4">{{ event.name }}</h2>
+            <h4 class="display-5">Total Raised: <div class="badge badge-success">£{{ total_stats['amount'] }}</div></h4>
+            <h4 class="lead">Supporters: <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h4>
           </div>
       </div>
-{% include "events/simona_de_leo_crowdfunding/info.html" %}
+{% include "events/"+event.event_key+"/info.html" %}
       <div class="jumbotron">
           <div class="container">
-            <h2 class="display-3">TOTAL RAISED: <div class="badge badge-success">£{{ total_stats['amount'] }}</div></h2>
-            <h3 class="lead">Contributors: <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h3>
           </div>
       </div>
      {% if request.args.get('legacy') -%}
@@ -197,7 +197,7 @@
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
                                     <button type="button" id="checkout" class="btn btn-lg btn-success form-control" autocomplete="off">
-                                      Contribute
+                                      Support
                                     </button>
                                 </div>
                             </div>
@@ -210,7 +210,7 @@
 
                <div class="container-fluid">
                    <div class="container my-5">
-<h3>Contributors <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h3>
+<h3>Supporters <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h3>
 {% for contrib in contributors %}
 {{ slt.render_contributor(contrib) }}
 {% endfor %}
@@ -219,8 +219,15 @@
 
 <nav class="navbar bottom navbar-light bg-faded my-4">
     <div class="container">
-        <small class="text-muted">Implemented by Alexander Vinokurov</small>
+        <p><small class="text-muted">For any info send a message to <a href="https://www.facebook.com/SaltyJitterbugs" target="_blank"><i class="fa fa-facebook-official" aria-hidden="true"></i> Salty Jitterbugs</a></small></p>
+        <!--<p><small class="text-muted">Implemented by <a href="https://www.facebook.com/alexander.vinokurov.75" target="_blank"><i class="fa fa-facebook-official" aria-hidden="true"></i> Alexander Vinokurov</a></small></p>-->
+        <p><small class="text-muted">Implemented by Alexander Vinokurov</small></p>
     </div>
 </nav>
 
 {%- endblock %}
+
+{% block title %}
+Salty Jitterbugs - {{event.name}}
+{% if config.MODE_TESTING %}[TEST MODE]{% endif %}
+{% endblock %}

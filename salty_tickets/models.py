@@ -1,11 +1,20 @@
+from flask import jsonify
 from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean, func
 from sqlalchemy import Text
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import aggregated
 from .database import Base
 from .utils import string_to_key
+from . import config
 import datetime
+
+
 __author__ = 'vnkrv'
+
+
+ORDER_STATUS_NEW = 'new'
+ORDER_STATUS_PAID = 'paid'
+ORDER_STATUS_FAILED = 'failed'
 
 
 class Event(Base):
@@ -35,7 +44,7 @@ class Product(Base):
     name = Column(String(50))
     type = Column(String(50), nullable=False)
     info = Column(Text)
-    price = Column(Float, default=0)
+    price = Column(Float, default=0, )
     max_available = Column(Integer, default=0)
     image_url = Column(String(255))
     parameters = relationship('ProductParameter', lazy='dynamic')
@@ -83,7 +92,7 @@ class Registration(Base):
 
     @property
     def total_amount_ordered(self):
-        return sum([o.total_price - o.transaction_fee for o in self.orders])
+        return sum([o.total_price for o in self.orders])
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -95,17 +104,47 @@ class Order(Base):
     registration_id = Column(Integer, ForeignKey('registrations.id'))
     total_price = Column(Float, nullable=False, default=0)
     transaction_fee = Column(Float, nullable=False, default=0)
-    status = Column(String, nullable=False)
+    status = Column(String, nullable=False, default=ORDER_STATUS_NEW)
     order_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    stripe_charge_id = Column(String(50))
+    # stripe_charge = Column(Text)
+
+    registration = relationship('Registration', uselist=False)
+    order_products = relationship('OrderProduct', lazy='dynamic')
 
     # @aggregated('order_products', Column(Float))
     @property
     def products_price(self):
-        # return func.sum(OrderProduct.price)
+        # return self.order_products.with_entities(func.sum(OrderProduct.price)).scalar()
         return sum([p.price for p in self.order_products.all()])
 
-    registration = relationship('Registration', uselist=False)
-    order_products = relationship('OrderProduct', lazy='dynamic')
+    @property
+    def stripe_amount(self):
+        return int((self.total_price + self.transaction_fee) * 100)
+
+    def charge(self, stripe_token):
+        import stripe
+        stripe.api_key = config.STRIPE_SK
+
+        try:
+            charge = stripe.Charge.create(
+                amount=self.stripe_amount,
+                currency='gbp',
+                description=self.registration.event.name,
+                # description='Flask Charge',
+                metadata=dict(order_id=self.id),
+                source=stripe_token
+            )
+            print(charge)
+            self.stripe_charge_id = charge['id']
+            # self.stripe_charge = jsonify(charge)
+            self.status = ORDER_STATUS_PAID
+            return True, charge
+        except stripe.CardError as ce:
+            self.stripe_charge_id = charge.get('id', '')
+            self.stripe_charge = jsonify(ce)
+            # self.status = ORDER_STATUS_FAILED
+            return False, ce
 
 
 class OrderProduct(Base):

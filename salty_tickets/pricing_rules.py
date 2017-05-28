@@ -86,20 +86,19 @@ def get_order_for_crowdfunding_event(event, form):
     products_price = user_order.products_price
     print(products_price)
     user_order.transaction_fee = transaction_fee(products_price)
-    total_price = products_price + float(user_order.transaction_fee)
-    user_order.total_price = "%.2f" % total_price
+    user_order.total_price = user_order.products_price
 
     return user_order
 
 
 def transaction_fee(price):
-    return "%.2f" % (price*0.015 + 0.2)
+    return price * 0.015 + 0.2
 
 
 def get_total_raised(event):
     assert isinstance(event, Event)
     total_stats = {
-        'amount': sum([sum([o.total_price - o.transaction_fee for o in r.orders]) for r in event.registrations.join(Order).all()]),
+        'amount': sum([sum([o.total_price for o in r.orders]) for r in event.registrations.join(Order).all()]),
         'contributors': len(event.registrations.join(Order).all())
     }
     return total_stats
@@ -108,6 +107,6 @@ def get_total_raised(event):
 def get_stripe_properties(event, order, form):
     stripe_props = {}
     stripe_props['email'] = form.email.data
-    stripe_props['amount'] = int(float(order.total_price)*100)
+    stripe_props['amount'] = order.stripe_amount
     return stripe_props
 

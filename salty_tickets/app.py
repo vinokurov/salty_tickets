@@ -6,10 +6,14 @@ from .forms import create_event_form, create_crowdfunding_form, get_registration
 from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties
 from .models import Event, Order, CrowdfundingRegistrationProperties, Registration
+# import salty_tickets.salty_tickets.config as config
 from flask import Flask, render_template, flash, escape
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from . import config
 __author__ = 'vnkrv'
+import stripe
+
 
 
 app = Flask('salty')
@@ -20,10 +24,11 @@ app.secret_key = 'devtest'
 
 @app.route('/')
 def index():
+    return redirect(url_for('crowdfunding_index'))
     # return render_template('index.html')
-    event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
-    if event:
-        return redirect(url_for('register_form', event_key=event.event_key))
+    # event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
+    # if event:
+    #     return redirect(url_for('register_form', event_key=event.event_key))
 
 
 @app.route('/register/<string:event_key>', methods=('GET', 'POST'))
@@ -74,20 +79,29 @@ def crowdfunding_form(event_key):
         registration = get_registration_from_form(form)
         print(registration)
         user_order = get_order_for_crowdfunding_event(event, form)
-        user_order.status = 'Paid'
         registration.orders.append(user_order)
         registration.crowdfunding_registration_properties = \
             CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
-        # db_session.add(registration)
-        # db_session.add(event)
         event.registrations.append(registration)
         db_session.commit()
-        return redirect(url_for('crowdfunding_form', event_key=event.event_key))
+        success, response = user_order.charge(form.stripe_token.data)
+        if success:
+            db_session.commit()
+            return redirect(url_for('crowdfunding_thankyou', event_key=event.event_key))
+        else:
+            return response
 
     print(event.id)
     print(event.registrations.count())
     contributors = event.registrations.order_by(Registration.registered_datetime.desc()).all()
-    return render_template('crowdfunding.html', event=event, form=form, total_stats=total_stats, contributors=contributors)
+    return render_template(
+        'crowdfunding.html',
+        event=event,
+        form=form,
+        total_stats=total_stats,
+        contributors=contributors,
+        config=config
+    )
 
 
 @app.route('/crowdfunding/checkout/<string:event_key>', methods=['POST'])
@@ -95,21 +109,28 @@ def crowdfunding_checkout(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
     form = create_crowdfunding_form(event)()
 
-    redurn_dict = dict(errors={})
+    return_dict = dict(errors={})
 
     if form.validate_on_submit():
         user_order = get_order_for_crowdfunding_event(event, form)
-        redurn_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        redurn_dict['order_summary_html'] = render_template('order_summary.html', user_order=user_order)
+        return_dict['stripe'] = get_stripe_properties(event, user_order, form)
+        return_dict['order_summary_html'] = render_template('order_summary.html', user_order=user_order)
     else:
-        redurn_dict['order_summary_html'] = render_template('order_summary.html', user_order=Order(total_price=0))
-        redurn_dict['errors'] = form.errors
-    return jsonify(redurn_dict)
+        return_dict['order_summary_html'] = render_template('order_summary.html', user_order=Order(total_price=0))
+        return_dict['errors'] = form.errors
+    return jsonify(return_dict)
+
+
+@app.route('/crowdfunding/thankyou/<string:event_key>', methods=('GET', 'POST'))
+def crowdfunding_thankyou(event_key):
+    return render_template('crowdfunding_thankyou.html', event_key=event_key)
 
 
 @app.route('/crowdfunding/contributors/<string:event_key>', methods=['GET'])
 def crowdfunding_contributors(event_key):
     pass
+
+
 
 
 @app.teardown_appcontext

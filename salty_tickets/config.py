@@ -1,0 +1,10 @@
+
+STRIPE_SK = 'sk'
+STRIPE_PK = 'pk'
+
+MODE_TESTING = STRIPE_SK.find('live') is -1 and STRIPE_PK.find('live') is -1
+
+DATABASE_USERNAME = ''
+DATABASE_PASSWORD = ''
+DATABASE_HOSTNAME = ''
+DATABASE_DBNAME = ''
