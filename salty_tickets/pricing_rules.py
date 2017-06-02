@@ -1,6 +1,6 @@
-from .forms import get_registration_from_form
-from .products import get_product_by_model
-from .models import Event, ProductParameter, Order, OrderProduct, Product
+from salty_tickets.forms import get_registration_from_form
+from salty_tickets.products import get_product_by_model
+from salty_tickets.models import Event, ProductParameter, Order, OrderProduct, Product
 
 __author__ = 'vnkrv'
 

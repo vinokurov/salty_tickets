@@ -1,13 +1,12 @@
-from flask import jsonify
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean, func
-from sqlalchemy import Text
-from sqlalchemy.orm import relationship
-from sqlalchemy_utils import aggregated
-from .database import Base
-from .utils import string_to_key
-from . import config
 import datetime
 
+from flask import jsonify
+from salty_tickets import config
+from salty_tickets.database import Base
+from salty_tickets.utils import string_to_key
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean
+from sqlalchemy import Text
+from sqlalchemy.orm import relationship
 
 __author__ = 'vnkrv'
 

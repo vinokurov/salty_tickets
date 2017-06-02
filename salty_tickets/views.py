@@ -1,25 +1,15 @@
+from flask import render_template
 from flask import url_for, jsonify
+from salty_tickets import app
+from salty_tickets import config
+from salty_tickets.database import db_session
+from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form
+from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
+from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
+    get_order_for_crowdfunding_event, get_stripe_properties
 from werkzeug.utils import redirect
 
-from .database import db_session
-from .forms import create_event_form, create_crowdfunding_form, get_registration_from_form
-from .pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties
-from .models import Event, Order, CrowdfundingRegistrationProperties, Registration
-# import salty_tickets.salty_tickets.config as config
-from flask import Flask, render_template, flash, escape
-from flask_bootstrap import Bootstrap
-from flask_sqlalchemy import SQLAlchemy
-from . import config
 __author__ = 'vnkrv'
-import stripe
-
-
-
-app = Flask('salty')
-Bootstrap(app)
-db = SQLAlchemy(app)
-app.secret_key = 'devtest'
 
 
 @app.route('/')
@@ -129,8 +119,6 @@ def crowdfunding_thankyou(event_key):
 @app.route('/crowdfunding/contributors/<string:event_key>', methods=['GET'])
 def crowdfunding_contributors(event_key):
     pass
-
-
 
 
 @app.teardown_appcontext

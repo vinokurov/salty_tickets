@@ -1,12 +1,12 @@
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, TextAreaField
 from wtforms.validators import Email, DataRequired
 from wtforms import Form as NoCsrfForm
-from .models import Event, Registration
-from .products import get_product_by_model
+from salty_tickets.models import Event, Registration
+from salty_tickets.products import get_product_by_model
 
 
-class SignupForm(Form):
+class SignupForm(FlaskForm):
     stripe_token = HiddenField()
     name = StringField(u'Your name', validators=[DataRequired()])
     email = StringField(u'Email', validators=[Email(), DataRequired()])

@@ -4,7 +4,7 @@ from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
 from wtforms.validators import Optional
 
-from .models import Product, ProductParameter, OrderProduct
+from salty_tickets.models import Product, ProductParameter, OrderProduct
 
 
 class ProductTemplate:
