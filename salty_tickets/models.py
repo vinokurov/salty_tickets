@@ -19,8 +19,8 @@ ORDER_STATUS_FAILED = 'failed'
 class Event(Base):
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
-    event_key = Column(String(50), unique=False, nullable=False)
-    name = Column(String(50), nullable=False)
+    event_key = Column(String(255), unique=False, nullable=False)
+    name = Column(String(255), nullable=False)
     info = Column(Text)
     event_type = Column(String(25))
     start_date = Column(DateTime, nullable=False)
@@ -40,7 +40,7 @@ class Product(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True)
     event_id = Column(Integer, ForeignKey('events.id'))
-    name = Column(String(50))
+    name = Column(String(255))
     type = Column(String(50), nullable=False)
     info = Column(Text)
     price = Column(Float, default=0, )
@@ -68,8 +68,8 @@ class ProductParameter(Base):
     __tablename__ = 'product_parameters'
     id = Column(Integer, primary_key=True)
     product_id = Column(Integer, ForeignKey('products.id'))
-    parameter_name = Column(String(50))
-    parameter_value = Column(String(50))
+    parameter_name = Column(String(255))
+    parameter_value = Column(String(255))
 
     def __init__(self, name, value, **kwargs):
         self.parameter_name = name
@@ -81,8 +81,8 @@ class Registration(Base):
     __tablename__ = 'registrations'
     id = Column(Integer, primary_key=True)
     event_id = Column(Integer, ForeignKey('events.id'))
-    name = Column(String(50), nullable=False)
-    email = Column(String(120), nullable=False)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
     comment = Column(Text)
     registered_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     orders = relationship("Order", lazy='dynamic')
@@ -172,8 +172,8 @@ class OrderProductDetail(Base):
     __tablename__ = 'order_product_details'
     id = Column(Integer, primary_key=True)
     order_product_id = Column(Integer, ForeignKey('order_products.id'))
-    field_name = Column(String(50), nullable=False)
-    field_value = Column(String(50), nullable=False)
+    field_name = Column(String(255), nullable=False)
+    field_value = Column(String(255), nullable=False)
 
     def __init__(self, field_name, field_value, **kwargs):
         self.field_name = field_name,
