@@ -15,6 +15,16 @@
 
 
 <script>
+
+// Disable function
+jQuery.fn.extend({
+    disable: function(state) {
+        return this.each(function() {
+            this.disabled = state;
+        });
+    }
+});
+
     // Close Checkout on page navigation:
     window.addEventListener('popstate', function() {
       handler.close();
@@ -53,6 +63,7 @@
                     console.log(data);  // display the returned data in the console.
                     $('div#order_summary').html(data.order_summary_html);
                     show_form_validation_errors(data.errors);
+                    $('button#checkout').disable(Object.keys(data.errors).length>0);
                 }
             });
         }
@@ -221,7 +232,7 @@ section {
                                 <h4 class="card-title">Summary</h4>
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-lg btn-success form-control" autocomplete="off">
+                                    <button type="button" id="checkout" class="btn btn-lg btn-success form-control" disabled>
                                       Pay with a card
                                     </button>
                                 </div>
