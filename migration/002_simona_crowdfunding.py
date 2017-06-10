@@ -75,8 +75,8 @@ simona_fundraising_event.products.append(
     products.MarketingProduct(
         name='Mr. Whoopie Dancer - A4',
         info='Original watercolor, pastels and ink, size A4, not framed. '
-             'The work won the “quality prize” and was part of the exhibition '
-             'at the illustration contest “scarpetta d’oro” 2016, Venice, Italy',
+             'The work won the "quality prize" and was part of the exhibition '
+             'at the illustration contest "scarpetta d\'oro" 2016, Venice, Italy',
         price=50,
         max_available=1,
         img_src='rewards/whoopie_dancer.jpg'
