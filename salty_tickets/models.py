@@ -103,7 +103,7 @@ class Order(Base):
     registration_id = Column(Integer, ForeignKey('registrations.id'))
     total_price = Column(Float, nullable=False, default=0)
     transaction_fee = Column(Float, nullable=False, default=0)
-    status = Column(String, nullable=False, default=ORDER_STATUS_NEW)
+    status = Column(String(50), nullable=False, default=ORDER_STATUS_NEW)
     order_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     stripe_charge_id = Column(String(50))
     # stripe_charge = Column(Text)
