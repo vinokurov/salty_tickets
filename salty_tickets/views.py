@@ -76,7 +76,8 @@ def register_checkout(event_key):
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:
-        return_dict['order_summary_html'] = render_template('order_summary.html', order_summary_controller=None)
+        print(form.errors)
+        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
         return_dict['errors'] = form.errors
     return jsonify(return_dict)
 
