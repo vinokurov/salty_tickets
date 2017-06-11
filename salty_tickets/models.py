@@ -17,6 +17,9 @@ ORDER_STATUS_NEW = 'new'
 ORDER_STATUS_PAID = 'paid'
 ORDER_STATUS_FAILED = 'failed'
 
+DANCE_ROLE_LEADER = 'leader'
+DANCE_ROLE_FOLLOWER = 'follower'
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -180,9 +183,6 @@ class OrderProduct(Base):
         print(details_dict)
         return details_dict
 
-    # def get_name(self):
-    #     product_class = get_product_by_model(self)
-
 
 class OrderProductDetail(Base):
     __tablename__ = 'order_product_details'
@@ -221,4 +221,5 @@ class RegistrationPartners(Base):
     id = Column(Integer, primary_key=True)
     registration1_id = Column(Integer, ForeignKey('registration.id'))
     registration2_id = Column(Integer, ForeignKey('registration.id'))
+    order_product_id = Column(Integer, ForeignKey('products.id'))
 

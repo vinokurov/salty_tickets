@@ -38,14 +38,20 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
         price = product.get_total_price(product_form, form)
         if price > 0:
             order_product = product.get_order_product_model(product_model, product_form, form)
-            # registration_model = get_registration_from_form(form)
-            order_product.registrations.append(registration)
+            if type(order_product) is list:
+                order_product[0].registrations.append(registration)
+                order_product[1].registrations.append(partner_registration)
+                user_order.order_products.append(order_product[0])
+                user_order.order_products.append(order_product[1])
+            else:
+                # registration_model = get_registration_from_form(form)
+                order_product.registrations.append(registration)
 
-            if product_form.needs_partner():
-                # partner_registration_model = get_partner_registration_from_form(form)
-                order_product.registrations.append(partner_registration)
+                if product_form.needs_partner():
+                    # partner_registration_model = get_partner_registration_from_form(form)
+                    order_product.registrations.append(partner_registration)
 
-            user_order.order_products.append(order_product)
+                user_order.order_products.append(order_product)
 
     products_price = user_order.products_price
     print(products_price)

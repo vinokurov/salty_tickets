@@ -4,8 +4,15 @@ from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
 from wtforms.validators import Optional
 
-from salty_tickets.models import Product, ProductParameter, OrderProduct
+from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER
 import json
+
+
+def flip_role(dance_role):
+    if dance_role == DANCE_ROLE_FOLLOWER:
+        return DANCE_ROLE_LEADER
+    else:
+        return DANCE_ROLE_FOLLOWER
 
 
 class ProductTemplate:
@@ -149,11 +156,16 @@ class RegularPartnerWorkshop(ProductTemplate):
             price = self.price
             add = BooleanField(label='Add')
             dance_role = SelectField(label='Your role',
-                                     choices=[('follower', 'Follower'), ('leader', 'Leader')])
+                                     choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
+            add_partner = BooleanField(label='Add partner')
+            partner_token = StringField(label='Partner\'s token')
             product_type = self.__class__.__name__
 
             def needs_partner(self):
-                return False
+                if self.add_partner.data:
+                    return True
+                else:
+                    return False
 
         return RegularPartnerWorkshopForm
 
@@ -166,6 +178,11 @@ class RegularPartnerWorkshop(ProductTemplate):
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
         order_product = OrderProduct(product_model, price, dict(dance_role=product_form.dance_role.data))
+        if product_form.add_partner.data:
+            print(product_form.dance_role.data, flip_role(product_form.dance_role.data))
+            order_product2 = OrderProduct(product_model, price,
+                                         dict(dance_role=flip_role(product_form.dance_role.data)))
+            return [order_product, order_product2]
         return order_product
 
     def get_name(self, order_product_model=None):
