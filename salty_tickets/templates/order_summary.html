@@ -1,9 +1,9 @@
 <ul class="list-group">
-    {% if user_order.total_price %}
-        {% for product in user_order.order_products %}
-        <li class="list-group-item"><small>{{product.product.name}}: £{{ '{:.2f}'.format(product.price) }}</small></li>
+    {% if order_summary_controller.show_order_summary %}
+        {% for product in order_summary_controller.products %}
+        <li class="list-group-item"><small>{{ product.name }}: £{{ product.price }}</small></li>
         {% endfor %}
-        <li class="list-group-item"><small>Transaction fee: £{{ '{:.2f}'.format(user_order.transaction_fee) }}</small></li>
+        <li class="list-group-item"><small>Transaction fee: £{{ order_summary_controller.transaction_fee }}</small></li>
+    <li class="list-group-item"><strong>Total: £{{ order_summary_controller.total_price }}</strong></li>
     {% endif %}
-    <li class="list-group-item"><strong>Total: £{{ '{:.2f}'.format(user_order.total_price) }}</strong></li>
 </ul>

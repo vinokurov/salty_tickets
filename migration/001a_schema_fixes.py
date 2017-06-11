@@ -13,6 +13,5 @@ ALTER TABLE order_product_details MODIFY field_value varchar(255);
 """
 
 database.db_session.execute(sql)
-# database.db_session.execute('ALTER TABLE events MODIFY event_key varchar(255)')
 
 database.db_session.commit()

@@ -4,89 +4,242 @@
 {%- extends "bootstrap/base.html" %}
 
 {% block scripts %}
-{{ super() }}
-{# <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> #}
-{# <script src="/static/registration.js"></script> #}
+{# {{ super() }} #}
 
-<script type="text/javascript">
-    $(document).ready(function() {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
 
-    $('#form_fields').on('click', function (e) {
-        $('.collapse').collapse('hide');
+<script src="https://checkout.stripe.com/checkout.js"></script>
+
+
+<script>
+
+// Disable function
+jQuery.fn.extend({
+    disable: function(state) {
+        return this.each(function() {
+            this.disabled = state;
+        });
+    }
+});
+
+    // Close Checkout on page navigation:
+    window.addEventListener('popstate', function() {
+      handler.close();
     });
 
-    $('button#get_total_price').on('click', function (e) {
-        //$('div#order_summary').html('');
-        //$('.collapse').collapse('hide');
-        var url = "{{ url_for('total_price', event_key=event.event_key) }}"; // send the form data here.
+    var form_changed = false;
+    var form_changed_element = 'form';
+
+    $('body').on('keyup change', '.form-control', function(e) {
+        form_changed = true;
+        form_changed_element = '#'+e.target.id;
+        setTimeout(update_total_price, 5000);
+    });
+
+    $('body').on('focusout', '.form-control', update_total_price)
+
+    function update_total_price(e) {
+        if(form_changed) {
+            form_changed = false;
+            console.log('focusout');
+            var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('form').serialize(), // serializes the form's elements.
+                success: function (data) {
+                    console.log(data);  // display the returned data in the console.
+                    $('div#order_summary').html(data.order_summary_html);
+                    show_form_validation_errors(data.errors);
+                    $('button#checkout').disable(Object.keys(data.errors).length>0);
+                }
+            });
+        }
+    }
+
+    function show_form_validation_errors(form_errors) {
+        $('.has-danger').each(function() {
+            $(this).removeClass('has-danger');
+        })
+
+        for(var form_field_id in form_errors)
+        {
+            console.log(form_field_id, form_errors[form_field_id]);
+            $('#'+form_field_id+'-form-group').addClass('has-danger');
+        }
+    }
+
+    $('body').on('click', 'button#checkout', function(e) {
+        var url = "{{ url_for('crowdfunding_checkout', event_key=event.event_key) }}"; // send the form data here.
         $.ajax({
             type: "POST",
             url: url,
             data: $('form').serialize(), // serializes the form's elements.
             success: function (data) {
+
                 console.log(data);  // display the returned data in the console.
-                //$('#stripe_checkout').data-amount = str(int(100*data.total_price));
-                //$('div#total_price').text('Total price: £'+data.total_price);
 
+                if(data.stripe.amount) {
+                    var handler = StripeCheckout.configure({
+                      key: '{{ config.STRIPE_PK }}',
+                      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+                      locale: 'auto',
+                      token: function(token) {
+                        // You can access the token ID with `token.id`.
+                        // Get the token ID to your server-side code for use.
+                        console.log(token)
+                        $('#{{ form.stripe_token.id }}').val(token.id);
+                        $('form').submit()
+                      }
+                    });
 
-                        $('div#order_summary').html(data.order_summary_html);
-                        $('.collapse').collapse('show');
+                    handler.open({
+                        name: 'Salty Jittergugs',
+                        description: 'Simona Crowdfunding',
+                        currency: 'gbp',
+                        amount: data.stripe.amount,
+                        email: data.stripe.email,
+                        zipCode: true,
+                        billingAddress: true,
+                        allowRememberMe: false
+                    })
+                }
             }
         });
         e.preventDefault(); // block the traditional submission of the form.
     });
-    // Inject our CSRF token into our AJAX request.
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", "{{ form.csrf_token._value() }}")
-            }
-        }
-    })
-});
+
+
+// http://stackoverflow.com/questions/3860351/relative-position-in-dom-of-elements-in-jquery
+// What this does is .add() the additional element (or selector)
+// (which jQuery keeps in document order) and then checks if it's the second of the two.
+
+(function($) {
+  $.fn.isBefore = function(elem) {
+    if(typeof(elem) == "string") elem = $(elem);
+    return this.add(elem).index(elem) > 0;
+  }
+})(jQuery)
 </script>
+
 {%- endblock %}
 
 
+{% block styles %}
+{# {{ super() }} #}
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.bg-grey {
+    background-color: #f6f6f6;
+}
+
+header {
+    background-image:url(/static/events/{{event.event_key}}/event_cover.jpg);
+    background-repeat:no-repeat;
+    background-attachment:scroll;
+    background-position:center center;
+    -webkit-background-size:cover;
+    -moz-background-size:cover;
+    background-size:cover;
+    -o-background-size:cover;
+    text-align:center;
+    color:#fff
+}
+header .intro-text {
+    padding-top: 100px;
+    padding-bottom: 50px
+}
+section {
+    padding: 100px 0
+}
+</style>
+{% endblock %}
+
+
 {% block content %}
-   <div class="container">
-      <div class="jumbotron">
-        <h1>{{ event.name }}</h1>
-      </div>
-   <div class="col-md-12">
+   <!--<div class="container">-->
+      <!--<div class="jumbotron">-->
+<header>
+          <div class="container">
+              <div class="intro-text">
+                  <h2 class="display-4">{{ event.name }}</h2>
+              </div>
+          </div>
+      <!--</div>-->
+    </header>
+
+{% include "events/"+event.event_key+"/info.html" %}
+
      {% if request.args.get('legacy') -%}
        {{wtf.quick_form(form, novalidate=True)}}
      {%- else -%}
-       <form class="form form-inline" method="post" role="form">
+       <form class="form form-vertical" method="post" role="form">
            <div id="form_fields">
-          {{ form.hidden_tag() }}
-          {{ wtf.form_errors(form) }}
 
-          {{ wtf.form_field(form.name) }}
-          {{ wtf.form_field(form.email) }}
+               <div class="container-fluid">
+                   <div class="container">
+                       <h2> Your details</h2>
+              {{ form.hidden_tag() }}
+              {{ wtf.form_errors(form) }}
 
-           {% for product_key in form.product_keys %}
-                {{ slt.render_workshop_form_field(form.get_product_by_key(product_key)) }}
-           {% endfor %}
+              {{ form.stripe_token }}
+              {{ slt.name_field(form.name) }}
+              {{ slt.email_field(form.email) }}
+                       <h3> Your partner details</h3>
+              {{ slt.name_field(form.partner_name) }}
+              {{ slt.email_field(form.partner_email) }}
 
-          {# {{ wtf.form_field(form.submit) }} #}
-           </div>
-           <button type="button" id="get_total_price" class="btn btn-primary" autocomplete="off">
-              Check availability
-           </button>
-           <div class="panel panel-default">
-               <div class="panel-heading">Order Summary </div>
-           <div class="panel-body collapse">
-               <div id="order_summary"></div>
-           </div>
+              {{ wtf.form_field(form.comment) }}
+                       </div>
+               </div>
+
+                <div class="container-fluid">
+                    <div class="container my-4">
+                        <!--<h2> Select a Reward</h2>-->
+                        <!--<div class="card-columns">-->
+               {% for product_key in form.product_keys %}
+                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key), event) }}
+               {% endfor %}
+                        <!--</div>-->
+                    </div>
+
+               </div>
+
+               <div class="container-fluid">
+                   <div class="container my-4">
+                        <div class="card card-default">
+                            <div class="card-block">
+                                <h4 class="card-title">Summary</h4>
+                                <div id="order_summary"></div>
+                                <div class="form-group form-vertical">
+                                    <button type="button" id="checkout" class="btn btn-lg btn-success form-control" disabled>
+                                      Pay with a card
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                   </div>
+               </div>
            </div>
         </form>
      {%- endif %}
 
-
-           <small>Implemented by Alexander Vinokurov</small>
-
-
-   </div>
+<nav class="navbar bottom navbar-light bg-faded my-4">
+    <div class="container">
+        <p><small class="text-muted">For any info send a message to <a href="https://www.facebook.com/SaltyJitterbugs" target="_blank"><i class="fa fa-facebook-official" aria-hidden="true"></i> Salty Jitterbugs</a></small></p>
+        <!--<p><small class="text-muted">Implemented by <a href="https://www.facebook.com/alexander.vinokurov.75" target="_blank"><i class="fa fa-facebook-official" aria-hidden="true"></i> Alexander Vinokurov</a></small></p>-->
+        <p><small class="text-muted">Implemented by Alexander Vinokurov</small></p>
+    </div>
+</nav>
 
 {%- endblock %}
+
+{% block title %}
+Salty Jitterbugs - {{event.name}}
+{% if config.MODE_TESTING %}[TEST MODE]{% endif %}
+{% endblock %}

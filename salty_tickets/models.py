@@ -3,8 +3,10 @@ import datetime
 from flask import jsonify
 from salty_tickets import config
 from salty_tickets.database import Base
+# from salty_tickets.products import get_product_by_model
 from salty_tickets.utils import string_to_key
 from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean
+from sqlalchemy import Table
 from sqlalchemy import Text
 from sqlalchemy.orm import relationship
 
@@ -27,7 +29,7 @@ class Event(Base):
     active = Column(Boolean, nullable=False, default=True)
 
     products = relationship('Product', lazy='dynamic')
-    registrations = relationship('Registration', lazy='dynamic')
+    orders = relationship('Order', lazy='dynamic')
 
     def __init__(self, name, start_date, **kwargs):
         self.name = name
@@ -80,13 +82,13 @@ class ProductParameter(Base):
 class Registration(Base):
     __tablename__ = 'registrations'
     id = Column(Integer, primary_key=True)
-    event_id = Column(Integer, ForeignKey('events.id'))
+    # event_id = Column(Integer, ForeignKey('events.id'))
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False)
     comment = Column(Text)
     registered_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
-    orders = relationship("Order", lazy='dynamic')
-    event = relationship("Event", uselist=False)
+    # orders = relationship("Order", lazy='dynamic')
+    # event = relationship("Event", uselist=False)
     crowdfunding_registration_properties = relationship('CrowdfundingRegistrationProperties', uselist=False)
 
     @property
@@ -101,6 +103,7 @@ class Order(Base):
     __tablename__ = 'orders'
     id = Column(Integer, primary_key=True)
     registration_id = Column(Integer, ForeignKey('registrations.id'))
+    event_id = Column(Integer, ForeignKey('events.id'))
     total_price = Column(Float, nullable=False, default=0)
     transaction_fee = Column(Float, nullable=False, default=0)
     status = Column(String(50), nullable=False, default=ORDER_STATUS_NEW)
@@ -109,6 +112,7 @@ class Order(Base):
     # stripe_charge = Column(Text)
 
     registration = relationship('Registration', uselist=False)
+    event = relationship("Event", uselist=False)
     order_products = relationship('OrderProduct', lazy='dynamic')
 
     # @aggregated('order_products', Column(Float))
@@ -151,21 +155,33 @@ class OrderProduct(Base):
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'))
     product_id = Column(Integer, ForeignKey('products.id'))
-    registration_id = Column(Integer, ForeignKey('registrations.id'))
     price = Column(Float, nullable=False)
+
     details = relationship("OrderProductDetail", lazy='dynamic')
     order = relationship('Order', uselist=False)
     product = relationship('Product', uselist=False)
 
-    registration = relationship('Registration', uselist=False)
+    registrations = relationship('Registration', secondary='order_product_registrations_mapping')
 
     def __init__(self, product, price, details_dict=None, **kwargs):
         self.product = product
         self.price = price
         if details_dict:
             for key, value in details_dict.items():
+                print(key, value)
                 self.details.append(OrderProductDetail(key, value))
         super(OrderProduct, self).__init__(**kwargs)
+
+    @property
+    def details_as_dict(self):
+        for d in self.details.all():
+            print(d.field_name, d.field_value)
+        details_dict = {d.field_name: d.field_value for d in self.details.all()}
+        print(details_dict)
+        return details_dict
+
+    # def get_name(self):
+    #     product_class = get_product_by_model(self)
 
 
 class OrderProductDetail(Base):
@@ -176,16 +192,21 @@ class OrderProductDetail(Base):
     field_value = Column(String(255), nullable=False)
 
     def __init__(self, field_name, field_value, **kwargs):
-        self.field_name = field_name,
+        self.field_name = field_name
         self.field_value = field_value
         super(OrderProductDetail, self).__init__(**kwargs)
 
 
-class OrderProductRegistrationsMapping(Base):
-    __tablename__ = 'order_product_registrations_mapping'
-    id = Column(Integer, primary_key=True)
-    order_product_id = Column(Integer, ForeignKey('order_products.id'))
-    registration_id = Column(Integer, ForeignKey('registrations.id'))
+# class OrderProductRegistrationsMapping(Base):
+#     __tablename__ = 'order_product_registrations_mapping'
+#     id = Column(Integer, primary_key=True)
+#     order_product_id = Column(Integer, ForeignKey('order_products.id'))
+#     registration_id = Column(Integer, ForeignKey('registrations.id'))
+
+order_product_registrations_mapping = Table('order_product_registrations_mapping', Base.metadata,
+    Column('order_product_id', Integer, ForeignKey('order_products.id')),
+    Column('registration_id', Integer, ForeignKey('registrations.id'))
+    )
 
 
 class CrowdfundingRegistrationProperties(Base):
@@ -193,3 +214,11 @@ class CrowdfundingRegistrationProperties(Base):
     id = Column(Integer, primary_key=True)
     registration_id = Column(Integer, ForeignKey('registrations.id'))
     anonymous = Column(Boolean, nullable=False, default=False)
+
+
+class RegistrationPartners(Base):
+    __tablename__ = 'registration_partners'
+    id = Column(Integer, primary_key=True)
+    registration1_id = Column(Integer, ForeignKey('registration.id'))
+    registration2_id = Column(Integer, ForeignKey('registration.id'))
+

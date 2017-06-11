@@ -6,6 +6,10 @@
   {{ donate_product(form_field) }}
 {% elif form_field.product_type == 'MarketingProduct' %}
   {{ marketing_product(form_field, event) }}
+{% elif form_field.product_type == 'CouplesOnlyWorkshop' %}
+    {{ couples_only_workshop_product(form_field, event) }}
+{% elif form_field.product_type == 'RegularPartnerWorkshop' %}
+    {{ regular_partner_workshop_product(form_field, event) }}
 {% else %}
    <div class="card-body">
     {%- for subfield in form_field %}
@@ -77,34 +81,34 @@
 
 {% macro toggle_btn_checkbox(field) %}
 <div class="btn-group" data-toggle="buttons">
-        <label class="btn btn-default slt-toggle">
+        <button class="btn btn-outline-success form-control slt-toggle">
             {{ field(checked=False) }} {{ field.label.text }}
-        </label>
+        </button>
 </div>
 {% endmacro %}
 
 
 {% macro email_field(field) %}
-<div  class="form-group">
-    <label class="sr-only" for="{{field.id}}">Your email</label>
+<div  class="form-group" id="{{field.id}}-form-group">
+    <label class="sr-only" for="{{field.id}}">{{ field.label.text }}</label>
     <div class="input-group">
         <div class="input-group-addon">
             <i class="fa fa-envelope" aria-hidden="true"></i>
         </div>
-        {{ field(class='form-control', placeholder="Email") }}
+        {{ field(class='form-control', placeholder=field.label.text) }}
     </div>
 </div>
 {% endmacro %}
 
 
 {% macro name_field(field) %}
-<div  class="form-group">
-  <label class="sr-only" for="{{field.id}}">Your name</label>
+<div  class="form-group" id="{{field.id}}-form-group">
+  <label class="sr-only" for="{{field.id}}">{{ field.label.text }}</label>
   <div class="input-group">
     <div class="input-group-addon">
         <i class="fa fa-user" aria-hidden="true"></i>
     </div>
-    {{ field(class='form-control', placeholder="Name") }}
+    {{ field(class='form-control', placeholder=field.label.text) }}
 </div>
 </div>
 {% endmacro %}
@@ -136,6 +140,33 @@
                 {{ registration.comment }}
             </p>
         {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro couples_only_workshop_product(form_field, event) %}
+<div class="card-block">
+    <h4 class="card-title">{{ form_field.product_name }}</h4>
+    <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
+    <div class="btn-group" data-toggle="buttons">
+        <button class="btn btn-outline-success form-control">
+            {{ form_field.add(checked=False) }} {{ form_field.add.label.text }}
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro regular_partner_workshop_product(form_field, event) %}
+<div class="card-block">
+    <h4 class="card-title">{{ form_field.product_name }}</h4>
+    <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
+    <div  class="form-group">{{ form_field.dance_role(class='form-control') }}</div>
+    <div class="btn-group" data-toggle="buttons">
+        <button class="btn btn-outline-success form-control">
+            {{ form_field.add(checked=False) }} {{ form_field.add.label.text }}
+        </button>
     </div>
 </div>
 {% endmacro %}

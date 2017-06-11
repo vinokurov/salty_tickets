@@ -5,6 +5,7 @@ from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField,
 from wtforms.validators import Optional
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct
+import json
 
 
 class ProductTemplate:
@@ -60,18 +61,80 @@ class ProductTemplate:
         params_dict = {a: getattr(self, a) for a in attrs}
         return params_dict
 
+    def get_total_price(self, produc_form, form):
+        raise NotImplementedError()
 
-class CouplesOnlyWorkshop(ProductTemplate):
-    price_weekend = None
-    weekend_key = None
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_form, form)
+        order_product = OrderProduct(product_model, price)
+        return order_product
 
-    def get_form(self):
+
+class ProductDiscountPrices:
+    discount_prices = None
+
+    def get_discount_price_by_key(self, key):
+        discount_prices_dict = json.loads(self.discount_prices)
+        return discount_prices_dict[key]
+
+    def get_discount_price(self, product_form, order_form):
+        prices = [self.get_discount_price_by_key(k)
+                  for k in self._get_applicable_discount_keys(product_form, order_form)]
+        if prices:
+            return min(prices)
+
+    def _get_discount_keys(self):
+        discount_prices_dict = json.loads(self.discount_prices)
+        return list(discount_prices_dict.keys())
+
+    def _get_applicable_discount_keys(self, product_form, order_form):
+        discount_keys = self._get_discount_keys()
+        if discount_keys:
+            for product_key in order_form.product_keys:
+                if discount_keys:
+                    order_form_product = order_form.get_product_by_key(product_key)
+                    if hasattr(order_form_product, 'discount_keys') and not order_form_product.add.data:
+                        affected_keys = set(discount_keys).intersection(order_form_product.discount_keys)
+                        for key in affected_keys:
+                            discount_keys.remove(key)
+        return discount_keys
+
+
+
+class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices):
+
+    def get_form(self, product_model=None):
         class CouplesOnlyWorkshopForm(NoCsrfForm):
+            product_name = self.name
             info = self.info
-            price = 50
-            add = BooleanField(label=self.name)
+            price = self.price
+            discount_keys = self._get_discount_keys()
+            add = BooleanField(label='Add')
             partner_name = StringField('Your partner name')
+            product_type = self.__class__.__name__
+
+            def needs_partner(self):
+                return self.add.data
+
         return CouplesOnlyWorkshopForm
+
+    def get_total_price(self, product_form, order_form):
+        if product_form.add.data:
+            discount_price = self.get_discount_price(product_form, order_form)
+            if discount_price:
+                return discount_price
+            else:
+                return self.price
+        else:
+            return 0
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name1 = order_product_model.registrations[0].name
+            name2 = order_product_model.registrations[1].name
+            return '{} ({} + {})'.format(self.name, name1, name2)
 
 
 class RegularPartnerWorkshop(ProductTemplate):
@@ -79,15 +142,40 @@ class RegularPartnerWorkshop(ProductTemplate):
     weekend_key = None
     ratio = None
 
-    def get_form(self):
+    def get_form(self, product_model=None):
         class RegularPartnerWorkshopForm(NoCsrfForm):
             product_name = self.name
             info = self.info
-            price = 50
-            add = BooleanField(label=self.name)
+            price = self.price
+            add = BooleanField(label='Add')
             dance_role = SelectField(label='Your role',
                                      choices=[('follower', 'Follower'), ('leader', 'Leader')])
+            product_type = self.__class__.__name__
+
+            def needs_partner(self):
+                return False
+
         return RegularPartnerWorkshopForm
+
+    def get_total_price(self, product_form, order_form=None):
+        if product_form.add.data:
+            return self.price
+        else:
+            return 0
+
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_form, form)
+        order_product = OrderProduct(product_model, price, dict(dance_role=product_form.dance_role.data))
+        return order_product
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name = order_product_model.registrations[0].name
+            role = order_product_model.details_as_dict['dance_role']
+            # name2 = order_product_model.registrations[1].name
+            return '{} ({} / {})'.format(self.name, name, role)
 
 
 class MarketingProduct(ProductTemplate):

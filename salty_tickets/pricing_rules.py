@@ -1,4 +1,6 @@
-from salty_tickets.forms import get_registration_from_form
+from collections import namedtuple
+
+from salty_tickets.forms import get_registration_from_form, get_partner_registration_from_form
 from salty_tickets.products import get_product_by_model
 from salty_tickets.models import Event, ProductParameter, Order, OrderProduct, Product
 
@@ -25,41 +27,31 @@ def get_salty_recipes_price(form):
     return total
 
 
-def get_order_for_event(event, form):
+def get_order_for_event(event, form, registration=None, partner_registration=None):
     assert isinstance(event, Event)
     user_order = Order()
 
-    for product in event.products:
-        product_form = form.get_product_by_key(product.product_key)
-        if product_form.going.data:
-            weekend_key = product.parameters.filter(ProductParameter.parameter_name == "weekend_key").first().parameter_value
+    for product_model in event.products:
+        print(product_model)
+        product = get_product_by_model(product_model)
+        product_form = form.get_product_by_key(product_model.product_key)
+        price = product.get_total_price(product_form, form)
+        if price > 0:
+            order_product = product.get_order_product_model(product_model, product_form, form)
+            # registration_model = get_registration_from_form(form)
+            order_product.registrations.append(registration)
 
-            # check if we can apply weekend discount
-            discount_related_products = event.products.join(ProductParameter).filter(
-                                        ProductParameter.parameter_name == "weekend_key",
-                                        ProductParameter.parameter_value == weekend_key
-            ).all()
+            if product_form.needs_partner():
+                # partner_registration_model = get_partner_registration_from_form(form)
+                order_product.registrations.append(partner_registration)
 
-            # TODO: should also include previously ordered and paid products
-            discount_applies = [form.get_product_by_key(p.product_key).going.data
-                                for p in discount_related_products].count(False) == 0
-            print(weekend_key)
-            print(discount_related_products)
-            print([form.get_product_by_key(p.product_key).going.data for p in discount_related_products])
-            if discount_applies:
-                price_str = product.parameters.filter(ProductParameter.parameter_name == "price_weekend").first().parameter_value
-            else:
-                price_str = product.parameters.filter(ProductParameter.parameter_name == "base_price").first().parameter_value
-
-            price = float(price_str)
-            user_order.order_products.append(OrderProduct(product, price))
-            print(product.name, price, discount_applies)
+            user_order.order_products.append(order_product)
 
     products_price = user_order.products_price
     print(products_price)
     user_order.transaction_fee = transaction_fee(products_price)
-    total_price = products_price + float(user_order.transaction_fee)
-    user_order.total_price = "%.2f" % total_price
+    user_order.total_price = user_order.products_price
+
 
     return user_order
 
@@ -109,4 +101,34 @@ def get_stripe_properties(event, order, form):
     stripe_props['email'] = form.email.data
     stripe_props['amount'] = order.stripe_amount
     return stripe_props
+
+
+OrderProductTuple = namedtuple('OrderProductTuple', ['name', 'price'])
+
+
+class OrderSummaryController:
+    products = []
+    transaction_fee = ''
+    total_price = ''
+    show_order_summary = False
+
+    def __init__(self, order):
+        assert isinstance(order, Order)
+        self.transaction_fee = '{:.2f}'.format(order.transaction_fee)
+        total_price = order.total_price + order.transaction_fee
+        self.total_price = '{:.2f}'.format(total_price)
+
+        products = []
+        for order_product in order.order_products.all():
+            price = '{:.2f}'.format(order_product.price)
+            product = get_product_by_model(order_product.product)
+            if hasattr(product, 'get_name'):
+                name = product.get_name(order_product)
+            else:
+                name = order_product.product.name
+            print(name)
+            products.append(OrderProductTuple(name=name, price=price))
+        self.products = products
+        print('product_len: {}'.format(len(self.products)))
+        self.show_order_summary = len(self.products) > 0
 

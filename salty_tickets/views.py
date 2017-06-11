@@ -3,10 +3,11 @@ from flask import url_for, jsonify
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.database import db_session
-from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form
+from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
+    get_partner_registration_from_form
 from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
 from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties
+    get_order_for_crowdfunding_event, get_stripe_properties, OrderSummaryController
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -21,6 +22,15 @@ def index():
     #     return redirect(url_for('register_form', event_key=event.event_key))
 
 
+@app.route('/r')
+@app.route('/register')
+@app.route('/register/')
+def register_index():
+    event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
+    if event:
+        return redirect(url_for('register_form', event_key=event.event_key))
+
+
 @app.route('/register/<string:event_key>', methods=('GET', 'POST'))
 def register_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
@@ -28,10 +38,47 @@ def register_form(event_key):
     form = create_event_form(event)()
     # form = SaltyRecipesSignupForm()
 
-    if form.validate_on_submit():
-        return 'your total price: £{}'.format(get_salty_recipes_price(form))
+    print(form.product_keys)
 
-    return render_template('signup.html', event=event, form=form)
+    if form.validate_on_submit():
+        registration = get_registration_from_form(form)
+        partner_registration = get_partner_registration_from_form(form)
+        user_order = get_order_for_event(event, form, registration, partner_registration)
+        registration.orders.append(user_order)
+        event.orders.append(registration)
+        db_session.commit()
+        success, response = user_order.charge(form.stripe_token.data)
+        if success:
+            db_session.commit()
+            return redirect(url_for('signup_thankyou', event_key=event.event_key))
+        else:
+            return response
+
+    # if form.validate_on_submit():
+    #     return 'your total price: £{}'.format(get_salty_recipes_price(form))
+
+    return render_template('signup.html', event=event, form=form, config=config)
+
+
+@app.route('/register/checkout/<string:event_key>', methods=['POST'])
+def register_checkout(event_key):
+    event = Event.query.filter_by(event_key=event_key).first()
+    form = create_event_form(event)()
+
+    return_dict = dict(errors={})
+
+    if form.validate_on_submit():
+        registration = get_registration_from_form(form)
+        partner_registration = get_partner_registration_from_form(form)
+        user_order = get_order_for_event(event, form, registration, partner_registration)
+        return_dict['stripe'] = get_stripe_properties(event, user_order, form)
+        order_summary_controller = OrderSummaryController(user_order)
+        return_dict['order_summary_html'] = render_template('order_summary.html',
+                                                            order_summary_controller=order_summary_controller)
+    else:
+        return_dict['order_summary_html'] = render_template('order_summary.html', order_summary_controller=None)
+        return_dict['errors'] = form.errors
+    return jsonify(return_dict)
 
 
 @app.route('/register/total_price/<string:event_key>', methods=('POST',))
