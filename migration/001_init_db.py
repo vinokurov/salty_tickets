@@ -17,25 +17,25 @@ event = models.Event(
 
 
 # event = models.Event.query.first()
-event.products.append(
-    products.CouplesOnlyWorkshop(
-        name='Aerials Workshop',
-        info='Sunday aerials workshop with Pol & Sara. Duration: 4h. Intermediate level Registration for couples only. Price: £80 per couple',
-        max_available=15,
-        price=80,
-        weekend_key='aerials'
-    ).model
-)
-event.products.append(
-    products.RegularPartnerWorkshop(
-        name='Saturday Shag Workshop',
-        info='Saturday shag workshop with Pol & Sara. Duration: 4h. Intermediate level. Price: £40 per person',
-        max_available=40,
-        ratio=1.35,
-        price=40,
-        weekend_key='shag'
-    ).model
-)
+# event.products.append(
+#     products.CouplesOnlyWorkshop(
+#         name='Aerials Workshop',
+#         info='Sunday aerials workshop with Pol & Sara. Duration: 4h. Intermediate level Registration for couples only. Price: £80 per couple',
+#         max_available=15,
+#         price=80,
+#         weekend_key='aerials'
+#     ).model
+# )
+# event.products.append(
+#     products.RegularPartnerWorkshop(
+#         name='Saturday Shag Workshop',
+#         info='Saturday shag workshop with Pol & Sara. Duration: 4h. Intermediate level. Price: £40 per person',
+#         max_available=40,
+#         ratio=1.35,
+#         price=40,
+#         weekend_key='shag'
+#     ).model
+# )
 database.db_session.add(event)
 database.db_session.commit()
 

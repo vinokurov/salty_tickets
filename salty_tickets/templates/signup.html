@@ -73,7 +73,7 @@ jQuery.fn.extend({
     }
 
     $('body').on('click', 'button#checkout', function(e) {
-        var url = "{{ url_for('crowdfunding_checkout', event_key=event.event_key) }}"; // send the form data here.
+        var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
         $.ajax({
             type: "POST",
             url: url,
@@ -98,7 +98,7 @@ jQuery.fn.extend({
 
                     handler.open({
                         name: 'Salty Jittergugs',
-                        description: 'Simona Crowdfunding',
+                        description: '{{ event.name }}',
                         currency: 'gbp',
                         amount: data.stripe.amount,
                         email: data.stripe.email,

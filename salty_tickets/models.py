@@ -136,7 +136,7 @@ class Order(Base):
             charge = stripe.Charge.create(
                 amount=self.stripe_amount,
                 currency='gbp',
-                description=self.registration.event.name,
+                description=self.event.name,
                 # description='Flask Charge',
                 metadata=dict(order_id=self.id),
                 source=stripe_token
@@ -219,7 +219,7 @@ class CrowdfundingRegistrationProperties(Base):
 class RegistrationPartners(Base):
     __tablename__ = 'registration_partners'
     id = Column(Integer, primary_key=True)
-    registration1_id = Column(Integer, ForeignKey('registration.id'))
-    registration2_id = Column(Integer, ForeignKey('registration.id'))
+    registration1_id = Column(Integer, ForeignKey('registrations.id'))
+    registration2_id = Column(Integer, ForeignKey('registrations.id'))
     order_product_id = Column(Integer, ForeignKey('products.id'))
 

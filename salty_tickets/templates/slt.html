@@ -148,6 +148,9 @@
 {% macro couples_only_workshop_product(form_field, event) %}
 <div class="card-block">
     <h4 class="card-title">{{ form_field.product_name }}</h4>
+    <p><small class="text-muted"><i class="fa fa-calendar" aria-hidden="true"></i> {{ form_field.workshop_date }}</small><br>
+    <small class="text-muted"><i class="fa fa-clock-o" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
+    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small></p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div class="btn-group" data-toggle="buttons">
         <button class="btn btn-outline-success form-control">
@@ -161,6 +164,9 @@
 {% macro regular_partner_workshop_product(form_field, event) %}
 <div class="card-block">
     <h4 class="card-title">{{ form_field.product_name }}</h4>
+    <p><small class="text-muted"><i class="fa fa-calendar" aria-hidden="true"></i> {{ form_field.workshop_date }}</small><br>
+    <small class="text-muted"><i class="fa fa-clock-o" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
+    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small></p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div  class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
     <div class="btn-group" data-toggle="buttons">

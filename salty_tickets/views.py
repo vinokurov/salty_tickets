@@ -36,7 +36,6 @@ def register_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
     print(event.name)
     form = create_event_form(event)()
-    # form = SaltyRecipesSignupForm()
 
     print(form.product_keys)
 
@@ -44,8 +43,8 @@ def register_form(event_key):
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
         user_order = get_order_for_event(event, form, registration, partner_registration)
-        registration.orders.append(user_order)
-        event.orders.append(registration)
+        user_order.registration = registration
+        event.orders.append(user_order)
         db_session.commit()
         success, response = user_order.charge(form.stripe_token.data)
         if success:
@@ -94,6 +93,11 @@ def total_price(event_key):
         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
     else:
         return jsonify({})
+
+
+@app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
+def signup_thankyou(event_key):
+    return render_template('signup_thankyou.html', event_key=event_key)
 
 
 @app.route('/c')

@@ -108,7 +108,13 @@ class ProductDiscountPrices:
 
 
 
-class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices):
+class WorkshopProduct:
+    workshop_date = None
+    workshop_time = None
+    workshop_level = None
+
+
+class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduct):
 
     def get_form(self, product_model=None):
         class CouplesOnlyWorkshopForm(NoCsrfForm):
@@ -119,6 +125,9 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices):
             add = BooleanField(label='Add')
             partner_name = StringField('Your partner name')
             product_type = self.__class__.__name__
+            workshop_date = self.workshop_date
+            workshop_time = self.workshop_time
+            workshop_level = self.workshop_level
 
             def needs_partner(self):
                 return self.add.data
@@ -144,9 +153,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices):
             return '{} ({} + {})'.format(self.name, name1, name2)
 
 
-class RegularPartnerWorkshop(ProductTemplate):
-    price_weekend = None
-    weekend_key = None
+class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     ratio = None
 
     def get_form(self, product_model=None):
@@ -160,6 +167,9 @@ class RegularPartnerWorkshop(ProductTemplate):
             add_partner = BooleanField(label='Add partner')
             partner_token = StringField(label='Partner\'s token')
             product_type = self.__class__.__name__
+            workshop_date = self.workshop_date
+            workshop_time = self.workshop_time
+            workshop_level = self.workshop_level
 
             def needs_partner(self):
                 if self.add_partner.data:
