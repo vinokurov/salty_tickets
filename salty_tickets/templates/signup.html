@@ -67,6 +67,9 @@ jQuery.fn.extend({
 
         for(var form_field_id in form_errors)
         {
+            // force reload page if CSFR token is expired
+            if(form_field_id=='csrf_token'){window.location.reload();}
+
             console.log(form_field_id, form_errors[form_field_id]);
             $('#'+form_field_id+'-form-group').addClass('has-danger');
         }
