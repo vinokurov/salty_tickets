@@ -3,13 +3,15 @@ from collections import namedtuple
 
 import math
 
+from salty_tickets.database import db_session
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
 from wtforms.validators import Optional
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
-    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, \
+    RegistrationPartners
 import json
 
 
@@ -119,6 +121,10 @@ class WorkshopProduct:
     workshop_level = None
 
 
+WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
+WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
+
+
 class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduct):
 
     def get_form(self, product_model=None):
@@ -133,6 +139,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
             workshop_level = self.workshop_level
+            waiting_list = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
                 return self.add.data
@@ -157,9 +164,39 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             name2 = order_product_model.registrations[1].name
             return '{} ({} + {})'.format(self.name, name1, name2)
 
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_form, form)
+        ws = self.get_waiting_lists(product_model)
+        status = ORDER_PRODUCT_STATUS_WAITING if ws else ORDER_PRODUCT_STATUS_ACCEPTED
+        order_product = OrderProduct(product_model, price, dict(status=status))
+        return order_product
 
-WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
-WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
+    @staticmethod
+    def get_registration_stats(product_model):
+        query = OrderProduct.query.filter_by(product_id=product_model.id). \
+            join(Order).filter_by(status=ORDER_STATUS_PAID)
+        couples_accepted = len(
+            query.join(aliased(OrderProductDetail)).filter_by(field_name='status',
+                                                              field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
+            .all()
+        )
+        couples_waiting = len(
+            query.join(aliased(OrderProductDetail)).filter_by(field_name='status',
+                                                              field_value=ORDER_PRODUCT_STATUS_WAITING)
+            .all()
+        )
+        return WorkshopRegStats(couples_accepted, couples_waiting)
+
+    @classmethod
+    def get_waiting_lists(cls, product_model):
+        registration_stats = cls.get_registration_stats(product_model)
+        print(registration_stats)
+        if registration_stats.waiting > 0:
+            return registration_stats.waiting + 1
+        if registration_stats.accepted + 1 > product_model.max_available:
+            return 1
+        else:
+            return 0
 
 
 class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
@@ -216,9 +253,13 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         if product_form.add_partner.data:
             dance_role = flip_role(dance_role)
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
-            # print(product_form.dance_role.data, flip_role(product_form.dance_role.data))
             order_product2 = OrderProduct(product_model, price,
                                          dict(dance_role=dance_role, status=status))
+
+            partners = RegistrationPartners()
+
+            db_session.add(RegistrationPartners(order_product_id1=order_product.id,
+                                                order_product_id2=order_product2.id))
             return [order_product, order_product2]
         return order_product
 
@@ -318,7 +359,6 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             return 1
         else:
             return 0
-
 
 
 

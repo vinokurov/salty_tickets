@@ -187,6 +187,16 @@ class OrderProduct(Base):
         details_dict = {d.field_name: d.field_value for d in self.details.all()}
         return details_dict
 
+    def cancel(self):
+        raise NotImplementedError
+
+    def refund(self, amount):
+        raise NotImplementedError
+
+    def accept(self):
+        status = self.details.query.filter_by(field_name='status').one()
+        status.field_value = ORDER_PRODUCT_STATUS_ACCEPTED
+
 
 class OrderProductDetail(Base):
     __tablename__ = 'order_product_details'
@@ -199,13 +209,6 @@ class OrderProductDetail(Base):
         self.field_name = field_name
         self.field_value = field_value
         super(OrderProductDetail, self).__init__(**kwargs)
-
-
-# class OrderProductRegistrationsMapping(Base):
-#     __tablename__ = 'order_product_registrations_mapping'
-#     id = Column(Integer, primary_key=True)
-#     order_product_id = Column(Integer, ForeignKey('order_products.id'))
-#     registration_id = Column(Integer, ForeignKey('registrations.id'))
 
 order_product_registrations_mapping = Table('order_product_registrations_mapping', Base.metadata,
     Column('order_product_id', Integer, ForeignKey('order_products.id')),
@@ -223,7 +226,8 @@ class CrowdfundingRegistrationProperties(Base):
 class RegistrationPartners(Base):
     __tablename__ = 'registration_partners'
     id = Column(Integer, primary_key=True)
-    registration1_id = Column(Integer, ForeignKey('registrations.id'))
-    registration2_id = Column(Integer, ForeignKey('registrations.id'))
-    order_product_id = Column(Integer, ForeignKey('products.id'))
+    order_product_id1 = Column(Integer, ForeignKey('order_products.id'))
+    order_product_id2 = Column(Integer, ForeignKey('order_products.id'))
+
+    # order_product1 = relationship()
 

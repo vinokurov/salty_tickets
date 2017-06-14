@@ -150,7 +150,9 @@
     <h4 class="card-title">{{ form_field.product_name }}</h4>
     <p><small class="text-muted"><i class="fa fa-calendar" aria-hidden="true"></i> {{ form_field.workshop_date }}</small><br>
     <small class="text-muted"><i class="fa fa-clock-o" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
-    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small></p>
+    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small><br>
+        <small>{{ availability_badge('Couple', form_field.waiting_list) }}</small>
+    </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div class="btn-group" data-toggle="buttons">
         <button class="btn btn-outline-success form-control">
@@ -193,8 +195,8 @@
 
 {% macro availability_badge(text, wait) %}
     {% if wait == 0 %}
-        <span class="badge badge-pill badge-success">{{ text }}</span>
+        <span class="badge badge badge-success">{{ text }}</span>
     {% else %}
-        <span class="badge badge-pill badge-warning">{{ text }} (Waiting list: {{ wait }})</span>
+        <span class="badge badge badge-warning">{{ text }} (waiting list: {{ wait }})</span>
     {% endif %}
 {% endmacro %}

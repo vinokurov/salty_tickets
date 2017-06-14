@@ -22,10 +22,7 @@ class FormWithProducts:
 
 
 def need_partner_check(form, field):
-    # raise ValidationError('Partner details are required')
-    # print('aasasa')
     for key in form.product_keys:
-        print(key)
         product_form = form.get_product_by_key(key)
         needs_partner = product_form.needs_partner()
         if needs_partner and not field.data:

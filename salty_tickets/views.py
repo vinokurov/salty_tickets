@@ -34,10 +34,7 @@ def register_index():
 @app.route('/register/<string:event_key>', methods=('GET', 'POST'))
 def register_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
-    print(event.name)
     form = create_event_form(event)()
-
-    print(form.product_keys)
 
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
@@ -85,11 +82,9 @@ def register_checkout(event_key):
 def total_price(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
     form = create_event_form(event)()
-    print('Starting calculate total price for event {}'.format(event.name))
     if form.validate_on_submit():
         user_order = get_order_for_event(event, form)
         price = user_order.total_price
-        print(price)
         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
     else:
         return jsonify({})
@@ -112,14 +107,12 @@ def crowdfunding_index():
 @app.route('/crowdfunding/<string:event_key>', methods=('GET', 'POST'))
 def crowdfunding_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
-    print(event.name)
     form = create_crowdfunding_form(event)()
 
     total_stats = get_total_raised(event)
 
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
-        print(registration)
         user_order = get_order_for_crowdfunding_event(event, form)
         registration.orders.append(user_order)
         registration.crowdfunding_registration_properties = \
@@ -133,8 +126,6 @@ def crowdfunding_form(event_key):
         else:
             return response
 
-    print(event.id)
-    print(event.registrations.count())
     contributors = event.registrations.order_by(Registration.registered_datetime.desc()).all()
     return render_template(
         'crowdfunding.html',
