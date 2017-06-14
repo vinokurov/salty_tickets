@@ -50,9 +50,6 @@ def register_form(event_key):
         else:
             return response
 
-    # if form.validate_on_submit():
-    #     return 'your total price: £{}'.format(get_salty_recipes_price(form))
-
     return render_template('signup.html', event=event, form=form, config=config)
 
 
@@ -113,11 +110,12 @@ def crowdfunding_form(event_key):
 
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
-        user_order = get_order_for_crowdfunding_event(event, form)
-        registration.orders.append(user_order)
         registration.crowdfunding_registration_properties = \
-            CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
-        event.registrations.append(registration)
+                CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
+        # partner_registration = get_partner_registration_from_form(form)
+        user_order = get_order_for_crowdfunding_event(event, form, registration, None)
+        user_order.registration = registration
+        event.orders.append(user_order)
         db_session.commit()
         success, response = user_order.charge(form.stripe_token.data)
         if success:
@@ -126,7 +124,7 @@ def crowdfunding_form(event_key):
         else:
             return response
 
-    contributors = event.registrations.order_by(Registration.registered_datetime.desc()).all()
+    contributors = Registration.query.join(event.orders).all()
     return render_template(
         'crowdfunding.html',
         event=event,
@@ -145,11 +143,15 @@ def crowdfunding_checkout(event_key):
     return_dict = dict(errors={})
 
     if form.validate_on_submit():
-        user_order = get_order_for_crowdfunding_event(event, form)
+        registration = get_registration_from_form(form)
+        user_order = get_order_for_crowdfunding_event(event, form, registration, None)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        return_dict['order_summary_html'] = render_template('order_summary.html', user_order=user_order)
+        order_summary_controller = OrderSummaryController(user_order)
+        return_dict['order_summary_html'] = render_template('order_summary.html',
+                                                            order_summary_controller=order_summary_controller)
     else:
-        return_dict['order_summary_html'] = render_template('order_summary.html', user_order=Order(total_price=0))
+        print(form.errors)
+        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
         return_dict['errors'] = form.errors
     return jsonify(return_dict)
 

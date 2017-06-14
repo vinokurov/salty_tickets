@@ -56,27 +56,28 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
     user_order.transaction_fee = transaction_fee(products_price)
     user_order.total_price = user_order.products_price
 
-
     return user_order
 
 
-def get_order_for_crowdfunding_event(event, form):
+def get_order_for_crowdfunding_event(event, form, registration=None, partner_registration=None):
     assert isinstance(event, Event)
     user_order = Order()
 
     for product_model in event.products:
         product = get_product_by_model(product_model)
         product_form = form.get_product_by_key(product_model.product_key)
-        price = product.get_total_price(product_form)
+        price = product.get_total_price(product_form, form)
         if price > 0:
-            registration_model = get_registration_from_form(form)
+            # registration_model = get_registration_from_form(form)
             if hasattr(product_form, 'add'):
                 for n in range(int(product_form.add.data)):
-                    user_order.order_products.append(
-                        OrderProduct(product_model, price, registration=registration_model))
+                    order_product = product.get_order_product_model(product_model, product_form, form)
+                    order_product.registrations.append(registration)
+                    user_order.order_products.append(order_product)
             else:
-                user_order.order_products.append(
-                    OrderProduct(product_model, price, registration=registration_model))
+                order_product = product.get_order_product_model(product_model, product_form, form)
+                order_product.registrations.append(registration)
+                user_order.order_products.append(order_product)
 
     products_price = user_order.products_price
     user_order.transaction_fee = transaction_fee(products_price)
@@ -92,8 +93,8 @@ def transaction_fee(price):
 def get_total_raised(event):
     assert isinstance(event, Event)
     total_stats = {
-        'amount': sum([sum([o.total_price for o in r.orders]) for r in event.registrations.join(Order).all()]),
-        'contributors': len(event.registrations.join(Order).all())
+        'amount': sum([o.total_price for o in event.orders.all()]),
+        'contributors': len(event.orders.all())
     }
     return total_stats
 

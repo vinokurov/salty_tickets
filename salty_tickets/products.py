@@ -80,7 +80,8 @@ class ProductTemplate:
 
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
-        order_product = OrderProduct(product_model, price)
+        status =  ORDER_PRODUCT_STATUS_ACCEPTED
+        order_product = OrderProduct(product_model, price, dict(status=status))
         return order_product
 
 
@@ -375,6 +376,9 @@ class MarketingProduct(ProductTemplate):
             available_quantity = self.get_available_quantity(product_model)
             product_type = self.__class__.__name__
 
+            def needs_partner(self):
+                return False
+
         if self.allow_select:
             quantity = min(self.get_available_quantity(product_model), int(self.allow_select))
         else:
@@ -392,8 +396,8 @@ class MarketingProduct(ProductTemplate):
         ordered_quantity = OrderProduct.query.filter(OrderProduct.product == product_model).count()
         return max(self.max_available - ordered_quantity, 0)
 
-    def get_total_price(self, form):
-        if form.add.data:
+    def get_total_price(self, product_form, order_form=None):
+        if product_form.add.data:
             return self.price
         else:
             return 0
@@ -409,11 +413,14 @@ class DonateProduct(ProductTemplate):
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
 
+            def needs_partner(self):
+                return False
+
         return DonateForm
 
-    def get_total_price(self, form):
-        if form.amount.data:
-            return float(form.amount.data)
+    def get_total_price(self, product_form, order_form=None):
+        if product_form.amount.data:
+            return float(product_form.amount.data)
         else:
             return 0
 

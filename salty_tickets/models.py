@@ -102,10 +102,7 @@ class Registration(Base):
     # orders = relationship("Order", lazy='dynamic')
     # event = relationship("Event", uselist=False)
     crowdfunding_registration_properties = relationship('CrowdfundingRegistrationProperties', uselist=False)
-
-    @property
-    def total_amount_ordered(self):
-        return sum([o.total_price for o in self.orders])
+    order = relationship('Order', uselist=False)
 
     def __repr__(self):
         return '<User %r>' % self.name
