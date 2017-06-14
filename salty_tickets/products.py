@@ -1,10 +1,15 @@
 import inspect
+from collections import namedtuple
 
+import math
+
+from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
 from wtforms.validators import Optional
 
-from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER
+from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING
 import json
 
 
@@ -153,8 +158,13 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             return '{} ({} + {})'.format(self.name, name1, name2)
 
 
+WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
+WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
+
+
 class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     ratio = None
+    allow_first = 0
 
     def get_form(self, product_model=None):
         class RegularPartnerWorkshopForm(NoCsrfForm):
@@ -170,6 +180,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
             workshop_level = self.workshop_level
+            waiting_lists = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
                 if self.add_partner.data:
@@ -187,11 +198,27 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
 
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
-        order_product = OrderProduct(product_model, price, dict(dance_role=product_form.dance_role.data))
+        ws = self.get_waiting_lists(product_model)
+        dance_role = product_form.dance_role.data
+
         if product_form.add_partner.data:
-            print(product_form.dance_role.data, flip_role(product_form.dance_role.data))
+            status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
+        else:
+            status = ORDER_PRODUCT_STATUS_WAITING if ws[0][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
+
+        order_product = OrderProduct(
+            product_model,
+            price,
+            dict(dance_role=dance_role, status=status)
+        )
+
+        # register partner
+        if product_form.add_partner.data:
+            dance_role = flip_role(dance_role)
+            status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
+            # print(product_form.dance_role.data, flip_role(product_form.dance_role.data))
             order_product2 = OrderProduct(product_model, price,
-                                         dict(dance_role=flip_role(product_form.dance_role.data)))
+                                         dict(dance_role=dance_role, status=status))
             return [order_product, order_product2]
         return order_product
 
@@ -203,6 +230,96 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             role = order_product_model.details_as_dict['dance_role']
             # name2 = order_product_model.registrations[1].name
             return '{} ({} / {})'.format(self.name, name, role)
+
+    @staticmethod
+    def get_registration_stats(product_model):
+        query = OrderProduct.query.filter_by(product_id=product_model.id). \
+            join(Order).filter_by(status=ORDER_STATUS_PAID)
+        leads_accepted = len(
+            query
+                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
+                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
+                .all()
+        )
+        leads_waiting = len(
+            query
+                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
+                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_WAITING)
+                .all()
+        )
+        follows_accepted = len(
+            query
+                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
+                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
+                .all()
+        )
+        follows_waiting = len(
+            query
+                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
+                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_WAITING)
+                .all()
+        )
+        return {
+            DANCE_ROLE_LEADER: WorkshopRegStats(accepted=leads_accepted, waiting=leads_waiting),
+            DANCE_ROLE_FOLLOWER: WorkshopRegStats(accepted=follows_accepted, waiting=follows_waiting)
+        }
+
+    @classmethod
+    def get_waiting_lists(cls, product_model):
+        registration_stats = cls.get_registration_stats(product_model)
+        print(registration_stats)
+        ratio = float(product_model.parameters_as_dict['ratio'])
+        allow_first = int(product_model.parameters_as_dict['allow_first'])
+        solo_leads_waiting = cls.get_waiting_list_for_role(
+            registration_stats[DANCE_ROLE_LEADER].accepted,
+            registration_stats[DANCE_ROLE_LEADER].waiting,
+            registration_stats[DANCE_ROLE_FOLLOWER].accepted,
+            product_model.max_available, ratio, allow_first
+        )
+        solo_follows_waiting = cls.get_waiting_list_for_role(
+            registration_stats[DANCE_ROLE_FOLLOWER].accepted,
+            registration_stats[DANCE_ROLE_FOLLOWER].waiting,
+            registration_stats[DANCE_ROLE_LEADER].accepted,
+            product_model.max_available, ratio, allow_first
+        )
+        ws_solo = {
+            DANCE_ROLE_LEADER: solo_leads_waiting,
+            DANCE_ROLE_FOLLOWER: solo_follows_waiting
+        }
+        total_accepted = registration_stats[DANCE_ROLE_LEADER].accepted + registration_stats[DANCE_ROLE_FOLLOWER].accepted
+
+        if total_accepted + 2 <= product_model.max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 0,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        elif product_model.max_available - total_accepted == 1:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        else:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 1
+            }
+
+        return ws_solo, ws_with_couple
+
+    @staticmethod
+    def get_waiting_list_for_role(accepted, waiting, accepted_other, max_available, ratio, allow_first):
+        if waiting > 0:
+            return waiting + 1
+        elif accepted + accepted_other + 1 > max_available:
+            return 1
+        elif accepted + 1 < allow_first:
+            return 0
+        elif accepted + 1 > accepted_other * ratio:
+            return 1
+        else:
+            return 0
+
+
 
 
 class MarketingProduct(ProductTemplate):

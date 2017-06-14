@@ -1,9 +1,10 @@
 import datetime
+import mock
 
 import pytest
 from salty_tickets.forms import create_event_form, SignupForm, FormWithProducts
-from salty_tickets.products import CouplesOnlyWorkshop
-from salty_tickets.models import Product, Event
+from salty_tickets.products import CouplesOnlyWorkshop, RegularPartnerWorkshop, WorkshopRegStats
+from salty_tickets.models import Product, Event, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
 from wtforms import Form
 
 
@@ -77,4 +78,55 @@ def test_CouplesOnlyWorkshop_get_total_price():
     assert product1._get_applicable_discount_keys(product1_form, order_form) == ['aerials_full_day']
     assert product1.get_total_price(product1_form, order_form) == 40
     assert product2.get_total_price(product2_form, order_form) == 30
+
+
+@mock.patch.object(RegularPartnerWorkshop, 'get_registration_stats')
+def test_RegularPartnerWorkshop_get_waiting_lists(get_registration_stats):
+
+    product_model = mock.Mock(spec=Product)
+
+    def test_case(max_available, ratio, allow_first,
+                  leads_acc, follows_acc, leads_wait, follows_wait,
+                  res_leads, res_follows, res_leads_with_partn, res_follows_with_partn):
+        product_model.max_available = max_available
+        product_model.parameters_as_dict = {'ratio': ratio, 'allow_first': allow_first}
+        get_registration_stats.side_effect = lambda x: {DANCE_ROLE_LEADER: WorkshopRegStats(leads_acc, leads_wait),
+                                                        DANCE_ROLE_FOLLOWER: WorkshopRegStats(follows_acc, follows_wait)}
+        expected_result = {DANCE_ROLE_LEADER: res_leads, DANCE_ROLE_FOLLOWER: res_follows}, \
+                          {DANCE_ROLE_LEADER: res_leads_with_partn, DANCE_ROLE_FOLLOWER: res_follows_with_partn}
+        assert RegularPartnerWorkshop.get_waiting_lists(product_model) == expected_result
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=0, follows_acc=0, leads_wait=0, follows_wait=0,
+              res_leads=0, res_follows=0, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=20, follows_acc=20, leads_wait=0, follows_wait=0,
+              res_leads=1, res_follows=1, res_leads_with_partn=1, res_follows_with_partn=1)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=19, follows_acc=20, leads_wait=0, follows_wait=0,
+              res_leads=0, res_follows=0, res_leads_with_partn=1, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=3, follows_acc=4, leads_wait=0, follows_wait=0,
+              res_leads=0, res_follows=0, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=9, follows_acc=12, leads_wait=0, follows_wait=0,
+              res_leads=0, res_follows=1, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=9, follows_acc=12, leads_wait=0, follows_wait=2,
+              res_leads=0, res_follows=3, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=3, follows_acc=4, leads_wait=0, follows_wait=5,
+              res_leads=0, res_follows=6, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=15, follows_acc=20, leads_wait=0, follows_wait=5,
+              res_leads=0, res_follows=6, res_leads_with_partn=0, res_follows_with_partn=0)
+
+
 

@@ -20,6 +20,10 @@ ORDER_STATUS_FAILED = 'failed'
 DANCE_ROLE_LEADER = 'leader'
 DANCE_ROLE_FOLLOWER = 'follower'
 
+ORDER_PRODUCT_STATUS_WAITING = 'waiting'
+ORDER_PRODUCT_STATUS_ACCEPTED = 'accepted'
+ORDER_PRODUCT_STATUS_CANCELLED = 'cancelled'
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -67,6 +71,11 @@ class Product(Base):
     @property
     def product_key(self):
         return string_to_key(self.name)
+
+    @property
+    def parameters_as_dict(self):
+        details_dict = {d.parameter_name: d.parameter_value for d in self.parameters.all()}
+        return details_dict
 
 
 class ProductParameter(Base):
@@ -137,7 +146,6 @@ class Order(Base):
                 amount=self.stripe_amount,
                 currency='gbp',
                 description=self.event.name,
-                # description='Flask Charge',
                 metadata=dict(order_id=self.id),
                 source=stripe_token
             )
@@ -171,16 +179,12 @@ class OrderProduct(Base):
         self.price = price
         if details_dict:
             for key, value in details_dict.items():
-                print(key, value)
                 self.details.append(OrderProductDetail(key, value))
         super(OrderProduct, self).__init__(**kwargs)
 
     @property
     def details_as_dict(self):
-        for d in self.details.all():
-            print(d.field_name, d.field_value)
         details_dict = {d.field_name: d.field_value for d in self.details.all()}
-        print(details_dict)
         return details_dict
 
 

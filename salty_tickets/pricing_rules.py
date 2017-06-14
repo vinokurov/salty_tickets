@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from salty_tickets.forms import get_registration_from_form, get_partner_registration_from_form
 from salty_tickets.products import get_product_by_model
-from salty_tickets.models import Event, ProductParameter, Order, OrderProduct, Product
+from salty_tickets.models import Event, ProductParameter, Order, OrderProduct, Product, ORDER_PRODUCT_STATUS_WAITING
 
 __author__ = 'vnkrv'
 
@@ -109,7 +109,7 @@ def get_stripe_properties(event, order, form):
     return stripe_props
 
 
-OrderProductTuple = namedtuple('OrderProductTuple', ['name', 'price'])
+OrderProductTuple = namedtuple('OrderProductTuple', ['name', 'price', 'wait_list'])
 
 
 class OrderSummaryController:
@@ -132,9 +132,11 @@ class OrderSummaryController:
                 name = product.get_name(order_product)
             else:
                 name = order_product.product.name
-            print(name)
-            products.append(OrderProductTuple(name=name, price=price))
+            # print(name)
+            wait_list = order_product.details_as_dict['status'] == ORDER_PRODUCT_STATUS_WAITING
+            products.append(OrderProductTuple(name=name, price=price, wait_list=wait_list))
+            print(products)
         self.products = products
-        print('product_len: {}'.format(len(self.products)))
+        # print('product_len: {}'.format(len(self.products)))
         self.show_order_summary = len(self.products) > 0
 

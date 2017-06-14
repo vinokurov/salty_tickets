@@ -166,7 +166,9 @@
     <h4 class="card-title">{{ form_field.product_name }}</h4>
     <p><small class="text-muted"><i class="fa fa-calendar" aria-hidden="true"></i> {{ form_field.workshop_date }}</small><br>
     <small class="text-muted"><i class="fa fa-clock-o" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
-    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small></p>
+    <small class="text-muted"><i class="fa fa-thermometer" aria-hidden="true"></i> {{ form_field.workshop_level }}</small><br>
+        <small>{{ partner_workshop_availability(form_field.waiting_lists) }}</small>
+    </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div  class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
     <div class="btn-group" data-toggle="buttons">
@@ -178,4 +180,21 @@
         </button>
     </div>
 </div>
+{% endmacro %}
+
+{% macro partner_workshop_availability(waiting_lists) %}
+    {{ availability_badge('Leader', waiting_lists[0]['leader']) }}
+    {{ availability_badge('Follower', waiting_lists[0]['follower']) }}
+    {{ availability_badge('Leader with partner', waiting_lists[1]['leader']) }}
+    {{ availability_badge('Follower with partner', waiting_lists[1]['follower']) }}
+{% endmacro %}
+
+
+
+{% macro availability_badge(text, wait) %}
+    {% if wait == 0 %}
+        <span class="badge badge-pill badge-success">{{ text }}</span>
+    {% else %}
+        <span class="badge badge-pill badge-warning">{{ text }} (Waiting list: {{ wait }})</span>
+    {% endif %}
 {% endmacro %}

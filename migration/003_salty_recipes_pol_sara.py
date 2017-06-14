@@ -44,13 +44,13 @@ event.products.append(
 event.products.append(
     products.RegularPartnerWorkshop(
         name='Shag Workshop',
-        info='Sunday shag workshop with Pol & Sara. Duration: 4h. Intermediate level. Price: £40 per person',
-        max_available=40,
+        info='Sunday shag workshop with Pol & Sara. Duration: 3h. Intermediate level. Price: £40 per person',
+        max_available=35,
         ratio=1.35,
-        # allow_first=10,
-        price=40,
+        allow_first=10,
+        price=35,
         workshop_date='30-July-2017',
-        workshop_time='10:00 till 15:30',
+        workshop_time='10:00 till 14:00',
         workshop_level='Improvers/Intermediate and higher'
     ).model
 )
