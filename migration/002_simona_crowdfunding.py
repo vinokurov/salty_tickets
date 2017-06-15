@@ -53,7 +53,7 @@ simona_fundraising_event.products.append(
 
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Mr. Whoopie Singer - A4',
+        name='Mr. Wompls Singer - A4',
         info='Original watercolor, pastels and ink, size A4, not framed.',
         price=40,
         max_available=1,
@@ -73,7 +73,7 @@ simona_fundraising_event.products.append(
 
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Mr. Whoopie Dancer - A4',
+        name='Mr. Wompls Dancer - A4',
         info='Original watercolor, pastels and ink, size A4, not framed. '
              'The work won the "quality prize" and was part of the exhibition '
              'at the illustration contest "scarpetta d\'oro" 2016, Venice, Italy',
@@ -85,7 +85,7 @@ simona_fundraising_event.products.append(
 
 simona_fundraising_event.products.append(
     products.MarketingProduct(
-        name='Mr. Whoopie Dancer 2 - A4',
+        name='Mr. Wompls Dancer 2 - A4',
         info='Original watercolor, pastels and ink, size A4, not framed.',
         price=40,
         max_available=1,
