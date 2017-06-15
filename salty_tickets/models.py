@@ -24,6 +24,8 @@ ORDER_PRODUCT_STATUS_WAITING = 'waiting'
 ORDER_PRODUCT_STATUS_ACCEPTED = 'accepted'
 ORDER_PRODUCT_STATUS_CANCELLED = 'cancelled'
 
+SIGNUP_GROUP_TYPE_PARTNERS = 'partners'
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -220,21 +222,19 @@ class CrowdfundingRegistrationProperties(Base):
     anonymous = Column(Boolean, nullable=False, default=False)
 
 
-class RegistrationPartners(Base):
-    __tablename__ = 'registration_partners'
-    id = Column(Integer, primary_key=True)
-    order_product_id1 = Column(Integer, ForeignKey('order_products.id'))
-    order_product_id2 = Column(Integer, ForeignKey('order_products.id'))
+# class RegistrationPartners(Base):
+#     __tablename__ = 'registration_partners'
+#     id = Column(Integer, primary_key=True)
+#     order_product_id1 = Column(Integer, ForeignKey('order_products.id'))
+#     order_product_id2 = Column(Integer, ForeignKey('order_products.id'))
 
     # order_product1 = relationship()
-
-GROUP_TYPE_PARTNERS = 'partners'
 
 class SignupGroup(Base):
     __tablename__ = 'signup_groups'
     id = Column(Integer, primary_key=True)
     type = Column(String(32))
-    event_id = Column(Integer, ForeignKey('events.id', uselist=False))
+    event_id = Column(Integer, ForeignKey('events.id'))
 
 group_order_product_mapping = Table('group_order_product_mapping', Base.metadata,
     Column('order_product_id', Integer, ForeignKey('order_products.id')),

@@ -10,8 +10,7 @@ from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField,
 from wtforms.validators import Optional
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
-    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, \
-    RegistrationPartners
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING
 import json
 
 
@@ -134,7 +133,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             info = self.info
             price = self.price
             discount_keys = self._get_discount_keys()
-            add = BooleanField(label='Add')
+            add = BooleanField(label='Book (couple)')
             partner_name = StringField('Your partner name')
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
@@ -209,10 +208,10 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             product_name = self.name
             info = self.info
             price = self.price
-            add = BooleanField(label='Add')
+            add = BooleanField(label='Book')
             dance_role = SelectField(label='Your role',
                                      choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
-            add_partner = BooleanField(label='Add partner')
+            add_partner = BooleanField(label='Book for partner')
             partner_token = StringField(label='Partner\'s token')
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
@@ -257,10 +256,10 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             order_product2 = OrderProduct(product_model, price,
                                          dict(dance_role=dance_role, status=status))
 
-            partners = RegistrationPartners()
-
-            db_session.add(RegistrationPartners(order_product_id1=order_product.id,
-                                                order_product_id2=order_product2.id))
+            # partners = RegistrationPartners()
+            #
+            # db_session.add(RegistrationPartners(order_product_id1=order_product.id,
+            #                                     order_product_id2=order_product2.id))
             return [order_product, order_product2]
         return order_product
 
