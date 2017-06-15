@@ -228,3 +228,16 @@ class RegistrationPartners(Base):
 
     # order_product1 = relationship()
 
+GROUP_TYPE_PARTNERS = 'partners'
+
+class SignupGroup(Base):
+    __tablename__ = 'signup_groups'
+    id = Column(Integer, primary_key=True)
+    type = Column(String(32))
+    event_id = Column(Integer, ForeignKey('events.id', uselist=False))
+
+group_order_product_mapping = Table('group_order_product_mapping', Base.metadata,
+    Column('order_product_id', Integer, ForeignKey('order_products.id')),
+    Column('signup_group_id', Integer, ForeignKey('signup_groups.id'))
+    )
+
