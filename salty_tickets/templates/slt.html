@@ -60,7 +60,8 @@
        <!--</div>-->
 
     <!--<div class="card-block">-->
-        <div class="card-text collapse" id="{{ '{}-info'.format(form_field.id) }}"><small>{{ form_field.info | safe}}</small></div>
+        <p class="card-text"><small><a href="#{{ '{}-info'.format(form_field.id) }}" data-toggle="collapse">Details</a></small></p class="card-text">
+        <p class="card-text collapse" id="{{ '{}-info'.format(form_field.id) }}"><small>{{ form_field.info | safe}}</small></p>
 
 <div  class="form-group">
     <div class="input-group">
