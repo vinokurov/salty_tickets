@@ -119,6 +119,8 @@ class WorkshopProduct:
     workshop_date = None
     workshop_time = None
     workshop_level = None
+    workshop_price = None
+    workshop_duration = None
 
 
 WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
@@ -133,12 +135,13 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             info = self.info
             price = self.price
             discount_keys = self._get_discount_keys()
-            add = BooleanField(label='Book (couple)')
+            add = BooleanField(label='Book with partner')
             partner_name = StringField('Your partner name')
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
             workshop_level = self.workshop_level
+            workshop_price = self.workshop_price
             waiting_list = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
@@ -208,7 +211,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             product_name = self.name
             info = self.info
             price = self.price
-            add = BooleanField(label='Book')
+            add = BooleanField(label='Book for yourself')
             dance_role = SelectField(label='Your role',
                                      choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
             add_partner = BooleanField(label='Book for partner')
@@ -217,6 +220,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
             workshop_level = self.workshop_level
+            workshop_price = self.workshop_price
             waiting_lists = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
