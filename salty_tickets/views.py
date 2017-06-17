@@ -7,7 +7,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_partner_registration_from_form
 from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
 from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, OrderSummaryController
+    get_order_for_crowdfunding_event, get_stripe_properties, OrderSummaryController, balance_event_waiting_lists
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -46,6 +46,7 @@ def register_form(event_key):
         success, response = user_order.charge(form.stripe_token.data)
         if success:
             db_session.commit()
+            balance_event_waiting_lists(event)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
             return response

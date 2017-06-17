@@ -202,6 +202,6 @@
     {% if wait == 0 %}
         <span class="badge badge badge-success">{{ text }}</span>
     {% else %}
-        <span class="badge badge badge-warning">{{ text }} (waiting list: {{ wait }})</span>
+        <span class="badge badge badge-warning">{{ text }} (waiting list{%if wait>1 %}: {{ wait-1 }}{%endif%})</span>
     {% endif %}
 {% endmacro %}

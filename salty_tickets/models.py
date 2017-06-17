@@ -61,7 +61,9 @@ class Product(Base):
     price = Column(Float, default=0, )
     max_available = Column(Integer, default=0)
     image_url = Column(String(255))
+
     parameters = relationship('ProductParameter', lazy='dynamic')
+    product_orders = relationship('OrderProduct', lazy='dynamic')
 
     def __init__(self, name, product_type, parameters_dict=None, **kwargs):
         self.name = name
@@ -170,6 +172,7 @@ class OrderProduct(Base):
     order_id = Column(Integer, ForeignKey('orders.id'))
     product_id = Column(Integer, ForeignKey('products.id'))
     price = Column(Float, nullable=False)
+    status = Column(String(32))
 
     details = relationship("OrderProductDetail", lazy='dynamic')
     order = relationship('Order', uselist=False)
@@ -191,14 +194,13 @@ class OrderProduct(Base):
         return details_dict
 
     def cancel(self):
-        raise NotImplementedError
+        self.status = ORDER_PRODUCT_STATUS_CANCELLED
 
     def refund(self, amount):
         raise NotImplementedError
 
     def accept(self):
-        status = self.details.query.filter_by(field_name='status').one()
-        status.field_value = ORDER_PRODUCT_STATUS_ACCEPTED
+        self.status = ORDER_PRODUCT_STATUS_ACCEPTED
 
 
 class OrderProductDetail(Base):
@@ -249,7 +251,7 @@ group_order_product_mapping = Table('group_order_product_mapping', Base.metadata
 class RefundRequest(Base):
     __tablename__ = 'refund_requests'
     id = Column(Integer, primary_key=True)
-    product_order_id = Column(Integer, ForeignKey('product_orders.id'))
+    product_order_id = Column(Integer, ForeignKey('order_products.id'))
     datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     status = Column(String(32), nullable=False)
     comment = Column(Text)
@@ -258,4 +260,4 @@ class RefundRequest(Base):
     refund_comment = Column(Text)
     refund_stripe_id = Column(String(255))
 
-    product_order = relationship('ProductOrder', uselist=False)
+    product_order = relationship('OrderProduct', uselist=False)

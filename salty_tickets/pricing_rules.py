@@ -129,8 +129,16 @@ class OrderSummaryController:
                 name = product.get_name(order_product)
             else:
                 name = order_product.product.name
-            wait_list = order_product.details_as_dict['status'] == ORDER_PRODUCT_STATUS_WAITING
+            wait_list = order_product.status == ORDER_PRODUCT_STATUS_WAITING
             products.append(OrderProductTuple(name=name, price=price, wait_list=wait_list))
+            print(OrderProductTuple(name=name, price=price, wait_list=wait_list))
         self.products = products
         self.show_order_summary = len(self.products) > 0
+
+
+def balance_event_waiting_lists(event_model):
+    for product_model in event_model.products:
+        product = get_product_by_model(product_model)
+        if hasattr(product, 'balance_waiting_list'):
+            product.balance_waiting_list(product_model)
 
