@@ -26,6 +26,10 @@ ORDER_PRODUCT_STATUS_CANCELLED = 'cancelled'
 
 SIGNUP_GROUP_TYPE_PARTNERS = 'partners'
 
+CANCELLATION_STATUS_NEW = 'new'
+CANCELLATION_STATUS_PROCESSED = 'processed'
+CANCELLATION_STATUS_DECLINED = 'declined'
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -241,3 +245,17 @@ group_order_product_mapping = Table('group_order_product_mapping', Base.metadata
     Column('signup_group_id', Integer, ForeignKey('signup_groups.id'))
     )
 
+
+class RefundRequest(Base):
+    __tablename__ = 'refund_requests'
+    id = Column(Integer, primary_key=True)
+    product_order_id = Column(Integer, ForeignKey('product_orders.id'))
+    datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    status = Column(String(32), nullable=False)
+    comment = Column(Text)
+    refund_datetime = Column(DateTime)
+    refund_amount = Column(Float)
+    refund_comment = Column(Text)
+    refund_stripe_id = Column(String(255))
+
+    product_order = relationship('ProductOrder', uselist=False)

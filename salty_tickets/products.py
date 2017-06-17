@@ -364,7 +364,42 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         else:
             return 0
 
-
+    @classmethod
+    def need_balance_waiting_list(cls, product_model):
+        reg_stats = cls.get_registration_stats(product_model)
+        ratio = float(product_model.parameters_as_dict['ratio'])
+        # both waiting lists empty => None
+        if reg_stats[DANCE_ROLE_LEADER].waiting == 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting == 0:
+            return False
+        # no available places => None
+        elif reg_stats[DANCE_ROLE_LEADER].accepted + reg_stats[DANCE_ROLE_FOLLOWER].accepted >= product_model.max_available:
+            return False
+        # both waiting lists not empty
+        elif reg_stats[DANCE_ROLE_LEADER].waiting > 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
+            # adding leader will imballance event => follower
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 >= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+                return DANCE_ROLE_FOLLOWER
+            # adding follower will imballance event => leader
+            elif reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 >= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+                return DANCE_ROLE_LEADER
+            else:
+                return True
+        # only followers waiting list
+        elif reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
+            # adding follower will not imballance event => follower
+            if reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 <= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+                return DANCE_ROLE_FOLLOWER
+            else:
+                return False
+        # only leads waiting list
+        elif reg_stats[DANCE_ROLE_LEADER].waiting > 0:
+            # adding leader will not imballance event => follower
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 <= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+                return DANCE_ROLE_LEADER
+            else:
+                return False
+        else:
+            return False
 
 class MarketingProduct(ProductTemplate):
     allow_select = None
