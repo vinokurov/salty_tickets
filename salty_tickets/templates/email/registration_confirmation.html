@@ -1,0 +1,28 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "slt.html" as slt %}
+
+{%- extends "bootstrap/base.html" %}
+
+{% block scripts %}
+{# {{ super() }} #}
+
+    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>-->
+    <!--<script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>-->
+    <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>-->
+
+{%- endblock %}
+
+
+{% block styles %}
+{# {{ super() }} #}
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+{%- endblock %}
+
+{% block content %}
+    <div class="content">
+        <h4 class="display-4">Thank you for registration!</h4>
+        <p><a href="{{url_for('register_form', event_key=event_key)}}"> Back to the event page</a></p>
+    </div>
+{% endblock %}

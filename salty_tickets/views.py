@@ -1,8 +1,14 @@
+from logging import Logger
+
+import logging
 from flask import render_template
 from flask import url_for, jsonify
+from premailer import Premailer
+from premailer import transform
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.database import db_session
+from salty_tickets.email import send_email
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form
 from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
@@ -170,3 +176,14 @@ def crowdfunding_contributors(event_key):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
+
+
+@app.route('/email')
+def confirmation_email():
+    html = render_template('email/registration_confirmation.html', event_key='salty_recipes_with_pol_sara', app=app)
+    pr = Premailer(html, cssutils_logging_level=logging.CRITICAL)
+    html_for_email = pr.transform()
+    import re
+    html_for_email = re.sub(r'<style.*</style>', '', html_for_email, flags=re.DOTALL)
+    print(html_for_email)
+    send_email(config.EMAIL_FROM, 'alexander.a.vinokurov@gmail.com', 'Registration successful', 'text body', html_for_email)
