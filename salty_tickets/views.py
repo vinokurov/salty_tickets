@@ -74,7 +74,7 @@ def register_checkout(event_key):
         partner_registration = get_partner_registration_from_form(form)
         user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        order_summary_controller = OrderSummaryController.from_order(user_order)
+        order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:
@@ -155,7 +155,7 @@ def crowdfunding_checkout(event_key):
         registration = get_registration_from_form(form)
         user_order = get_order_for_crowdfunding_event(event, form, registration, None)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        order_summary_controller = OrderSummaryController.from_order(user_order)
+        order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:

@@ -370,24 +370,24 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         # both waiting lists not empty
         elif reg_stats[DANCE_ROLE_LEADER].waiting > 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
             # adding leader will imbalance event => follower
-            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 >= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1.0 >= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
                 return DANCE_ROLE_FOLLOWER
             # adding follower will imbalance event => leader
-            elif reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 >= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+            elif reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1.0 >= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
                 return DANCE_ROLE_LEADER
             else:
                 return True
         # only followers waiting list
         elif reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
             # adding follower will not imbalance event => follower
-            if reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 <= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+            if reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1.0 <= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
                 return DANCE_ROLE_FOLLOWER
             else:
                 return False
         # only leads waiting list
         elif reg_stats[DANCE_ROLE_LEADER].waiting > 0:
             # adding leader will not imbalance event => follower
-            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 <= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1.0 <= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
                 return DANCE_ROLE_LEADER
             else:
                 return False

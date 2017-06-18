@@ -1,13 +1,13 @@
 <ul class="list-group">
     {% if order_summary_controller.show_order_summary %}
-        {% for product in order_summary_controller.order_product_info_list %}
-            {% if order_summary_controller.is_waiting_list(product) %}
+        {% for product in order_summary_controller.order_products %}
+            {% if product.is_waiting %}
                 <li class="list-group-item list-group-item-warning"><small>
-                    <strong>Waiting list</strong>: {{ product.name }}: £{{ order_summary_controller.price_format(product.price) }}
+                    <strong>Waiting list</strong>: {{ product.name }}: £{{ product.price }}
                 </small></li>
             {% else %}
                 <li class="list-group-item"><small>
-                    {{ product.name }}: £{{ order_summary_controller.price_format(product.price) }}
+                    {{ product.name }}: £{{ product.price }}
                 </small></li>
             {% endif %}
         {% endfor %}
