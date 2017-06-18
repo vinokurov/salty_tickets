@@ -7,13 +7,15 @@ from premailer import Premailer
 from premailer import transform
 from salty_tickets import app
 from salty_tickets import config
+from salty_tickets.controllers import OrderSummaryController
 from salty_tickets.database import db_session
 from salty_tickets.email import send_email
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form
 from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
 from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, OrderSummaryController, balance_event_waiting_lists
+    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists
+from salty_tickets.tokens import token_to_email
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -72,7 +74,7 @@ def register_checkout(event_key):
         partner_registration = get_partner_registration_from_form(form)
         user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        order_summary_controller = OrderSummaryController(user_order)
+        order_summary_controller = OrderSummaryController.from_order(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:
@@ -153,7 +155,7 @@ def crowdfunding_checkout(event_key):
         registration = get_registration_from_form(form)
         user_order = get_order_for_crowdfunding_event(event, form, registration, None)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        order_summary_controller = OrderSummaryController(user_order)
+        order_summary_controller = OrderSummaryController.from_order(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:
@@ -187,3 +189,8 @@ def confirmation_email():
     html_for_email = re.sub(r'<style.*</style>', '', html_for_email, flags=re.DOTALL)
     print(html_for_email)
     send_email(config.EMAIL_FROM, 'alexander.a.vinokurov@gmail.com', 'Registration successful', 'text body', html_for_email)
+
+
+@app.route('/register/<string:event_key>/order/<string:email_token>')
+def event_order(event_key, email_token):
+    email = token_to_email(email_token)

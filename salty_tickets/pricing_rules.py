@@ -106,36 +106,6 @@ def get_stripe_properties(event, order, form):
     return stripe_props
 
 
-OrderProductTuple = namedtuple('OrderProductTuple', ['name', 'price', 'wait_list'])
-
-
-class OrderSummaryController:
-    products = []
-    transaction_fee = ''
-    total_price = ''
-    show_order_summary = False
-
-    def __init__(self, order):
-        assert isinstance(order, Order)
-        self.transaction_fee = '{:.2f}'.format(order.transaction_fee)
-        total_price = order.total_price + order.transaction_fee
-        self.total_price = '{:.2f}'.format(total_price)
-
-        products = []
-        for order_product in order.order_products.all():
-            price = '{:.2f}'.format(order_product.price)
-            product = get_product_by_model(order_product.product)
-            if hasattr(product, 'get_name'):
-                name = product.get_name(order_product)
-            else:
-                name = order_product.product.name
-            wait_list = order_product.status == ORDER_PRODUCT_STATUS_WAITING
-            products.append(OrderProductTuple(name=name, price=price, wait_list=wait_list))
-            print(OrderProductTuple(name=name, price=price, wait_list=wait_list))
-        self.products = products
-        self.show_order_summary = len(self.products) > 0
-
-
 def balance_event_waiting_lists(event_model):
     for product_model in event_model.products:
         product = get_product_by_model(product_model)
