@@ -8,16 +8,19 @@ from salty_tickets.config import EMAIL_FROM
 from salty_tickets.controllers import OrderSummaryController
 
 
-def send_email(email_from, email_to, subj, body, body_html):
+def send_email(email_from, email_to, subj, body_text, body_html):
+    email_data = {
+        'from': email_from,
+        'to': [email_to],
+        'subject': subj,
+        'text': body_text,
+        'html': body_html
+    }
+    if not config.MODE_TESTING:
+        email_data['bcc'] = config.EMAIL_DEBUG
     result = requests.post('https://api.mailgun.net/v3/saltyjitterbugs.co.uk/messages',
                            auth=('api', config.MAILGUN_KEY),
-                           data={
-                               'from': email_from,
-                               'to': [email_to],
-                               'subject': subj,
-                               'text': body,
-                               'html': body_html
-                           })
+                           data=email_data)
 
 
 def prepare_email_html(html):
