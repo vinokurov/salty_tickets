@@ -1,19 +1,14 @@
-from logging import Logger
-
-import logging
 from flask import render_template
 from flask import url_for, jsonify
-from premailer import Premailer
-from premailer import transform
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
-from salty_tickets.email import send_email, send_registration_confirmation
+from salty_tickets.email import send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm
-from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration, RefundRequest
-from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
+from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
+from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists
 from salty_tickets.tokens import email_deserialize
 from werkzeug.utils import redirect
@@ -80,21 +75,23 @@ def register_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
     else:
         print(form.errors)
-        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=FormErrorController(form))
-        return_dict['errors'] = form.errors
+        form_errors_controller = FormErrorController(form)
+        return_dict['order_summary_html'] = render_template('form_errors.html',
+                                                            form_errors=form_errors_controller)
+        return_dict['errors'] = {v:k for v,k in form_errors_controller.errors}
     return jsonify(return_dict)
 
 
-@app.route('/register/total_price/<string:event_key>', methods=('POST',))
-def total_price(event_key):
-    event = Event.query.filter_by(event_key=event_key).first()
-    form = create_event_form(event)()
-    if form.validate_on_submit():
-        user_order = get_order_for_event(event, form)
-        price = user_order.total_price
-        return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
-    else:
-        return jsonify({})
+# @app.route('/register/total_price/<string:event_key>', methods=('POST',))
+# def total_price(event_key):
+#     event = Event.query.filter_by(event_key=event_key).first()
+#     form = create_event_form(event)()
+#     if form.validate_on_submit():
+#         user_order = get_order_for_event(event, form)
+#         price = user_order.total_price
+#         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
+#     else:
+#         return jsonify({})
 
 
 @app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
@@ -198,4 +195,5 @@ def event_order_product_cancel(event_key, order_product_token):
         db_session.commit()
         return 'Cancelled'
     else:
-        return render_template('cancel_order_product.html', form=form, order_product_controller=order_product_controller)
+        return render_template('cancel_order_product.html',
+                               form=form, order_product_controller=order_product_controller)
