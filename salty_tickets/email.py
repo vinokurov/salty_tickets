@@ -35,6 +35,8 @@ def send_registration_confirmation(user_order):
     html = render_template('email/registration_confirmation.html', order_summary_controller=order_summary_controller)
     html = prepare_email_html(html)
 
+    # TODO: plain text email
+
     subj = '{} - Registration'.format(user_order.event.name)
 
     send_email(EMAIL_FROM, user_order.registration.email, subj, '', html)

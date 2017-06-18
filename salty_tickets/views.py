@@ -7,12 +7,12 @@ from premailer import Premailer
 from premailer import transform
 from salty_tickets import app
 from salty_tickets import config
-from salty_tickets.controllers import OrderSummaryController
+from salty_tickets.controllers import OrderSummaryController, OrderProductController
 from salty_tickets.database import db_session
 from salty_tickets.email import send_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
-    get_partner_registration_from_form
-from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
+    get_partner_registration_from_form, OrderProductCancelForm
+from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration, RefundRequest
 from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists
 from salty_tickets.tokens import email_deserialize
@@ -181,17 +181,21 @@ def shutdown_session(exception=None):
     db_session.remove()
 
 
-@app.route('/email')
-def confirmation_email():
-    html = render_template('email/registration_confirmation.html', event_key='salty_recipes_with_pol_sara', app=app)
-    pr = Premailer(html, cssutils_logging_level=logging.CRITICAL)
-    html_for_email = pr.transform()
-    import re
-    html_for_email = re.sub(r'<style.*</style>', '', html_for_email, flags=re.DOTALL)
-    print(html_for_email)
-    send_email(config.EMAIL_FROM, 'alexander.a.vinokurov@gmail.com', 'Registration successful', 'text body', html_for_email)
-
-
 @app.route('/register/<string:event_key>/order/<string:email_token>')
 def event_order(event_key, email_token):
     email = email_deserialize(email_token)
+
+
+@app.route('/register/<string:event_key>/cancel/<string:order_product_token>', methods=('GET', 'POST'))
+def event_order_product_cancel(event_key, order_product_token):
+    form = OrderProductCancelForm()
+    order_product_controller = OrderProductController.from_token(order_product_token)
+
+    if form.validate_on_submit():
+        refund_request = RefundRequest()
+        refund_request.product_order = order_product_controller._order_product
+        db_session.add(refund_request)
+        db_session.commit()
+        return 'Cancelled'
+    else:
+        return render_template('cancel_order_product.html', form=form, order_product_controller=order_product_controller)

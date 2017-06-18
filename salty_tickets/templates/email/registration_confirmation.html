@@ -52,7 +52,7 @@ Please accept our apologies for any inconvenience this may cause for the moment.
                     <td><strong>Waiting list</strong>: {{ product.name }}</td>
                     <td>{{ product.price }}</td>
                     <td>{{ product.token }}</td>
-                    <td><button class="btn-warning">Cancel</button></td>
+                    <td><a class="btn btn-warning btn-sm" href="{{product.cancel_url}}">Cancel</a></td>
                 </tr>
                 {% else %}
                 <tr>

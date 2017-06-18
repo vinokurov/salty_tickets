@@ -1,7 +1,9 @@
 from datetime import datetime
+
+from flask import url_for
 from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING
 from salty_tickets.products import get_product_by_model
-from salty_tickets.tokens import email_deserialize, order_product_serialize
+from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize
 
 
 def price_format(func):
@@ -13,6 +15,12 @@ def price_format(func):
 class OrderProductController:
     def __init__(self, order_product):
         self._order_product = order_product
+
+    @classmethod
+    def from_token(cls, order_product_token):
+        order_product = order_product_deserialize(order_product_token)
+        if order_product:
+            return cls(order_product)
 
     @property
     def name(self):
@@ -42,6 +50,13 @@ class OrderProductController:
             return order_product_serialize(self._order_product)
         else:
             return ''
+
+    @property
+    def cancel_url(self):
+        return url_for('event_order_product_cancel',
+                       event_key=self._order_product.order.event.event_key,
+                       order_product_token=self.token,
+                       _external=True)
 
 
 class OrderSummaryController:

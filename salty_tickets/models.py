@@ -253,7 +253,7 @@ class RefundRequest(Base):
     id = Column(Integer, primary_key=True)
     product_order_id = Column(Integer, ForeignKey('order_products.id'))
     datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
-    status = Column(String(32), nullable=False)
+    status = Column(String(32), nullable=False, default=CANCELLATION_STATUS_NEW)
     comment = Column(Text)
     refund_datetime = Column(DateTime)
     refund_amount = Column(Float)
