@@ -26,6 +26,7 @@
 {%- endblock %}
 
 {% block content %}
+<div class="container">
 <div class="container-fluid small-text">
     <p>Dear, {{ order_summary_controller._order.registration.name }}</p>
     <p>Thank you for your interest in the {{order_summary_controller._order.event.name}}!</p>
@@ -37,7 +38,7 @@
     <p>However, your place in the workshop will be respected if you find a partner.
         At the same time we will work hard to incentivise more leads to sign up.</p>
 
-Please accept our apologies for any inconvenience this may cause for the moment.</p>
+    <p>Please accept our apologies for any inconvenience this may cause for the moment.</p>
     {% else %}
     <p>We would like to confirm your place in the workshops! Looking forward to see you soon!</p>
     {% endif %}
@@ -81,6 +82,7 @@ Please accept our apologies for any inconvenience this may cause for the moment.
 <div class="container-fluid small-text">
     Lots of love,<br>
     Salty Jitterbugs Team
+</div>
 </div>
 
 {% endblock %}

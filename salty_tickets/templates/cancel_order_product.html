@@ -17,12 +17,34 @@
     <!-- Bootstrap -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+header .intro-text {
+    padding-top: 100px;
+    padding-bottom: 50px
+}
+section {
+    padding: 100px 0
+}
+</style>
 {%- endblock %}
 
 {% block content %}
+<header>
+    <div class="container">
+        <div class="intro-text">
+            <h4>You are going to cancel your participation in <a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}">{{order_product_controller._order_product.order.event.name}}</a></h4>
+        </div>
+    </div>
+</header>
+
+<div class="container">
     <div class="container-fluid">
-        <h4>You are going to cancel your participation in <a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}">{{order_product_controller._order_product.order.event.name}}</a></h4>
         <table class="table">
+            <tr>
+                <th>Your name</th>
+                <td>{{ order_product_controller._order_product.registrations[0].name }}</td>
+            </tr>
             <tr>
                 <th>Registration</th>
                 <td>{{ order_product_controller.name }}</td>
@@ -49,4 +71,5 @@
         <p><a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}"> To the event page</a></p>
 
     </div>
+</div>
 {% endblock %}
