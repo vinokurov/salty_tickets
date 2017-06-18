@@ -1,16 +1,12 @@
-from collections import namedtuple
-
+from datetime import datetime
 from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING
 from salty_tickets.products import get_product_by_model
-from salty_tickets.tokens import token_to_email
-
-
-OrderProductInfo = namedtuple('OrderProductInfo', ['id', 'name', 'price', 'status'])
+from salty_tickets.tokens import email_deserialize, order_product_serialize
 
 
 def price_format(func):
     def func_wrap(self):
-        return '{:.2f}'.format(func(self))
+        return '£{:.2f}'.format(func(self))
     return func_wrap
 
 
@@ -39,6 +35,14 @@ class OrderProductController:
     def is_waiting(self):
         return self.status == ORDER_PRODUCT_STATUS_WAITING
 
+    @property
+    def token(self):
+        registration_datetime_diff = datetime.now() - self._order_product.order.order_datetime
+        if self.is_waiting or registration_datetime_diff.total_seconds() < 60*60*24:
+            return order_product_serialize(self._order_product)
+        else:
+            return ''
+
 
 class OrderSummaryController:
     def __init__(self, order):
@@ -64,6 +68,13 @@ class OrderSummaryController:
         for order_product in self._order.order_products:
             yield OrderProductController(order_product)
 
+    @property
+    def has_waiting_list(self):
+        for p in self.order_products:
+            if p.is_waiting:
+                return True
+        return False
+
 
 class EventOrderController:
     def __init__(self, event, email, order_products):
@@ -73,7 +84,7 @@ class EventOrderController:
 
     @classmethod
     def from_email_token(cls, event_key, email_token):
-        email = token_to_email(email_token)
+        email = email_deserialize(email_token)
         event = Event.query.filter_by(event_key=event_key).first()
         order_products = cls._get_order_products_for_email(event_key, email)
         return cls(event, email, order_products)

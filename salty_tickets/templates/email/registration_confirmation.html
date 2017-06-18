@@ -16,13 +16,71 @@
 {% block styles %}
 {# {{ super() }} #}
     <!-- Bootstrap -->
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">-->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.small-text {
+  font-size: 12px;
+}
+</style>
 {%- endblock %}
 
 {% block content %}
-    <div class="content">
-        <h4 class="display-4">Thank you for registration!</h4>
-        <p><a href="{{url_for('register_form', event_key=event_key)}}"> Back to the event page</a></p>
-    </div>
+<div class="container-fluid small-text">
+    <p>Dear, {{ order_summary_controller._order.registration.name }}</p>
+    <p>Thank you for your interest in the {{order_summary_controller._order.event.name}}!</p>
+    {% if order_summary_controller.has_waiting_list %}
+    <p>With pain in our heart we regret to inform you that due to the imbalance between leads and followers
+        we need to put you on the waiting list for the moment for some of the workshops.</p>
+    <p>We aim to have you get the most out of the workshops and therefore we would like to have a healthy balance in the classes.</p>
+
+    <p>However, your place in the workshop will be respected if you find a partner.
+        At the same time we will work hard to incentivise more leads to sign up.</p>
+
+Please accept our apologies for any inconvenience this may cause for the moment.</p>
+    {% else %}
+    <p>We would like to confirm your place in the workshops! Looking forward to see you soon!</p>
+    {% endif %}
+</div>
+<div class="container-fluid small-text">
+    <h4>Summary</h4>
+        <table class="table">
+            <tbody>
+            {% for product in order_summary_controller.order_products %}
+                {% if product.is_waiting %}
+                <tr class="table-warning">
+                    <td><strong>Waiting list</strong>: {{ product.name }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>{{ product.token }}</td>
+                    <td><button class="btn-warning">Cancel</button></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.price }}</td>
+                    <td>{{ product.token }}</td>
+                    <td></td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+                <tr>
+                    <td>Transaction fee</td>
+                    <td>{{ order_summary_controller.transaction_fee }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <th>Total</th>
+                    <th>{{ order_summary_controller.total_price }}</th>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+</div>
+<div class="container-fluid small-text">
+    Lots of love,<br>
+    Salty Jitterbugs Team
+</div>
+
 {% endblock %}

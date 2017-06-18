@@ -1,8 +1,11 @@
 # from salty_tickets import app
+import logging
 import requests
 from flask import render_template
 from salty_tickets import config
-from premailer import transform
+from premailer import transform, Premailer
+from salty_tickets.config import EMAIL_FROM
+from salty_tickets.controllers import OrderSummaryController
 
 
 def send_email(email_from, email_to, subj, body, body_html):
@@ -16,7 +19,22 @@ def send_email(email_from, email_to, subj, body, body_html):
                                'html': body_html
                            })
 
-def confirmation_email():
-    html = render_template('signup_thankyou.html', event_key='salty_recipes_with_pol_sara', app=app)
-    html_for_email = transform(html)
-    send_email(config.EMAIL_FROM, 'alexander.a.vinokurov@gmail.com', 'Registration successful', 'text body', html_for_email)
+
+def prepare_email_html(html):
+    pr = Premailer(html, cssutils_logging_level=logging.CRITICAL)
+    html_for_email = pr.transform()
+    import re
+    html_for_email = re.sub(r'<style.*</style>', '', html_for_email, flags=re.DOTALL)
+    # print(html_for_email)
+    return html_for_email
+
+
+def send_registration_confirmation(user_order):
+    order_summary_controller = OrderSummaryController(user_order)
+
+    html = render_template('email/registration_confirmation.html', order_summary_controller=order_summary_controller)
+    html = prepare_email_html(html)
+
+    subj = '{} - Registration'.format(user_order.event.name)
+
+    send_email(EMAIL_FROM, user_order.registration.email, subj, '', html)

@@ -3,15 +3,15 @@
         {% for product in order_summary_controller.order_products %}
             {% if product.is_waiting %}
                 <li class="list-group-item list-group-item-warning"><small>
-                    <strong>Waiting list</strong>: {{ product.name }}: £{{ product.price }}
+                    <strong>Waiting list</strong>: {{ product.name }}: {{ product.price }}
                 </small></li>
             {% else %}
                 <li class="list-group-item"><small>
-                    {{ product.name }}: £{{ product.price }}
+                    {{ product.name }}: {{ product.price }}
                 </small></li>
             {% endif %}
         {% endfor %}
-        <li class="list-group-item"><small>Transaction fee: £{{ order_summary_controller.transaction_fee }}</small></li>
-    <li class="list-group-item"><strong>Total: £{{ order_summary_controller.total_price }}</strong></li>
+        <li class="list-group-item"><small>Transaction fee: {{ order_summary_controller.transaction_fee }}</small></li>
+    <li class="list-group-item"><strong>Total: {{ order_summary_controller.total_price }}</strong></li>
     {% endif %}
 </ul>

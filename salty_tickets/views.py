@@ -9,13 +9,13 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController
 from salty_tickets.database import db_session
-from salty_tickets.email import send_email
+from salty_tickets.email import send_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form
 from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
 from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists
-from salty_tickets.tokens import token_to_email
+from salty_tickets.tokens import email_deserialize
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -55,6 +55,7 @@ def register_form(event_key):
         if success:
             db_session.commit()
             balance_event_waiting_lists(event)
+            send_registration_confirmation(user_order)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
             return response
@@ -193,4 +194,4 @@ def confirmation_email():
 
 @app.route('/register/<string:event_key>/order/<string:email_token>')
 def event_order(event_key, email_token):
-    email = token_to_email(email_token)
+    email = email_deserialize(email_token)
