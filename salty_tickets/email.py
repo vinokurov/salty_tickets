@@ -35,24 +35,24 @@ def prepare_email_html(html):
 def send_registration_confirmation(user_order):
     order_summary_controller = OrderSummaryController(user_order)
 
-    html = render_template('email/registration_confirmation.html', order_summary_controller=order_summary_controller)
-    html = prepare_email_html(html)
+    body_html = render_template('email/registration_confirmation.html', order_summary_controller=order_summary_controller)
+    body_html = prepare_email_html(body_html)
 
     body_text = render_template('email/registration_confirmation.txt', order_summary_controller=order_summary_controller)
 
     subj = '{} - Registration'.format(user_order.event.name)
 
-    send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, html)
+    send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, body_html)
 
 
 def send_acceptance_from_waiting_list(order_product):
     order_product_controller = OrderProductController(order_product)
 
-    html = render_template('email/acceptance_from_waiting_list.html', order_product_controller=order_product_controller)
-    html = prepare_email_html(html)
+    body_html = render_template('email/acceptance_from_waiting_list.html', order_product_controller=order_product_controller)
+    body_html = prepare_email_html(body_html)
 
     body_text = render_template('email/acceptance_from_waiting_list.txt', order_product_controller=order_product_controller)
 
     subj = '{} - {} - You are in!'.format(order_product.order.event.name, order_product.name)
 
-    send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, html)
+    send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, body_html)
