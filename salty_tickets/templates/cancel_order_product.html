@@ -24,7 +24,7 @@ header .intro-text {
     padding-bottom: 50px
 }
 section {
-    padding: 100px 0
+    padding: 20px 0
 }
 </style>
 {%- endblock %}
@@ -33,17 +33,21 @@ section {
 <header>
     <div class="container">
         <div class="intro-text">
-            <h4>You are going to cancel your participation in <a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}">{{order_product_controller._order_product.order.event.name}}</a></h4>
+            <h4>You are going to cancel your participation :'((</h4>
         </div>
     </div>
 </header>
 
-<div class="container">
+<section class="container">
     <div class="container-fluid">
         <table class="table">
             <tr>
                 <th>Your name</th>
                 <td>{{ order_product_controller._order_product.registrations[0].name }}</td>
+            </tr>
+            <tr>
+                <th>Event</th>
+                <td><a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}">{{order_product_controller._order_product.order.event.name}}</a></td>
             </tr>
             <tr>
                 <th>Registration</th>
@@ -65,11 +69,17 @@ section {
                {{ wtf.form_field(form.confirm) }}
                {{ wtf.form_field(form.comment) }}
                {{ wtf.form_field(form.submit, class='btn btn-danger') }}
-               <p></p>
            </div>
         </form>
-        <p><a href="{{url_for('register_form', event_key=order_product_controller._order_product.order.event.event_key)}}"> To the event page</a></p>
-
     </div>
-</div>
+</section>
+
+<section class="container">
+    <div class="container-fluid">
+            <h4>Refunds policy</h4>
+            <small>
+                {% include 'refunds.html' %}
+            </small>
+    </div>
+</section>
 {% endblock %}
