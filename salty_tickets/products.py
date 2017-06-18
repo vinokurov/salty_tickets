@@ -3,15 +3,18 @@ from collections import namedtuple
 
 import math
 
+from itsdangerous import BadSignature
 from salty_tickets.database import db_session
+from salty_tickets.tokens import order_product_deserialize, order_product_token_expired
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
-from wtforms.validators import Optional
+from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
-    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
+    SignupGroup, group_order_product_mapping
 import json
 
 
@@ -206,13 +209,14 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     def get_form(self, product_model=None):
         class RegularPartnerWorkshopForm(NoCsrfForm):
             product_name = self.name
+            product_id = product_model.id
             info = self.info
             price = self.price
             add = BooleanField(label='Book for yourself')
             dance_role = SelectField(label='Your role',
                                      choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
             add_partner = BooleanField(label='Book for partner')
-            partner_token = StringField(label='Partner\'s token')
+            partner_token = StringField(label='Partner\'s registration token', validators=[PartnerTokenValid()])
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
@@ -510,3 +514,29 @@ def get_product_by_model(db_model):
     product_class = product_mapping[class_name]
     assert issubclass(product_class, ProductTemplate)
     return product_class.from_model(db_model)
+
+
+class PartnerTokenValid:
+    def __call__(self, form, field):
+        print(form)
+        if field.data:
+            try:
+                partner_product_order = order_product_deserialize(field.data)
+                print(partner_product_order.registrations[0].name)
+            except BadSignature:
+                raise ValidationError('Invalid token')
+
+            if form.product_id != partner_product_order.product.id:
+                raise ValidationError('The token is for a different workshop')
+
+            if form.dance_role.data == partner_product_order.details_as_dict['dance_role']:
+                raise ValidationError('Partner has the same role')
+
+            if partner_product_order.status != ORDER_PRODUCT_STATUS_WAITING and order_product_token_expired(field.data):
+                raise ValidationError('Token has expired')
+
+            has_partners = (len(SignupGroup.query.
+                                join(group_order_product_mapping).
+                                join(OrderProduct).filter_by(id=partner_product_order.id).all()) > 0)
+            if has_partners:
+                raise ValidationError('Your partner has already signed up with a partner')

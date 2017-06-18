@@ -30,6 +30,8 @@ CANCELLATION_STATUS_NEW = 'new'
 CANCELLATION_STATUS_PROCESSED = 'processed'
 CANCELLATION_STATUS_DECLINED = 'declined'
 
+SIGNUP_GROUP_PARTNERS = 'partners'
+
 
 class Event(Base):
     __tablename__ = 'events'
@@ -241,6 +243,9 @@ class SignupGroup(Base):
     id = Column(Integer, primary_key=True)
     type = Column(String(32))
     event_id = Column(Integer, ForeignKey('events.id'))
+
+    order_products = relationship('OrderProduct', secondary='group_order_product_mapping')
+    event = relationship('Event', uselist=False)
 
 group_order_product_mapping = Table('group_order_product_mapping', Base.metadata,
     Column('order_product_id', Integer, ForeignKey('order_products.id')),

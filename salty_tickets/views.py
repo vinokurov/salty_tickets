@@ -7,7 +7,7 @@ from premailer import Premailer
 from premailer import transform
 from salty_tickets import app
 from salty_tickets import config
-from salty_tickets.controllers import OrderSummaryController, OrderProductController
+from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
 from salty_tickets.email import send_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
@@ -80,7 +80,7 @@ def register_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
     else:
         print(form.errors)
-        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
+        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=FormErrorController(form))
         return_dict['errors'] = form.errors
     return jsonify(return_dict)
 

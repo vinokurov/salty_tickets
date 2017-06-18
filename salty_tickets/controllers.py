@@ -116,3 +116,20 @@ class EventOrderController:
     def order_products(self):
         for order_product in self._order_products:
             yield OrderProductController(order_product)
+
+
+class FormErrorController:
+    def __init__(self, form):
+        self._form = form
+
+    @property
+    def errors(self):
+        print(self._form.errors)
+        for k, v in self._form.errors.items():
+            print(v)
+            # v = self._form.errors[k]
+            if isinstance(v, dict):
+                for k1, v1 in v.items():
+                    yield '{}-{}'.format(k, k1), ', '.join(v1)
+            else:
+                yield k, ', '.join(v)
