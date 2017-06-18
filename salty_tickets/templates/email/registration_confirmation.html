@@ -44,8 +44,16 @@
     {% endif %}
 </div>
 <div class="container-fluid small-text">
-    <h4>Summary</h4>
+    <h5>Order Summary</h5>
         <table class="table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Token</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
             {% for product in order_summary_controller.order_products %}
                 {% if product.is_waiting %}
