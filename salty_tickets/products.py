@@ -414,6 +414,8 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         print(order_product.registrations[0].name, order_product.registrations[0].registered_datetime, order_product.id, order_product.status, order_product.details_as_dict['dance_role'])
         order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
         db_session.commit()
+        # TODO: user notification when accepted from waiting list
+        # TODO: users with partners should have higher priority
 
 
 class MarketingProduct(ProductTemplate):
