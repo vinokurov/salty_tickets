@@ -243,7 +243,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         ws = self.get_waiting_lists(product_model)
         dance_role = product_form.dance_role.data
 
-        if product_form.add_partner.data or product_form.partner_token:
+        if product_form.add_partner.data or product_form.partner_token.data:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
         else:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[0][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
@@ -445,7 +445,6 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         print(order_product.registrations[0].name, order_product.registrations[0].registered_datetime, order_product.id, order_product.status, order_product.details_as_dict['dance_role'])
         order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
         db_session.commit()
-        # TODO: user notification when accepted from waiting list
 
 
 class MarketingProduct(ProductTemplate):
@@ -472,7 +471,7 @@ class MarketingProduct(ProductTemplate):
         setattr(
             MarketingProductForm,
             'add',
-            SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, quantity+1)])
+            SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, quantity+1)], validators=[Optional()])
         )
         return MarketingProductForm
 
@@ -558,7 +557,7 @@ class PartnerTokenValid:
             if form.dance_role.data == partner_product_order.details_as_dict['dance_role']:
                 raise ValidationError('Partner has the same role')
 
-            if partner_product_order.status != ORDER_PRODUCT_STATUS_WAITING and order_product_token_expired(field.data):
+            if partner_product_order.status != ORDER_PRODUCT_STATUS_WAITING and order_product_token_expired(field.data, 60*60*24):
                 raise ValidationError('Token has expired')
 
             has_partners = (len(SignupGroup.query.

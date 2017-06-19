@@ -159,8 +159,10 @@ def crowdfunding_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
     else:
         print(form.errors)
-        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
-        return_dict['errors'] = form.errors
+        form_errors_controller = FormErrorController(form)
+        return_dict['order_summary_html'] = render_template('form_errors.html',
+                                                            form_errors=form_errors_controller)
+        return_dict['errors'] = {v: k for v, k in form_errors_controller.errors}
     return jsonify(return_dict)
 
 
