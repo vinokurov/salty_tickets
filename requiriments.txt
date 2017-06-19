@@ -4,5 +4,6 @@ flask_bootstrap
 flask_sqlalchemy
 wtforms
 sqlalchemy_utils
-flas-wtf
+flask-wtf
 stripe
+premailer
