@@ -14,7 +14,7 @@ from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
     ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
-    SignupGroup, group_order_product_mapping
+    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS
 import json
 
 
@@ -243,7 +243,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         ws = self.get_waiting_lists(product_model)
         dance_role = product_form.dance_role.data
 
-        if product_form.add_partner.data:
+        if product_form.add_partner.data or product_form.partner_token:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
         else:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[0][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
@@ -330,14 +330,26 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         }
         total_accepted = registration_stats[DANCE_ROLE_LEADER].accepted + registration_stats[DANCE_ROLE_FOLLOWER].accepted
 
-        if total_accepted + 2 <= product_model.max_available:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 0,
-                DANCE_ROLE_FOLLOWER: 0
-            }
-        elif product_model.max_available - total_accepted == 1:
+        each_role_max_available = int(math.ceil(product_model.max_available/(1.0 + 1.0/ratio)))
+
+        if product_model.max_available - total_accepted == 1:
             ws_with_couple = {
                 DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        elif registration_stats[DANCE_ROLE_LEADER].accepted + 1 > each_role_max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        elif registration_stats[DANCE_ROLE_FOLLOWER].accepted + 1 > each_role_max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 0,
+                DANCE_ROLE_FOLLOWER: 1
+            }
+        elif total_accepted + 2 <= product_model.max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 0,
                 DANCE_ROLE_FOLLOWER: 0
             }
         else:
@@ -401,17 +413,32 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     @classmethod
     def balance_waiting_list(cls, product_model):
         can_balance = cls.can_balance_waiting_list_one(product_model)
+        results = []
         while can_balance:
-            # get top waiting
+            # get top waiting with partners
             query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
-                join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
+                join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID). \
+                join(group_order_product_mapping).join(SignupGroup, aliased=True).filter_by(type=SIGNUP_GROUP_PARTNERS)
             if can_balance in (DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER):
-                query = query.join(OrderProductDetail, aliased=True).filter_by(field_name='dance_role', field_value=can_balance)
+                query = query.join(OrderProductDetail, aliased=True).filter_by(field_name='dance_role',
+                                                                               field_value=can_balance)
             order_product = query.join(Order).order_by(asc(Order.order_datetime)).first()
             if order_product:
                 cls.accept_from_waiting_list(order_product)
+                results.append(order_product)
+            else:
+                # get top waiting (without partners)
+                query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
+                    join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
+                if can_balance in (DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER):
+                    query = query.join(OrderProductDetail, aliased=True).filter_by(field_name='dance_role', field_value=can_balance)
+                order_product = query.join(Order).order_by(asc(Order.order_datetime)).first()
+                if order_product:
+                    cls.accept_from_waiting_list(order_product)
+                    results.append(order_product)
             can_balance = cls.can_balance_waiting_list_one(product_model)
         print(cls.get_registration_stats(product_model))
+        return results
 
     @classmethod
     def accept_from_waiting_list(cls, order_product):
@@ -419,7 +446,6 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
         db_session.commit()
         # TODO: user notification when accepted from waiting list
-        # TODO: users with partners should have higher priority
 
 
 class MarketingProduct(ProductTemplate):

@@ -53,6 +53,6 @@ def send_acceptance_from_waiting_list(order_product):
 
     body_text = render_template('email/acceptance_from_waiting_list.txt', order_product_controller=order_product_controller)
 
-    subj = '{} - {} - You are in!'.format(order_product.order.event.name, order_product.name)
+    subj = '{} - {} - You are in!'.format(order_product.order.event.name, order_product.product.name)
 
     send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, body_html)

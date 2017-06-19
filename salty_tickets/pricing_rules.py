@@ -1,30 +1,9 @@
-from collections import namedtuple
-
-from salty_tickets.forms import get_registration_from_form, get_partner_registration_from_form
-from salty_tickets.products import get_product_by_model
-from salty_tickets.models import Event, ProductParameter, Order, OrderProduct, Product, ORDER_PRODUCT_STATUS_WAITING
-
-__author__ = 'vnkrv'
-
-
-def get_salty_recipes_price(form):
-    price_aerieals_one_day = 50
-    price_aerials_both_days = 90
-    price_shag_one_day = 35
-    price_shag_both_days = 50
-
-    total = 0
-    if form.saturday_aerials.going.data and form.sunday_aerials.going.data:
-        total += price_aerials_both_days
-    elif form.saturday_aerials.going.data or form.sunday_aerials.going.data:
-        total += price_aerieals_one_day
-
-    if form.saturday_shag.going.data and form.sunday_shag.going.data:
-        total += price_shag_both_days
-    elif form.saturday_shag.going.data or form.sunday_shag.going.data:
-        total += price_shag_one_day
-
-    return total
+from salty_tickets.database import db_session
+from salty_tickets.email import send_acceptance_from_waiting_list
+from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
+    Product, Registration
+from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop
+from salty_tickets.tokens import order_product_deserialize
 
 
 def get_order_for_event(event, form, registration=None, partner_registration=None):
@@ -110,5 +89,39 @@ def balance_event_waiting_lists(event_model):
     for product_model in event_model.products:
         product = get_product_by_model(product_model)
         if hasattr(product, 'balance_waiting_list'):
-            product.balance_waiting_list(product_model)
+            results = product.balance_waiting_list(product_model)
+            for order_product in results:
+                send_acceptance_from_waiting_list(order_product)
 
+
+def process_partner_registrations(user_order, form):
+    for product_model in user_order.event.products:
+        product = get_product_by_model(product_model)
+        product_form = form.get_product_by_key(product_model.product_key)
+        if isinstance(product, RegularPartnerWorkshop) and product_form.add.data:
+            waiting_lists_couple = product.get_waiting_lists(product_model)[1]
+            if product_form.partner_token.data:
+                order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id).first()
+                partner_order_product = order_product_deserialize(product_form.partner_token.data)
+                group = SignupGroup(type=SIGNUP_GROUP_PARTNERS)
+                group.event = order_product.order.event
+                group.order_products.append(order_product)
+                group.order_products.append(partner_order_product)
+                db_session.add(group)
+                partner_role = partner_order_product.details_as_dict['dance_role']
+                if not waiting_lists_couple[partner_role]:
+                    partner_order_product.accept()
+                    send_acceptance_from_waiting_list(partner_order_product)
+            elif product_form.add_partner.data:
+                order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id)\
+                                            .join(Registration, aliased=True).filter_by(name=product_form.name)\
+                                            .first()
+                partner_order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id)\
+                                            .join(Registration, aliased=True).filter_by(name=product_form.partner_name)\
+                                            .first()
+                group = SignupGroup(type=SIGNUP_GROUP_PARTNERS)
+                group.event = order_product.order.event
+                group.order_products.append(order_product)
+                group.order_products.append(partner_order_product)
+                db_session.add(group)
+            db_session.commit()

@@ -9,7 +9,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_partner_registration_from_form, OrderProductCancelForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists
+    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
 from salty_tickets.tokens import email_deserialize
 from werkzeug.utils import redirect
 
@@ -49,6 +49,7 @@ def register_form(event_key):
         success, response = user_order.charge(form.stripe_token.data)
         if success:
             db_session.commit()
+            process_partner_registrations(user_order, form)
             balance_event_waiting_lists(event)
             send_registration_confirmation(user_order)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
