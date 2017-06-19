@@ -94,39 +94,53 @@ def test_RegularPartnerWorkshop_get_waiting_lists(get_registration_stats):
                                                         DANCE_ROLE_FOLLOWER: WorkshopRegStats(follows_acc, follows_wait)}
         expected_result = {DANCE_ROLE_LEADER: res_leads, DANCE_ROLE_FOLLOWER: res_follows}, \
                           {DANCE_ROLE_LEADER: res_leads_with_partn, DANCE_ROLE_FOLLOWER: res_follows_with_partn}
+        print(RegularPartnerWorkshop.get_waiting_lists(product_model))
         assert RegularPartnerWorkshop.get_waiting_lists(product_model) == expected_result
 
+    # no registrations yet => all available
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=0, follows_acc=0, leads_wait=0, follows_wait=0,
               res_leads=0, res_follows=0, res_leads_with_partn=0, res_follows_with_partn=0)
 
+    # no free spaces => all waiting list
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=20, follows_acc=20, leads_wait=0, follows_wait=0,
               res_leads=1, res_follows=1, res_leads_with_partn=1, res_follows_with_partn=1)
 
+    # just one place available, class balanced => ??
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=19, follows_acc=20, leads_wait=0, follows_wait=0,
               res_leads=0, res_follows=0, res_leads_with_partn=1, res_follows_with_partn=0)
 
+    # imbalanced class, but before {allow_first} => all ok
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=3, follows_acc=4, leads_wait=0, follows_wait=0,
               res_leads=0, res_follows=0, res_leads_with_partn=0, res_follows_with_partn=0)
 
+    # imbalanced class, more than {allow first} => apply restrictions
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=9, follows_acc=12, leads_wait=0, follows_wait=0,
               res_leads=0, res_follows=1, res_leads_with_partn=0, res_follows_with_partn=0)
 
+    # followers waiting list exist => followers waiting list +1
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=9, follows_acc=12, leads_wait=0, follows_wait=2,
               res_leads=0, res_follows=3, res_leads_with_partn=0, res_follows_with_partn=0)
 
+    # followers waiting list exist, before {allow first} => followers waiting list +1
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=3, follows_acc=4, leads_wait=0, follows_wait=5,
               res_leads=0, res_follows=6, res_leads_with_partn=0, res_follows_with_partn=0)
 
+    # class imbalanced, followers wait list equal to remaining places => followers waiting list +1
     test_case(max_available=40, ratio=1.35, allow_first=10,
               leads_acc=15, follows_acc=20, leads_wait=0, follows_wait=5,
               res_leads=0, res_follows=6, res_leads_with_partn=0, res_follows_with_partn=0)
+
+    # still remaining places, but followers - max => waiting list for solo and partnered followers
+    test_case(max_available=40, ratio=1.35, allow_first=10,
+              leads_acc=15, follows_acc=23, leads_wait=0, follows_wait=5,
+              res_leads=0, res_follows=6, res_leads_with_partn=0, res_follows_with_partn=1)
 
 
 

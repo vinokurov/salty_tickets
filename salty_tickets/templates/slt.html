@@ -177,7 +177,11 @@
         <small>{{ partner_workshop_availability(form_field.waiting_lists) }}</small>
     </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
-    <div  class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
+    <div class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
+    <div class="form-group" id="{{form_field.partner_token.id}}-form-group">
+        {{ form_field.partner_token.label.text }} {{form_field.partner_token(class='form-control') }}
+        <small id="emailHelp" class="form-text text-muted">If your partner has already registered.</small>
+    </div>
     <div class="btn-group" data-toggle="buttons">
         <button class="btn btn-outline-success form-control">
             {{ form_field.add(checked=False) }} {{ form_field.add.label.text }}
@@ -202,6 +206,6 @@
     {% if wait == 0 %}
         <span class="badge badge badge-success">{{ text }}</span>
     {% else %}
-        <span class="badge badge badge-warning">{{ text }} (waiting list: {{ wait }})</span>
+        <span class="badge badge badge-warning">{{ text }} (waiting list{%if wait>1 %}: {{ wait-1 }}{%endif%})</span>
     {% endif %}
 {% endmacro %}

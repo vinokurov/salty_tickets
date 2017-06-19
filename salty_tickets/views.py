@@ -2,12 +2,15 @@ from flask import render_template
 from flask import url_for, jsonify
 from salty_tickets import app
 from salty_tickets import config
+from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
+from salty_tickets.email import send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
-    get_partner_registration_from_form
-from salty_tickets.models import Event, Order, CrowdfundingRegistrationProperties, Registration
-from salty_tickets.pricing_rules import get_salty_recipes_price, get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, OrderSummaryController
+    get_partner_registration_from_form, OrderProductCancelForm
+from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
+from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
+    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
+from salty_tickets.tokens import email_deserialize
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -46,6 +49,9 @@ def register_form(event_key):
         success, response = user_order.charge(form.stripe_token.data)
         if success:
             db_session.commit()
+            process_partner_registrations(user_order, form)
+            balance_event_waiting_lists(event)
+            send_registration_confirmation(user_order)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
             return response
@@ -70,21 +76,23 @@ def register_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
     else:
         print(form.errors)
-        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
-        return_dict['errors'] = form.errors
+        form_errors_controller = FormErrorController(form)
+        return_dict['order_summary_html'] = render_template('form_errors.html',
+                                                            form_errors=form_errors_controller)
+        return_dict['errors'] = {v:k for v,k in form_errors_controller.errors}
     return jsonify(return_dict)
 
 
-@app.route('/register/total_price/<string:event_key>', methods=('POST',))
-def total_price(event_key):
-    event = Event.query.filter_by(event_key=event_key).first()
-    form = create_event_form(event)()
-    if form.validate_on_submit():
-        user_order = get_order_for_event(event, form)
-        price = user_order.total_price
-        return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
-    else:
-        return jsonify({})
+# @app.route('/register/total_price/<string:event_key>', methods=('POST',))
+# def total_price(event_key):
+#     event = Event.query.filter_by(event_key=event_key).first()
+#     form = create_event_form(event)()
+#     if form.validate_on_submit():
+#         user_order = get_order_for_event(event, form)
+#         price = user_order.total_price
+#         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
+#     else:
+#         return jsonify({})
 
 
 @app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
@@ -151,8 +159,10 @@ def crowdfunding_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
     else:
         print(form.errors)
-        return_dict['order_summary_html'] = render_template('form_errors.html', form_errors=form.errors)
-        return_dict['errors'] = form.errors
+        form_errors_controller = FormErrorController(form)
+        return_dict['order_summary_html'] = render_template('form_errors.html',
+                                                            form_errors=form_errors_controller)
+        return_dict['errors'] = {v: k for v, k in form_errors_controller.errors}
     return jsonify(return_dict)
 
 
@@ -169,3 +179,24 @@ def crowdfunding_contributors(event_key):
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
+
+
+@app.route('/register/<string:event_key>/order/<string:email_token>')
+def event_order(event_key, email_token):
+    email = email_deserialize(email_token)
+
+
+@app.route('/register/<string:event_key>/cancel/<string:order_product_token>', methods=('GET', 'POST'))
+def event_order_product_cancel(event_key, order_product_token):
+    form = OrderProductCancelForm()
+    order_product_controller = OrderProductController.from_token(order_product_token)
+
+    if form.validate_on_submit():
+        refund_request = RefundRequest()
+        refund_request.product_order = order_product_controller._order_product
+        db_session.add(refund_request)
+        db_session.commit()
+        return 'Cancelled'
+    else:
+        return render_template('cancel_order_product.html',
+                               form=form, order_product_controller=order_product_controller)

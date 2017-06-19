@@ -3,14 +3,18 @@ from collections import namedtuple
 
 import math
 
+from itsdangerous import BadSignature
 from salty_tickets.database import db_session
+from salty_tickets.tokens import order_product_deserialize, order_product_token_expired
+from sqlalchemy import asc
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
-from wtforms.validators import Optional
+from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
-    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
+    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS
 import json
 
 
@@ -80,7 +84,7 @@ class ProductTemplate:
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
         status =  ORDER_PRODUCT_STATUS_ACCEPTED
-        order_product = OrderProduct(product_model, price, dict(status=status))
+        order_product = OrderProduct(product_model, price, status=status)
         return order_product
 
 
@@ -171,22 +175,18 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
         price = self.get_total_price(product_form, form)
         ws = self.get_waiting_lists(product_model)
         status = ORDER_PRODUCT_STATUS_WAITING if ws else ORDER_PRODUCT_STATUS_ACCEPTED
-        order_product = OrderProduct(product_model, price, dict(status=status))
+        order_product = OrderProduct(product_model, price, status=status)
         return order_product
 
     @staticmethod
     def get_registration_stats(product_model):
         query = OrderProduct.query.filter_by(product_id=product_model.id). \
-            join(Order).filter_by(status=ORDER_STATUS_PAID)
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
         couples_accepted = len(
-            query.join(aliased(OrderProductDetail)).filter_by(field_name='status',
-                                                              field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
-            .all()
+            query.filter_by(status=ORDER_PRODUCT_STATUS_ACCEPTED).all()
         )
         couples_waiting = len(
-            query.join(aliased(OrderProductDetail)).filter_by(field_name='status',
-                                                              field_value=ORDER_PRODUCT_STATUS_WAITING)
-            .all()
+            query.filter_by(status=ORDER_PRODUCT_STATUS_WAITING).all()
         )
         return WorkshopRegStats(couples_accepted, couples_waiting)
 
@@ -209,13 +209,14 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     def get_form(self, product_model=None):
         class RegularPartnerWorkshopForm(NoCsrfForm):
             product_name = self.name
+            product_id = product_model.id
             info = self.info
             price = self.price
             add = BooleanField(label='Book for yourself')
             dance_role = SelectField(label='Your role',
                                      choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
             add_partner = BooleanField(label='Book for partner')
-            partner_token = StringField(label='Partner\'s token')
+            partner_token = StringField(label='Partner\'s registration token', validators=[PartnerTokenValid()])
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
@@ -242,7 +243,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         ws = self.get_waiting_lists(product_model)
         dance_role = product_form.dance_role.data
 
-        if product_form.add_partner.data:
+        if product_form.add_partner.data or product_form.partner_token.data:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
         else:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[0][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
@@ -250,7 +251,8 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         order_product = OrderProduct(
             product_model,
             price,
-            dict(dance_role=dance_role, status=status)
+            dict(dance_role=dance_role),
+            status=status
         )
 
         # register partner
@@ -258,12 +260,8 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             dance_role = flip_role(dance_role)
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
             order_product2 = OrderProduct(product_model, price,
-                                         dict(dance_role=dance_role, status=status))
+                                         dict(dance_role=dance_role), status=status)
 
-            # partners = RegistrationPartners()
-            #
-            # db_session.add(RegistrationPartners(order_product_id1=order_product.id,
-            #                                     order_product_id2=order_product2.id))
             return [order_product, order_product2]
         return order_product
 
@@ -278,30 +276,29 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
 
     @staticmethod
     def get_registration_stats(product_model):
-        query = OrderProduct.query.filter_by(product_id=product_model.id). \
-            join(Order).filter_by(status=ORDER_STATUS_PAID)
+        query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_ACCEPTED). \
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
         leads_accepted = len(
-            query
-                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
-                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
-                .all()
-        )
-        leads_waiting = len(
-            query
-                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
-                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_WAITING)
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
                 .all()
         )
         follows_accepted = len(
-            query
-                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
-                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_ACCEPTED)
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
+                .all()
+        )
+
+        query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
+        leads_waiting = len(
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
                 .all()
         )
         follows_waiting = len(
-            query
-                .join(aliased(OrderProductDetail)).filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
-                .join(aliased(OrderProductDetail)).filter_by(field_name='status', field_value=ORDER_PRODUCT_STATUS_WAITING)
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
                 .all()
         )
         return {
@@ -333,14 +330,26 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         }
         total_accepted = registration_stats[DANCE_ROLE_LEADER].accepted + registration_stats[DANCE_ROLE_FOLLOWER].accepted
 
-        if total_accepted + 2 <= product_model.max_available:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 0,
-                DANCE_ROLE_FOLLOWER: 0
-            }
-        elif product_model.max_available - total_accepted == 1:
+        each_role_max_available = int(math.ceil(product_model.max_available/(1.0 + 1.0/ratio)))
+
+        if product_model.max_available - total_accepted == 1:
             ws_with_couple = {
                 DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        elif registration_stats[DANCE_ROLE_LEADER].accepted + 1 > each_role_max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 1,
+                DANCE_ROLE_FOLLOWER: 0
+            }
+        elif registration_stats[DANCE_ROLE_FOLLOWER].accepted + 1 > each_role_max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 0,
+                DANCE_ROLE_FOLLOWER: 1
+            }
+        elif total_accepted + 2 <= product_model.max_available:
+            ws_with_couple = {
+                DANCE_ROLE_LEADER: 0,
                 DANCE_ROLE_FOLLOWER: 0
             }
         else:
@@ -365,7 +374,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             return 0
 
     @classmethod
-    def need_balance_waiting_list(cls, product_model):
+    def can_balance_waiting_list_one(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
         ratio = float(product_model.parameters_as_dict['ratio'])
         # both waiting lists empty => None
@@ -376,30 +385,67 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             return False
         # both waiting lists not empty
         elif reg_stats[DANCE_ROLE_LEADER].waiting > 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
-            # adding leader will imballance event => follower
-            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 >= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+            # adding leader will imbalance event => follower
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1.0 >= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
                 return DANCE_ROLE_FOLLOWER
-            # adding follower will imballance event => leader
-            elif reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 >= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+            # adding follower will imbalance event => leader
+            elif reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1.0 >= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
                 return DANCE_ROLE_LEADER
             else:
                 return True
         # only followers waiting list
         elif reg_stats[DANCE_ROLE_FOLLOWER].waiting > 0:
-            # adding follower will not imballance event => follower
-            if reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1 <= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
+            # adding follower will not imbalance event => follower
+            if reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1.0 <= reg_stats[DANCE_ROLE_LEADER].accepted * ratio:
                 return DANCE_ROLE_FOLLOWER
             else:
                 return False
         # only leads waiting list
         elif reg_stats[DANCE_ROLE_LEADER].waiting > 0:
-            # adding leader will not imballance event => follower
-            if reg_stats[DANCE_ROLE_LEADER].accepted + 1 <= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
+            # adding leader will not imbalance event => follower
+            if reg_stats[DANCE_ROLE_LEADER].accepted + 1.0 <= reg_stats[DANCE_ROLE_FOLLOWER].accepted * ratio:
                 return DANCE_ROLE_LEADER
             else:
                 return False
         else:
             return False
+
+    @classmethod
+    def balance_waiting_list(cls, product_model):
+        can_balance = cls.can_balance_waiting_list_one(product_model)
+        results = []
+        while can_balance:
+            # get top waiting with partners
+            query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
+                join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID). \
+                join(group_order_product_mapping).join(SignupGroup, aliased=True).filter_by(type=SIGNUP_GROUP_PARTNERS)
+            if can_balance in (DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER):
+                query = query.join(OrderProductDetail, aliased=True).filter_by(field_name='dance_role',
+                                                                               field_value=can_balance)
+            order_product = query.join(Order).order_by(asc(Order.order_datetime)).first()
+            if order_product:
+                cls.accept_from_waiting_list(order_product)
+                results.append(order_product)
+            else:
+                # get top waiting (without partners)
+                query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
+                    join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
+                if can_balance in (DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER):
+                    query = query.join(OrderProductDetail, aliased=True).filter_by(field_name='dance_role', field_value=can_balance)
+                order_product = query.join(Order).order_by(asc(Order.order_datetime)).first()
+                if order_product:
+                    cls.accept_from_waiting_list(order_product)
+                    results.append(order_product)
+            can_balance = cls.can_balance_waiting_list_one(product_model)
+        print(cls.get_registration_stats(product_model))
+        return results
+
+    @classmethod
+    def accept_from_waiting_list(cls, order_product):
+        print(order_product.registrations[0].name, order_product.registrations[0].registered_datetime, order_product.id, order_product.status, order_product.details_as_dict['dance_role'])
+        order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
+        db_session.commit()
+
 
 class MarketingProduct(ProductTemplate):
     allow_select = None
@@ -425,7 +471,7 @@ class MarketingProduct(ProductTemplate):
         setattr(
             MarketingProductForm,
             'add',
-            SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, quantity+1)])
+            SelectField(label='Add', choices=[(str(x), str(x)) for x in range(0, quantity+1)], validators=[Optional()])
         )
         return MarketingProductForm
 
@@ -493,3 +539,29 @@ def get_product_by_model(db_model):
     product_class = product_mapping[class_name]
     assert issubclass(product_class, ProductTemplate)
     return product_class.from_model(db_model)
+
+
+class PartnerTokenValid:
+    def __call__(self, form, field):
+        print(form)
+        if field.data:
+            try:
+                partner_product_order = order_product_deserialize(field.data)
+                print(partner_product_order.registrations[0].name)
+            except BadSignature:
+                raise ValidationError('Invalid token')
+
+            if form.product_id != partner_product_order.product.id:
+                raise ValidationError('The token is for a different workshop')
+
+            if form.dance_role.data == partner_product_order.details_as_dict['dance_role']:
+                raise ValidationError('Partner has the same role')
+
+            if partner_product_order.status != ORDER_PRODUCT_STATUS_WAITING and order_product_token_expired(field.data, 60*60*24):
+                raise ValidationError('Token has expired')
+
+            has_partners = (len(SignupGroup.query.
+                                join(group_order_product_mapping).
+                                join(OrderProduct).filter_by(id=partner_product_order.id).all()) > 0)
+            if has_partners:
+                raise ValidationError('Your partner has already signed up with a partner')

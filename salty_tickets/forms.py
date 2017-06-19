@@ -91,3 +91,8 @@ def get_partner_registration_from_form(form):
     )
     return registration_model
 
+
+class OrderProductCancelForm(FlaskForm):
+    confirm = BooleanField('I confirm I want to cancel', validators=[DataRequired()])
+    comment = TextAreaField('Reason to cancel')
+    submit = SubmitField('Cancel my participation')

@@ -1,0 +1,37 @@
+Dear, {{ order_summary_controller._order.registration.name }}
+
+Thank you for your interest in the {{order_summary_controller._order.event.name}}!
+
+{% if order_summary_controller.has_waiting_list %}
+With pain in our heart we regret to inform you that due to the imbalance between leads and followers we need to put you on the waiting list for the moment for some of the workshops.
+We aim to have you get the most out of the workshops and therefore we have to keep a healthy balance in the classes.
+As you have already done the payment we will take you off the waiting list as soon as there is a free place. If we don't manage to find you a place, we will refund you. Alternatively you can cancel you registration any time and get refunded.
+Also you can get off the waiting list if you find a partner. For this purpose, you should ask your partner to specify your registration token.
+
+Please accept our apologies for any inconvenience this may cause for the moment.
+{% else %}
+We would like to confirm your place in the workshops! Looking forward to see you soon!
+{% endif %}
+
+Order Summary
+
+{% for product in order_summary_controller.order_products %}
+    {% if product.is_waiting %}
+    ITEM: Waiting list: {{ product.name }}
+    PRICE: {{ product.price }}
+    TOKEN: {{ product.token }}
+    CANCEL: {{product.cancel_url}}
+
+    {% else %}
+    ITEM: {{ product.name }}
+    PRICE: {{ product.price }}
+    TOKEN: {{ product.token }}
+
+    {% endif %}
+{% endfor %}
+    TRANSACTION FEE: {{ order_summary_controller.transaction_fee }}
+
+    TOTAL: {{ order_summary_controller.total_price }}
+
+Lots of love,
+Salty Jitterbugs Team

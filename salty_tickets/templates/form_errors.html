@@ -1,8 +1,10 @@
 <div class="alert alert-danger" role="alert">
   <strong>Please fill in all the required details!</strong>
     <ul class="list-group">
-        {% for error_field in form_errors.items() %}
-        <li class="list-group-item list-group-item-danger"><small>{{ error_field[0] }}: {{ '. '.join(error_field[1]) }}</small></li>
+        {% for error_field in form_errors.errors %}
+        <li class="list-group-item list-group-item-danger">
+            <small>{{ error_field[0] }}: {{ error_field[1] }}</small>
+        </li>
         {% endfor %}
     </ul>
 </div>
