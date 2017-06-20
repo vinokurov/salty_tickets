@@ -18,7 +18,8 @@ database.db_session.commit()
 event.products.append(
     products.CouplesOnlyWorkshop(
         name='Aerials Breakfast',
-        info='Saturday morning aerials workshop with Pol & Sara. Duration: 2h. Intermediate level Registration for couples only.',
+        info='Saturday morning aerials workshop with Pol & Sara. Duration: 2h. Intermediate level. '
+             'We allow signs up with partners only.',
         max_available=20,
         price=25,
         discount_prices='{"aerials_full_day": 20}',
@@ -32,7 +33,8 @@ event.products.append(
 event.products.append(
     products.CouplesOnlyWorkshop(
         name='Aerials Lunch',
-        info='Saturday aerials workshop with Pol & Sara. Duration: 2h. Intermediate level Registration for couples only.',
+        info='Saturday morning aerials workshop with Pol & Sara. Duration: 2h. Intermediate level. '
+             'We allow signs up with partners only.',
         max_available=20,
         price=25,
         discount_prices='{"aerials_full_day": 20}',
@@ -46,7 +48,7 @@ event.products.append(
 event.products.append(
     products.RegularPartnerWorkshop(
         name='Collegiate Shag',
-        info='Sunday shag workshop with Pol & Sara. Duration: 3h. Intermediate level. Price: £40 per person',
+        info='Sunday shag workshop with Pol & Sara. Duration: 3h. Intermediate level. Price: £35 per person',
         max_available=35,
         ratio=1.35,
         allow_first=10,

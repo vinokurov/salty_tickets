@@ -12,7 +12,7 @@ SQLALCHEMY_DATABASE_URI = "mysql+pymysql://{username}:{password}@{hostname}/{dat
             databasename=config.DATABASE_DBNAME,
 )
 
-engine = create_engine('sqlite:////tmp/test.db', convert_unicode=True)
+engine = create_engine('sqlite:///C:\\temp\\test.db', convert_unicode=True)
 # engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, pool_size=100, pool_recycle=280)
 
 db_session = scoped_session(sessionmaker(autocommit=False,
