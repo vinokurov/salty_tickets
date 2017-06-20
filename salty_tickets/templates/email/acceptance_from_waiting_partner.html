@@ -1,0 +1,42 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "slt.html" as slt %}
+
+{%- extends "bootstrap/base.html" %}
+
+{% block scripts %}
+{# {{ super() }} #}
+
+    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>-->
+    <!--<script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>-->
+    <!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>-->
+
+{%- endblock %}
+
+
+{% block styles %}
+{# {{ super() }} #}
+    <!-- Bootstrap -->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">-->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.small-text {
+  font-size: 12px;
+}
+</style>
+{%- endblock %}
+
+{% block content %}
+<div class="container">
+<div class="container-fluid small-text">
+    <p>Dear, {{ order_product_controller._order_product.registrations[0].name }}</p>
+    <p>With great pleasure we want to confirm that your partner has signed up and you are no longer on the waiting list for
+        {{order_product_controller._order_product.order.event.name}} - {{order_product_controller._order_product.product.name}}!</p>
+    <p>Your place is confirmed and we are looking forward to see you soon.</p>
+</div>
+<div class="container-fluid small-text">
+    Lots of love,<br>
+    Salty Jitterbugs Team
+</div>
+</div>
+
+{% endblock %}

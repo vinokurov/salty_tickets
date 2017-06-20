@@ -18,30 +18,28 @@ database.db_session.commit()
 event.products.append(
     products.CouplesOnlyWorkshop(
         name='Aerials Breakfast',
-        info='Saturday morning aerials workshop with Pol & Sara. Duration: 2h. Intermediate level Registration for couples only. Price: £80 per couple',
-        max_available=10,
-        price=50,
-        discount_prices='{"aerials_full_day": 40}',
+        info='Saturday morning aerials workshop with Pol & Sara. Duration: 2h. Intermediate level Registration for couples only.',
+        max_available=20,
+        price=25,
+        discount_prices='{"aerials_full_day": 20}',
         workshop_date='29-July-2017',
-        workshop_time='10:30 till 13:00, workshop time: 4h',
+        workshop_time='10:30 till 13:00, workshop time: 2h',
         workshop_level='Improvers/Intermediate',
-        workshop_price='£50 per couple, £40 if book both aerial workshops',
-        workshop_duration='4h'
+        workshop_price='£25 per person, £20 if book both aerial workshops'
     ).model
 )
 
 event.products.append(
     products.CouplesOnlyWorkshop(
         name='Aerials Lunch',
-        info='Saturday aerials workshop with Pol & Sara. Duration: 4h. Intermediate level Registration for couples only. Price: £80 per couple',
-        max_available=10,
-        price=50,
-        discount_prices='{"aerials_full_day": 40}',
+        info='Saturday aerials workshop with Pol & Sara. Duration: 2h. Intermediate level Registration for couples only.',
+        max_available=20,
+        price=25,
+        discount_prices='{"aerials_full_day": 20}',
         workshop_date='29-July-2017',
-        workshop_time='14:30 till 17:00, workshop time: 4h',
+        workshop_time='14:30 till 17:00, workshop time: 2h',
         workshop_level='Intermediate and higher',
-        workshop_price='£50 per couple, £40 if book both aerial workshops',
-        workshop_duration='4h'
+        workshop_price='£25 per person, £20 if book both aerial workshops'
     ).model
 )
 
@@ -56,8 +54,7 @@ event.products.append(
         workshop_date='30-July-2017',
         workshop_time='10:00 till 14:00, workshop time: 3h',
         workshop_level='Improvers/Intermediate and higher',
-        workshop_price='£35 per person',
-        workshop_duration='3h'
+        workshop_price='£35 per person'
     ).model
 )
 

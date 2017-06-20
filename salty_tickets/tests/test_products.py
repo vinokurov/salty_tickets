@@ -13,14 +13,14 @@ def test_CouplesOnlyWorkshop_get_discount_price():
         name='Aerials Workshop - Morning',
         info='Sunday morning aerials workshop with Pol & Sara.',
         max_available=10,
-        price=50,
-        discount_prices='{"aerials_full_day": 40}'
+        price=25,
+        discount_prices='{"aerials_full_day": 20}'
     )
 
     form = product.get_form()
 
     form.add.data = False
-    assert product.get_discount_price_by_key('aerials_full_day') == 40
+    assert product.get_discount_price_by_key('aerials_full_day') == 20
 
 
 def test_CouplesOnlyWorkshop_get_total_price():

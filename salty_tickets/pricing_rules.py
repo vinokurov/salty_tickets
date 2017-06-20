@@ -1,8 +1,8 @@
 from salty_tickets.database import db_session
-from salty_tickets.email import send_acceptance_from_waiting_list
+from salty_tickets.email import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
-    Product, Registration
-from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop
+    Product, Registration, OrderProduct, order_product_registrations_mapping
+from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize
 
 
@@ -49,10 +49,12 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
         if price > 0:
             # registration_model = get_registration_from_form(form)
             if hasattr(product_form, 'add'):
-                for n in range(int(product_form.add.data)):
-                    order_product = product.get_order_product_model(product_model, product_form, form)
-                    order_product.registrations.append(registration)
-                    user_order.order_products.append(order_product)
+                if product_form.add.data:
+                    print(product_form.add.data)
+                    for n in range(int(product_form.add.data)):
+                        order_product = product.get_order_product_model(product_model, product_form, form)
+                        order_product.registrations.append(registration)
+                        user_order.order_products.append(order_product)
             else:
                 order_product = product.get_order_product_model(product_model, product_form, form)
                 order_product.registrations.append(registration)
@@ -94,6 +96,15 @@ def balance_event_waiting_lists(event_model):
                 send_acceptance_from_waiting_list(order_product)
 
 
+def create_partners_group(order_product_1, order_product_2):
+    group = SignupGroup(type=SIGNUP_GROUP_PARTNERS)
+    group.event = order_product_1.order.event
+    group.order_products.append(order_product_1)
+    group.order_products.append(order_product_2)
+    db_session.add(group)
+    return group
+
+
 def process_partner_registrations(user_order, form):
     for product_model in user_order.event.products:
         product = get_product_by_model(product_model)
@@ -103,25 +114,31 @@ def process_partner_registrations(user_order, form):
             if product_form.partner_token.data:
                 order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id).first()
                 partner_order_product = order_product_deserialize(product_form.partner_token.data)
-                group = SignupGroup(type=SIGNUP_GROUP_PARTNERS)
-                group.event = order_product.order.event
-                group.order_products.append(order_product)
-                group.order_products.append(partner_order_product)
+                group = create_partners_group(order_product, partner_order_product)
                 db_session.add(group)
                 partner_role = partner_order_product.details_as_dict['dance_role']
                 if not waiting_lists_couple[partner_role]:
                     partner_order_product.accept()
                     send_acceptance_from_waiting_list(partner_order_product)
             elif product_form.add_partner.data:
-                order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id)\
-                                            .join(Registration, aliased=True).filter_by(name=product_form.name)\
-                                            .first()
-                partner_order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id)\
-                                            .join(Registration, aliased=True).filter_by(name=product_form.partner_name)\
-                                            .first()
-                group = SignupGroup(type=SIGNUP_GROUP_PARTNERS)
-                group.event = order_product.order.event
-                group.order_products.append(order_product)
-                group.order_products.append(partner_order_product)
+                order_products = OrderProduct.query.filter_by(order_id=user_order.id). \
+                    join(Product, aliased=True).filter_by(id=product_model.id).all()
+                group = create_partners_group(order_products[0], order_products[1])
                 db_session.add(group)
             db_session.commit()
+        elif isinstance(product, CouplesOnlyWorkshop) and product_form.add.data:
+            if product_form.partner_token.data:
+                order_product = user_order.order_products.join(Product, aliased=True).filter_by(id=product_model.id).first()
+                partner_order_product = order_product_deserialize(product_form.partner_token.data)
+                group = create_partners_group(order_product, partner_order_product)
+                db_session.add(group)
+
+                partner_order_product.accept()
+                send_acceptance_from_waiting_partner(partner_order_product)
+            elif product_form.add_partner.data:
+                order_products = OrderProduct.query.filter_by(order_id=user_order.id). \
+                                    join(Product, aliased=True).filter_by(id=product_model.id).all()
+                group = create_partners_group(order_products[0], order_products[1])
+                db_session.add(group)
+            db_session.commit()
+

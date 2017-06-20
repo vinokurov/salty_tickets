@@ -6,9 +6,9 @@
   {{ donate_product(form_field) }}
 {% elif form_field.product_type == 'MarketingProduct' %}
   {{ marketing_product(form_field, event) }}
-{% elif form_field.product_type == 'CouplesOnlyWorkshop' %}
-    {{ couples_only_workshop_product(form_field, event) }}
-{% elif form_field.product_type == 'RegularPartnerWorkshop' %}
+{% elif form_field.product_type == 'CouplesOnlyWorkshopOld' %}
+    {{ couples_only_workshop_old_product(form_field, event) }}
+{% elif form_field.product_type in ('RegularPartnerWorkshop', 'CouplesOnlyWorkshop') %}
     {{ regular_partner_workshop_product(form_field, event) }}
 {% else %}
    <div class="card-body">
@@ -146,7 +146,7 @@
 {% endmacro %}
 
 
-{% macro couples_only_workshop_product(form_field, event) %}
+{% macro couples_only_workshop_old_product(form_field, event) %}
 <div class="card-block">
     <h4 class="card-title">{{ form_field.product_name }}</h4>
     <p>
@@ -174,7 +174,14 @@
         <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
         <small class="text-muted"><i class="fa fa-thermometer fa-fw" aria-hidden="true"></i> {{ form_field.workshop_level }}</small><br>
         <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.workshop_price }}</small><br>
-        <small>{{ partner_workshop_availability(form_field.waiting_lists) }}</small>
+        <small>
+            {% if form_field.product_type == 'RegularPartnerWorkshop' %}
+                {{ partner_workshop_availability(form_field.waiting_lists) }}
+            {% elif form_field.product_type == 'CouplesOnlyWorkshop' %}
+                {{ availability_badge('Leader with partner', form_field.waiting_lists) }}
+                {{ availability_badge('Follower with partner', form_field.waiting_lists) }}
+            {% endif %}
+        </small>
     </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
