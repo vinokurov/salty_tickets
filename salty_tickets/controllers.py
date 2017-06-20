@@ -90,6 +90,16 @@ class OrderSummaryController:
                 return True
         return False
 
+    def get_waiting_reason(self, order_product):
+        if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
+            if order_product.product.type == 'CouplesOnlyWorkshop':
+                print([op.product_id for op in self._order.order_products])
+                if len([op for op in self._order.order_products if op.product.id==order_product.product.id]) == 1:
+                    return 'You are put in the waiting list until your partner signs up'
+                else:
+                    return 'There are no available places in the workshop'
+            return 'You are put on the waiting list due to the current imbalance in leads and followers'
+
 
 class EventOrderController:
     def __init__(self, event, email, order_products):

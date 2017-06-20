@@ -4,6 +4,7 @@
             {% if product.is_waiting %}
                 <li class="list-group-item list-group-item-warning"><small>
                     <strong>Waiting list</strong>: {{ product.name }}: {{ product.price }}
+                    <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(product._order_product) }}</small></p>
                 </small></li>
             {% else %}
                 <li class="list-group-item"><small>

@@ -185,10 +185,7 @@
     </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
     <div class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
-    <div class="form-group" id="{{form_field.partner_token.id}}-form-group">
-        {{ form_field.partner_token.label.text }} {{form_field.partner_token(class='form-control') }}
-        <small id="emailHelp" class="form-text text-muted">If your partner has already registered.</small>
-    </div>
+    {{ partner_token_field(form_field.partner_token) }}
     <div class="btn-group" data-toggle="buttons">
         <button class="btn btn-outline-success form-control">
             {{ form_field.add(checked=False) }} {{ form_field.add.label.text }}
@@ -215,4 +212,14 @@
     {% else %}
         <span class="badge badge badge-warning">{{ text }} (waiting list{%if wait>1 %}: {{ wait-1 }}{%endif%})</span>
     {% endif %}
+{% endmacro %}
+
+
+{% macro partner_token_field(token_field) %}
+    <div class="form-group" id="{{token_field.id}}-form-group">
+        <label class="form-control-label" for="{{token_field.id}}">{{ token_field.label.text }}</label>
+        {{token_field(class='form-control') }}
+        <div class="form-control-feedback" id="{{token_field.id}}-feedback"></div>
+        <small class="form-text text-muted">If your partner has already registered.</small>
+    </div>
 {% endmacro %}

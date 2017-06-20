@@ -60,7 +60,8 @@
             {% for product in order_summary_controller.order_products %}
                 {% if product.is_waiting %}
                 <tr class="table-warning">
-                    <td><strong>Waiting list</strong>: {{ product.name }}</td>
+                    <td><strong>Waiting list</strong>: {{ product.name }}
+                        <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(product._order_product) }}</small></p></td>
                     <td>{{ product.price }}</td>
                     <td>{{ product.token }}</td>
                     <td><a class="btn btn-warning btn-sm" href="{{product.cancel_url}}">Cancel</a></td>

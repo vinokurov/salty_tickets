@@ -10,7 +10,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
-from salty_tickets.tokens import email_deserialize
+from salty_tickets.tokens import email_deserialize, order_product_deserialize
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -74,6 +74,8 @@ def register_checkout(event_key):
         order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
+        return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
+        print(return_dict['validated_partner_tokens'])
     else:
         print(form.errors)
         form_errors_controller = FormErrorController(form)
@@ -81,6 +83,18 @@ def register_checkout(event_key):
                                                             form_errors=form_errors_controller)
         return_dict['errors'] = {v:k for v,k in form_errors_controller.errors}
     return jsonify(return_dict)
+
+
+def get_validated_partner_tokens(form):
+    tokens_data = {}
+    for product_key in form.product_keys:
+        product_form = form.get_product_by_key(product_key)
+        if hasattr(product_form, 'partner_token'):
+            if product_form.partner_token.data:
+                order_product = order_product_deserialize(product_form.partner_token.data)
+                tokens_data[product_form.partner_token.id] = 'Your partner: {}'.format(order_product.registrations[0].name)
+    return tokens_data
+
 
 
 # @app.route('/register/total_price/<string:event_key>', methods=('POST',))

@@ -53,16 +53,22 @@ jQuery.fn.extend({
                 success: function (data) {
                     console.log(data);  // display the returned data in the console.
                     $('div#order_summary').html(data.order_summary_html);
-                    show_form_validation_errors(data.errors);
+                    show_form_validation_errors(data.errors, data.validated_partner_tokens);
                     $('button#checkout').disable(Object.keys(data.errors).length>0);
                 }
             });
         }
     }
 
-    function show_form_validation_errors(form_errors) {
+    function show_form_validation_errors(form_errors, form_success) {
         $('.has-danger').each(function() {
             $(this).removeClass('has-danger');
+        })
+        $('.form-control-danger').each(function() {
+            $(this).removeClass('form-control-danger');
+        })
+        $('.form-control-feedback').each(function() {
+            $(this).html('');
         })
 
         for(var form_field_id in form_errors)
@@ -72,6 +78,16 @@ jQuery.fn.extend({
 
             console.log(form_field_id, form_errors[form_field_id]);
             $('#'+form_field_id+'-form-group').addClass('has-danger');
+            $('#'+form_field_id).addClass('form-control-danger');
+            $('#'+form_field_id+'-feedback').html(form_errors[form_field_id])
+        }
+
+        for(var form_field_id in form_success)
+        {
+            console.log(form_field_id, form_success[form_field_id]);
+            $('#'+form_field_id+'-form-group').addClass('has-success');
+            $('#'+form_field_id).addClass('form-control-success');
+            $('#'+form_field_id+'-feedback').html(form_success[form_field_id])
         }
     }
 
