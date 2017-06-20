@@ -18,7 +18,7 @@ __author__ = 'vnkrv'
 
 @app.route('/')
 def index():
-    return redirect(url_for('crowdfunding_index'))
+    return redirect(url_for('register_index'))
     # return render_template('index.html')
     # event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
     # if event:
@@ -75,9 +75,7 @@ def register_checkout(event_key):
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
-        print(return_dict['validated_partner_tokens'])
     else:
-        print(form.errors)
         form_errors_controller = FormErrorController(form)
         return_dict['order_summary_html'] = render_template('form_errors.html',
                                                             form_errors=form_errors_controller)
@@ -172,7 +170,6 @@ def crowdfunding_checkout(event_key):
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
     else:
-        print(form.errors)
         form_errors_controller = FormErrorController(form)
         return_dict['order_summary_html'] = render_template('form_errors.html',
                                                             form_errors=form_errors_controller)

@@ -193,7 +193,6 @@ class CouplesOnlyWorkshopOld(ProductTemplate, ProductDiscountPrices, WorkshopPro
     @classmethod
     def get_waiting_lists(cls, product_model):
         registration_stats = cls.get_registration_stats(product_model)
-        print(registration_stats)
         if registration_stats.waiting > 0:
             return registration_stats.waiting + 1
         if registration_stats.accepted + 1 > product_model.max_available:
@@ -309,7 +308,6 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
     @classmethod
     def get_waiting_lists(cls, product_model):
         registration_stats = cls.get_registration_stats(product_model)
-        print(registration_stats)
         ratio = float(product_model.parameters_as_dict['ratio'])
         allow_first = int(product_model.parameters_as_dict['allow_first'])
         solo_leads_waiting = cls.get_waiting_list_for_role(
@@ -555,7 +553,6 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
     @classmethod
     def get_waiting_lists(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
-        print(reg_stats)
         if reg_stats[DANCE_ROLE_FOLLOWER].accepted + reg_stats[DANCE_ROLE_LEADER].accepted + 2 < product_model.max_available:
             return 0
         else:
@@ -595,7 +592,6 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
                     cls.accept_from_waiting_list(partners_order_product)
                     results.append(partners_order_product)
             can_balance = cls.can_balance_waiting_list_one_couple(product_model)
-        print(cls.get_registration_stats(product_model))
         return results
 
     @classmethod
@@ -700,11 +696,9 @@ def get_product_by_model(db_model):
 
 class PartnerTokenValid:
     def __call__(self, form, field):
-        print(form)
         if field.data:
             try:
                 partner_product_order = order_product_deserialize(field.data)
-                print(partner_product_order.registrations[0].name)
             except BadSignature:
                 raise ValidationError('Invalid token')
 

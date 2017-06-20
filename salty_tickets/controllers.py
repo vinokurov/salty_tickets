@@ -93,7 +93,6 @@ class OrderSummaryController:
     def get_waiting_reason(self, order_product):
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
             if order_product.product.type == 'CouplesOnlyWorkshop':
-                print([op.product_id for op in self._order.order_products])
                 if len([op for op in self._order.order_products if op.product.id==order_product.product.id]) == 1:
                     return 'You are put in the waiting list until your partner signs up'
                 else:
@@ -134,9 +133,7 @@ class FormErrorController:
 
     @property
     def errors(self):
-        print(self._form.errors)
         for k, v in self._form.errors.items():
-            print(v)
             if isinstance(v, dict):
                 for k1, v1 in v.items():
                     yield '{}-{}'.format(k, k1), ', '.join(v1)

@@ -173,8 +173,12 @@ header .intro-text {
     padding-top: 100px;
     padding-bottom: 50px
 }
-section {
-    padding: 100px 0
+
+@media (max-width: 400px) {
+  .btn-responsive {
+    white-space: normal;
+    font-size:75%;
+  }
 }
 </style>
 {% endblock %}
@@ -229,7 +233,7 @@ section {
                                 <h4 class="card-title">Summary</h4>
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-lg btn-success form-control" disabled>
+                                    <button type="button" id="checkout" class="btn btn-lg btn-responsive btn-success form-control" disabled>
                                         <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
                                         Sign up and pay
                                     </button>

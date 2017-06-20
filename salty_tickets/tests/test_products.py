@@ -94,7 +94,6 @@ def test_RegularPartnerWorkshop_get_waiting_lists(get_registration_stats):
                                                         DANCE_ROLE_FOLLOWER: WorkshopRegStats(follows_acc, follows_wait)}
         expected_result = {DANCE_ROLE_LEADER: res_leads, DANCE_ROLE_FOLLOWER: res_follows}, \
                           {DANCE_ROLE_LEADER: res_leads_with_partn, DANCE_ROLE_FOLLOWER: res_follows_with_partn}
-        print(RegularPartnerWorkshop.get_waiting_lists(product_model))
         assert RegularPartnerWorkshop.get_waiting_lists(product_model) == expected_result
 
     # no registrations yet => all available
