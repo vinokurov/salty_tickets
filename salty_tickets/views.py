@@ -4,7 +4,7 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
-from salty_tickets.email import send_registration_confirmation
+from salty_tickets.emails import send_registration_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest

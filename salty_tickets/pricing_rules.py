@@ -1,5 +1,5 @@
 from salty_tickets.database import db_session
-from salty_tickets.email import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
+from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
     Product, Registration, OrderProduct, order_product_registrations_mapping
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
