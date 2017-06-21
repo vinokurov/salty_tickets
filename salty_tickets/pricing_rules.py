@@ -49,7 +49,9 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
         if price > 0:
             # registration_model = get_registration_from_form(form)
             if hasattr(product_form, 'add'):
-                if product_form.add.data:
+                print(product_form.add.object_data, type(product_form.add.object_data))
+                print(product_form.add.object_data == None)
+                if product_form.add.data not in ['0', 'None']:
                     for n in range(int(product_form.add.data)):
                         order_product = product.get_order_product_model(product_model, product_form, form)
                         order_product.registrations.append(registration)

@@ -144,9 +144,12 @@ class Order(Base):
     def stripe_amount(self):
         return int((self.total_price + self.transaction_fee) * 100)
 
-    def charge(self, stripe_token):
+    def charge(self, stripe_token, stripe_sk=None):
         import stripe
-        stripe.api_key = config.STRIPE_SK
+        if not stripe_sk:
+            stripe_sk = stripe.api_key = config.STRIPE_SK
+
+        stripe.api_key = stripe_sk
 
         try:
             charge = stripe.Charge.create(
