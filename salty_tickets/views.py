@@ -4,7 +4,7 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
-from salty_tickets.emails import send_registration_confirmation
+from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
@@ -208,7 +208,8 @@ def event_order_product_cancel(event_key, order_product_token):
         refund_request.product_order = order_product_controller._order_product
         db_session.add(refund_request)
         db_session.commit()
-        return 'Cancelled'
+        send_cancellation_request_confirmation(order_product_controller._order_product)
+        return 'Cancel request has been submitted'
     else:
         return render_template('cancel_order_product.html',
                                form=form, order_product_controller=order_product_controller)
