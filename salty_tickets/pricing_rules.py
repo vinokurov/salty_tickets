@@ -1,7 +1,7 @@
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
-    Product, Registration, OrderProduct, order_product_registrations_mapping
+    Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize
 
@@ -115,10 +115,11 @@ def process_partner_registrations(user_order, form):
                 partner_order_product = order_product_deserialize(product_form.partner_token.data)
                 group = create_partners_group(order_product, partner_order_product)
                 db_session.add(group)
-                partner_role = partner_order_product.details_as_dict['dance_role']
-                if not waiting_lists_couple[partner_role]:
-                    partner_order_product.accept()
-                    send_acceptance_from_waiting_list(partner_order_product)
+                if partner_order_product.status == ORDER_PRODUCT_STATUS_WAITING:
+                    partner_role = partner_order_product.details_as_dict['dance_role']
+                    if not waiting_lists_couple[partner_role]:
+                        partner_order_product.accept()
+                        send_acceptance_from_waiting_list(partner_order_product)
             elif product_form.add_partner.data:
                 order_products = OrderProduct.query.filter_by(order_id=user_order.id). \
                     join(Product, aliased=True).filter_by(id=product_model.id).all()
