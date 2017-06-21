@@ -54,7 +54,8 @@ def register_form(event_key):
             send_registration_confirmation(user_order)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
-            return response
+            print(response)
+            return render_template('event_purchase_error.html', error_message=response)
 
     return render_template('signup.html', event=event, form=form, config=config)
 

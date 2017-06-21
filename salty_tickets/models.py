@@ -162,8 +162,8 @@ class Order(Base):
             self.status = ORDER_STATUS_PAID
             return True, charge
         except stripe.CardError as ce:
-            self.stripe_charge_id = charge.get('id', '')
-            self.stripe_charge = jsonify(ce)
+            # self.stripe_charge_id = charge.get('id', '')
+            # self.stripe_charge = jsonify(ce)
             # self.status = ORDER_STATUS_FAILED
             return False, ce
 
