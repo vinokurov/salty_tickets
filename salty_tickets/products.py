@@ -222,6 +222,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
             waiting_lists = self.get_waiting_lists(product_model)
+            available_quantity = self.get_available_quantity(product_model)
 
             def needs_partner(self):
                 if self.add_partner.data:
@@ -358,6 +359,14 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
 
         return ws_solo, ws_with_couple
 
+    @classmethod
+    def get_available_quantity(cls, product_model):
+        reg_stats = cls.get_registration_stats(product_model)
+        available_quantity = product_model.max_available \
+                             - reg_stats[DANCE_ROLE_LEADER].accepted \
+                             - reg_stats[DANCE_ROLE_FOLLOWER].accepted
+        return available_quantity
+
     @staticmethod
     def get_waiting_list_for_role(accepted, waiting, accepted_other, max_available, ratio, allow_first):
         if waiting > 0:
@@ -463,6 +472,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
             waiting_lists = self.get_waiting_lists(product_model)
+            available_quantity = self.get_available_quantity(product_model)
 
             def needs_partner(self):
                 if self.add_partner.data:
@@ -551,12 +561,20 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
         }
 
     @classmethod
+    def get_available_quantity(cls, product_model):
+        reg_stats = cls.get_registration_stats(product_model)
+        available_quantity = product_model.max_available \
+                             - reg_stats[DANCE_ROLE_LEADER].accepted \
+                             - reg_stats[DANCE_ROLE_FOLLOWER].accepted
+        return available_quantity
+
+    @classmethod
     def get_waiting_lists(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
-        if reg_stats[DANCE_ROLE_FOLLOWER].accepted + reg_stats[DANCE_ROLE_LEADER].accepted + 2 < product_model.max_available:
-            return 0
-        else:
+        if reg_stats[DANCE_ROLE_FOLLOWER].accepted + reg_stats[DANCE_ROLE_LEADER].accepted + 2 > product_model.max_available:
             return 1
+        else:
+            return 0
 
     @classmethod
     def can_balance_waiting_list_one_couple(cls, product_model):
