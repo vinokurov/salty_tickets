@@ -208,10 +208,10 @@
 
 {% macro ticket_availability_status(available, waiting_lists, threshold, product_type) %}
     {% if available <= 0 %}
-        Sold out.
+        <strong class="text-muted">Sold out.</strong>
     {% else %}
         {% if available <= threshold %}
-            Just {{ available }} ticket{% if available >0%}s{%endif%} left!
+            <strong class="text-danger">Just {{ available }} ticket{% if available >0%}s{%endif%} left!</strong>
         {% else %}
             Plenty of tickets available.
         {% endif %}
