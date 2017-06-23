@@ -4,13 +4,14 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
-from salty_tickets.emails import send_registration_confirmation
+from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm
-from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest
+from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
 from salty_tickets.tokens import email_deserialize, order_product_deserialize
+from sqlalchemy import desc
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -54,7 +55,8 @@ def register_form(event_key):
             send_registration_confirmation(user_order)
             return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
-            return response
+            print(response)
+            return render_template('event_purchase_error.html', error_message=response)
 
     return render_template('signup.html', event=event, form=form, config=config)
 
@@ -137,14 +139,17 @@ def crowdfunding_form(event_key):
         user_order.registration = registration
         event.orders.append(user_order)
         db_session.commit()
-        success, response = user_order.charge(form.stripe_token.data)
+        success, response = user_order.charge(form.stripe_token.data, stripe_sk=config.STRIPE_SIMONA_SK)
         if success:
             db_session.commit()
             return redirect(url_for('crowdfunding_thankyou', event_key=event.event_key))
         else:
-            return response
+            print(response)
+            return render_template('event_purchase_error.html', error_message=response)
 
-    contributors = Registration.query.join(event.orders).all()
+    contributors = Registration.query.\
+        join(Order, aliased=True).join(Event, aliased=True).filter_by(event_key=event_key).\
+        order_by(desc(Registration.registered_datetime)).all()
     return render_template(
         'crowdfunding.html',
         event=event,
@@ -207,7 +212,8 @@ def event_order_product_cancel(event_key, order_product_token):
         refund_request.product_order = order_product_controller._order_product
         db_session.add(refund_request)
         db_session.commit()
-        return 'Cancelled'
+        send_cancellation_request_confirmation(order_product_controller._order_product)
+        return 'Cancel request has been submitted'
     else:
         return render_template('cancel_order_product.html',
                                form=form, order_product_controller=order_product_controller)

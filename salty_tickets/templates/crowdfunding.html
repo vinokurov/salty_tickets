@@ -89,7 +89,7 @@ jQuery.fn.extend({
 
                 if(data.stripe.amount) {
                     var handler = StripeCheckout.configure({
-                      key: '{{ config.STRIPE_PK }}',
+                      key: '{{ config.STRIPE_SIMONA_PK }}',
                       image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
                       locale: 'auto',
                       token: function(token) {

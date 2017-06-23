@@ -144,9 +144,12 @@ class Order(Base):
     def stripe_amount(self):
         return int((self.total_price + self.transaction_fee) * 100)
 
-    def charge(self, stripe_token):
+    def charge(self, stripe_token, stripe_sk=None):
         import stripe
-        stripe.api_key = config.STRIPE_SK
+        if not stripe_sk:
+            stripe_sk = stripe.api_key = config.STRIPE_SK
+
+        stripe.api_key = stripe_sk
 
         try:
             charge = stripe.Charge.create(
@@ -162,8 +165,8 @@ class Order(Base):
             self.status = ORDER_STATUS_PAID
             return True, charge
         except stripe.CardError as ce:
-            self.stripe_charge_id = charge.get('id', '')
-            self.stripe_charge = jsonify(ce)
+            # self.stripe_charge_id = charge.get('id', '')
+            # self.stripe_charge = jsonify(ce)
             # self.status = ORDER_STATUS_FAILED
             return False, ce
 

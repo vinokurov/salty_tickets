@@ -132,7 +132,7 @@
 <div class="card card-default">
     <div class="card-block">
         {% if registration.crowdfunding_registration_properties.anonymous %}
-        <h4>Anonymous <div class="badge badge-success">£{{ registration.total_amount_ordered }}</div></h4>
+        <h4>Anonymous <div class="badge badge-success">£{{ '{:.1f}'.format(registration.order.total_price) }}</div></h4>
         {% else %}
         <h4>{{ registration.name }} <div class="badge badge-success">£{{ '{:.1f}'.format(registration.order.total_price) }}</div></h4>
         {% endif %}
