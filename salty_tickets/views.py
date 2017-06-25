@@ -12,7 +12,7 @@ from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Regi
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
 from salty_tickets.products import flip_role
-from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize
+from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
 from sqlalchemy import desc
 from werkzeug.utils import redirect
 
@@ -55,10 +55,10 @@ def register_form(event_key):
             process_partner_registrations(user_order, form)
             balance_results = balance_event_waiting_lists(event)
             email_result = send_registration_confirmation(user_order)
-            order_summary_controller = OrderSummaryController(user_order)
-            return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller,
-                                   event_key=event.event_key)
-            # return redirect(url_for('signup_thankyou', event_key=event.event_key))
+            # order_summary_controller = OrderSummaryController(user_order)
+            # return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller,
+            #                        event_key=event.event_key)
+            return redirect(url_for('signup_thankyou', order_token=order_serialize(user_order)))
         else:
             print(response)
             return render_template('event_purchase_error.html', error_message=response)
@@ -113,9 +113,9 @@ def get_validated_partner_tokens(form):
     return tokens_data
 
 
-@app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
-def signup_thankyou(event_key):
-    return render_template('signup_thankyou.html', event_key=event_key)
+# @app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
+# def signup_thankyou(event_key):
+#     return render_template('signup_thankyou.html', event_key=event_key)
 
 
 @app.route('/c')
@@ -224,11 +224,20 @@ def event_order_product_cancel(event_key, order_product_token):
 
 
 @app.route('/register/order/<string:order_token>')
-def event_order_summary(order_token, methods=('GET', 'POST')):
+def event_order_summary(order_token):
+    return render_event_order_summary(order_token, thankyou=False)
+
+
+@app.route('/register/thankyou/<string:order_token>')
+def signup_thankyou(order_token):
+    return render_event_order_summary(order_token, thankyou=True)
+
+
+def render_event_order_summary(order_token, thankyou=False):
     try:
         user_order = order_deserialize(order_token)
     except BadSignature:
         return 'Incorrect order token'
 
     order_summary_controller = OrderSummaryController(user_order)
-    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller)
+    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, thankyou=thankyou)

@@ -48,10 +48,29 @@
 
 {% block content %}
     <div class="container container-fluid my-5">
-        <!--<h4 class="display-4">Thank you for registration!</h4>-->
-        <!--<div class="card">-->
-
-        <!--</div>-->
+        {% if thankyou %}<h4 class="display-4">Thank you for registration!</h4>{%endif%}
+        <div class="card"><div class="card-block">
+            <small>
+            <table class="table">
+                <tr>
+                    <th>Event</th>
+                    <td><a href="{{ order_summary_controller.event.registration_url }}">{{order_summary_controller.event.name}}</a></td>
+                </tr>
+                <tr>
+                    <th>Your name</th>
+                    <td>{{ order_summary_controller._order.registration.name}}</td>
+                </tr>
+                <tr>
+                    <th>Your email</th>
+                    <td>{{ order_summary_controller._order.registration.email}}</td>
+                </tr>
+                <tr>
+                    <th>Registration date</th>
+                    <td>{{ order_summary_controller._order.order_datetime}}</td>
+                </tr>
+            </table>
+                </small>
+        </div> </div>
         <div class="card"><div class="card-block">
     <h5 class="card-title">Order Summary</h5>
         <small>
