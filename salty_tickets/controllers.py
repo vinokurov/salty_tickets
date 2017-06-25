@@ -4,7 +4,7 @@ from flask import url_for
 from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
     SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping
 from salty_tickets.products import get_product_by_model
-from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize
+from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize
 
 
 def price_format(func):
@@ -107,7 +107,8 @@ class OrderProductController:
                             MessageController('Token expires on {:%d-%b-%Y %H:%M}'.format(token_expiry))]
             else:
                 return [MessageController('No partner.'),
-                        MessageController('Your token: {}'.format(self.token))]
+                        MessageController('Your token for {}:'.format(self._order_product.product.name)),
+                        MessageController(self.token)]
         else:
             return None
 
@@ -146,6 +147,16 @@ class OrderSummaryController:
     @property
     def event(self):
         return EventController(self._order.event)
+
+    @property
+    def token(self):
+        return order_serialize(self._order)
+
+    @property
+    def order_status_url(self):
+        return url_for('event_order_summary',
+                       order_token=self.token,
+                       _external=True)
 
     def get_waiting_reason(self, order_product):
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:

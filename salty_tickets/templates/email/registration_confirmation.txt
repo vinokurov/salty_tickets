@@ -33,5 +33,7 @@ Order Summary
 
     TOTAL: {{ order_summary_controller.total_price }}
 
+You can see your order status following this link: {{order_summary_controller.order_status_url}}
+
 Lots of love,
 Salty Jitterbugs Team

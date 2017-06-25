@@ -52,25 +52,28 @@
                 <tr>
                     <th>Item</th>
                     <th>Price</th>
-                    <th>Token</th>
+                    <th>Status</th>
+                    <th>Partner</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-            {% for product in order_summary_controller.order_products %}
-                {% if product.is_waiting %}
+            {% for order_product in order_summary_controller.order_products %}
+                {% if order_product.is_waiting %}
                 <tr class="table-warning">
-                    <td><strong>Waiting list</strong>: {{ product.name }}
-                        <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(product._order_product) }}</small></p></td>
-                    <td>{{ product.price }}</td>
-                    <td>{{ product.token }}</td>
-                    <td><a class="btn btn-warning btn-sm" href="{{product.cancel_url}}">Cancel</a></td>
+                    <td><strong>Waiting list</strong>: {{ order_product.name }}
+                        <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(order_product._order_product) }}</small></p></td>
+                    <td>{{ order_product.price }}</td>
+                    <td>{{ order_product.status }}</td>
+                    <td>{{ message(order_product.partner_info) }}</td>
+                    <td><a class="btn btn-warning btn-sm" href="{{order_product.cancel_url}}">Cancel</a></td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td>{{ product.name }}</td>
-                    <td>{{ product.price }}</td>
-                    <td>{{ product.token }}</td>
+                    <td>{{ order_product.name }}</td>
+                    <td>{{ order_product.price }}</td>
+                    <td>{{ order_product.status }}</td>
+                    <td>{{ message(order_product.partner_info) }}</td>
                     <td></td>
                 </tr>
                 {% endif %}
@@ -80,16 +83,23 @@
                     <td>{{ order_summary_controller.transaction_fee }}</td>
                     <td></td>
                     <td></td>
+                    <td></td>
                 </tr>
                 <tr>
                     <th>Total</th>
                     <th>{{ order_summary_controller.total_price }}</th>
                     <td></td>
                     <td></td>
+                    <td></td>
                 </tr>
             </tbody>
         </table>
 </div>
+
+<div class="container-fluid small-text">
+    You can see your order status following this link: <a href="{{order_summary_controller.order_status_url}}">{{order_summary_controller.order_status_url}}</a>
+</div>
+
 <div class="container-fluid small-text">
     Lots of love,<br>
     Salty Jitterbugs Team
@@ -97,3 +107,19 @@
 </div>
 
 {% endblock %}
+
+{% macro message(message_controller) %}
+    {% if message_controller is iterable and var is not string %}
+        {% for m in message_controller %}
+            <div>{{ message(m) }}</div>
+        {% endfor %}
+    {% else %}
+        {% if message_controller.bs_class %}
+            <div class="{{message_controller.bs_class}}">
+                {{ message_controller.text }}
+            </div>
+        {% else %}
+            {{ message_controller.text }}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
