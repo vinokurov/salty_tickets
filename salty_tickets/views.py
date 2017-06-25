@@ -225,19 +225,19 @@ def event_order_product_cancel(event_key, order_product_token):
 
 @app.route('/register/order/<string:order_token>')
 def event_order_summary(order_token):
-    return render_event_order_summary(order_token, thankyou=False)
+    return render_event_order_summary(order_token, title="Order Status")
 
 
 @app.route('/register/thankyou/<string:order_token>')
 def signup_thankyou(order_token):
-    return render_event_order_summary(order_token, thankyou=True)
+    return render_event_order_summary(order_token, title="Thank you for Registration!")
 
 
-def render_event_order_summary(order_token, thankyou=False):
+def render_event_order_summary(order_token, title=None):
     try:
         user_order = order_deserialize(order_token)
     except BadSignature:
         return 'Incorrect order token'
 
     order_summary_controller = OrderSummaryController(user_order)
-    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, thankyou=thankyou)
+    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, title=title)

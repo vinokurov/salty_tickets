@@ -48,8 +48,12 @@
 
 {% block content %}
     <div class="container container-fluid my-5">
-        {% if thankyou %}<h4 class="display-4">Thank you for registration!</h4>{%endif%}
         <div class="card"><div class="card-block">
+            {% if title %}
+            <h4 class="display-4 card-title">
+            {{ title }}
+            </h4>
+            {% endif %}
             <small>
             <table class="table">
                 <tr>
