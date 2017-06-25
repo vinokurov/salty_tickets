@@ -95,6 +95,7 @@ def balance_event_waiting_lists(event_model):
             results = product.balance_waiting_list(product_model)
             for order_product in results:
                 send_acceptance_from_waiting_list(order_product)
+            return results
 
 
 def create_partners_group(order_product_1, order_product_2):

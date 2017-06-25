@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import url_for
-from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING
+from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
+    SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping
 from salty_tickets.products import get_product_by_model
 from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize
 
@@ -37,19 +38,26 @@ class OrderProductController:
 
     @property
     def status(self):
-        return self._order_product.status
+        return self._order_product.status.title()
 
     @property
     def is_waiting(self):
-        return self.status == ORDER_PRODUCT_STATUS_WAITING
+        return self._order_product.status == ORDER_PRODUCT_STATUS_WAITING
+
+    @property
+    def product_type(self):
+        return self._order_product.product.type
 
     @property
     def token(self):
-        registration_datetime_diff = datetime.now() - self._order_product.order.order_datetime
-        if self.is_waiting or registration_datetime_diff.total_seconds() < 60*60*24:
-            return order_product_serialize(self._order_product)
+        return order_product_serialize(self._order_product)
+
+    @property
+    def token_expiry(self):
+        if self.product_type == 'RegularPartnerWorkshop' and not self.is_waiting:
+            return self._order_product.order.order_datetime + timedelta(days=1)
         else:
-            return ''
+            return None
 
     @property
     def cancel_url(self):
@@ -57,6 +65,51 @@ class OrderProductController:
                        event_key=self._order_product.order.event.event_key,
                        order_product_token=self.token,
                        _external=True)
+
+    @property
+    def can_add_partner(self):
+        if self.product_type not in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
+            return False
+        elif self.partner_order_product:
+            return False
+        else:
+            return True
+
+    @property
+    def partner_order_product(self):
+        if self.product_type in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
+            group = SignupGroup.query.filter_by(type=SIGNUP_GROUP_TYPE_PARTNERS). \
+                join(group_order_product_mapping). \
+                filter_by(order_product_id=self._order_product.id).one_or_none()
+            if not group:
+                return None
+            else:
+                partner_order = [op for op in group.order_products if op.id != self._order_product.id][0]
+                return OrderProductController(partner_order)
+        return None
+
+    @property
+    def partner_info(self):
+        partner_order_product = self.partner_order_product
+        if partner_order_product:
+            return MessageController(partner_order_product._order_product.registrations[0].name.title(),
+                                     status='success', icon='check')
+        elif self._order_product.product.type in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
+            token_expiry = self.token_expiry
+            if token_expiry:
+                if datetime.now() > token_expiry:
+                    return [MessageController('No partner.'),
+                            MessageController('Your token has expired on {:%d-%b-%Y %H:%M}'.format(token_expiry))]
+                else:
+                    return [MessageController('No partner.'),
+                            MessageController('Your token for {}:'.format(self._order_product.product.name)),
+                            MessageController(self.token),
+                            MessageController('Token expires on {:%d-%b-%Y %H:%M}'.format(token_expiry))]
+            else:
+                return [MessageController('No partner.'),
+                        MessageController('Your token: {}'.format(self.token))]
+        else:
+            return None
 
 
 class OrderSummaryController:
@@ -90,6 +143,10 @@ class OrderSummaryController:
                 return True
         return False
 
+    @property
+    def event(self):
+        return EventController(self._order.event)
+
     def get_waiting_reason(self, order_product):
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
             if order_product.product.type == 'CouplesOnlyWorkshop':
@@ -98,6 +155,24 @@ class OrderSummaryController:
                 else:
                     return 'There are no available places in the workshop'
             return 'You are put on the waiting list due to the current imbalance in leads and followers'
+
+
+class EventController:
+    def __init__(self, event):
+        self._event = event
+
+    @property
+    def name(self):
+        return self._event.name
+
+    @property
+    def event_key(self):
+        return self._event.event_key
+
+    @property
+    def registration_url(self):
+        return url_for('register_form', event_key=self.event_key, _external=True)
+
 
 
 class EventOrderController:
@@ -139,3 +214,21 @@ class FormErrorController:
                     yield '{}-{}'.format(k, k1), ', '.join(v1)
             else:
                 yield k, ', '.join(v)
+
+
+class MessageController:
+    def __init__(self, text, status=None, icon=None):
+        self.text = text
+        self.status = status
+        self.icon = icon
+
+    def __repr__(self):
+        return self.text
+
+    def __str__(self):
+        return self.text
+
+    @property
+    def bs_class(self):
+        if self.status.lower() in ('success', 'danger', 'warning', 'info'):
+            return 'text-{}'.format(self.status.lower())

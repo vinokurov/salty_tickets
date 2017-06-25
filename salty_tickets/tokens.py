@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from itsdangerous import URLSafeSerializer
-from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT
-from salty_tickets.models import OrderProduct
+from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER
+from salty_tickets.models import OrderProduct, Order
 
 
 def email_serialize(email):
@@ -34,4 +34,17 @@ def order_product_token_expired(order_product_token, expire_period_seconds):
     order_product = order_product_deserialize(order_product_token)
     registration_datetime_diff = datetime.now() - order_product.order.order_datetime
     return registration_datetime_diff.total_seconds() > expire_period_seconds
+
+
+def order_serialize(user_order):
+    serializer =  URLSafeSerializer(SECRET_KEY, salt=SALT_ORDER)
+    token = serializer.dumps(user_order.id)
+    return token
+
+
+def order_deserialize(order_token):
+    serializer =  URLSafeSerializer(SECRET_KEY, salt=SALT_ORDER)
+    order_id = serializer.loads(order_token)
+    user_order = Order.query.filter_by(id=order_id).one()
+    return user_order
 

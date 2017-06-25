@@ -1,5 +1,6 @@
-from flask import render_template
+from flask import render_template, request
 from flask import url_for, jsonify
+from itsdangerous import BadSignature
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
@@ -10,7 +11,8 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
-from salty_tickets.tokens import email_deserialize, order_product_deserialize
+from salty_tickets.products import flip_role
+from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize
 from sqlalchemy import desc
 from werkzeug.utils import redirect
 
@@ -51,13 +53,28 @@ def register_form(event_key):
         if success:
             db_session.commit()
             process_partner_registrations(user_order, form)
-            balance_event_waiting_lists(event)
-            send_registration_confirmation(user_order)
-            return redirect(url_for('signup_thankyou', event_key=event.event_key))
+            balance_results = balance_event_waiting_lists(event)
+            email_result = send_registration_confirmation(user_order)
+            order_summary_controller = OrderSummaryController(user_order)
+            return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller,
+                                   event_key=event.event_key)
+            # return redirect(url_for('signup_thankyou', event_key=event.event_key))
         else:
             print(response)
             return render_template('event_purchase_error.html', error_message=response)
 
+    tokens = request.args.get('tokens')
+    if tokens:
+        tokens = tokens.split(',')
+        for token in tokens:
+            try:
+                order_product = order_product_deserialize(token)
+                if order_product.order.event.id == event.id:
+                    form[order_product.product.product_key].partner_token.data = token
+                    form[order_product.product.product_key].dance_role.data = flip_role(order_product.details_as_dict['dance_role'])
+                    form[order_product.product.product_key].add.data = 1
+            except BadSignature:
+                pass
     return render_template('signup.html', event=event, form=form, config=config)
 
 
@@ -94,19 +111,6 @@ def get_validated_partner_tokens(form):
                 order_product = order_product_deserialize(product_form.partner_token.data)
                 tokens_data[product_form.partner_token.id] = 'Your partner: {}'.format(order_product.registrations[0].name)
     return tokens_data
-
-
-
-# @app.route('/register/total_price/<string:event_key>', methods=('POST',))
-# def total_price(event_key):
-#     event = Event.query.filter_by(event_key=event_key).first()
-#     form = create_event_form(event)()
-#     if form.validate_on_submit():
-#         user_order = get_order_for_event(event, form)
-#         price = user_order.total_price
-#         return jsonify({'total_price': price, 'order_summary_html': render_template('order_summary.html', order=user_order, price=price)})
-#     else:
-#         return jsonify({})
 
 
 @app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
@@ -217,3 +221,14 @@ def event_order_product_cancel(event_key, order_product_token):
     else:
         return render_template('cancel_order_product.html',
                                form=form, order_product_controller=order_product_controller)
+
+
+@app.route('/register/order/<string:order_token>')
+def event_order_summary(order_token, methods=('GET', 'POST')):
+    try:
+        user_order = order_deserialize(order_token)
+    except BadSignature:
+        return 'Incorrect order token'
+
+    order_summary_controller = OrderSummaryController(user_order)
+    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller)

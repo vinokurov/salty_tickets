@@ -188,8 +188,8 @@
     <div class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
     {{ partner_token_field(form_field.partner_token) }}
     <div class="btn-group" data-toggle="buttons">
-        <button class="btn btn-outline-success form-control btn-responsive">
-            {{ form_field.add(checked=False) }} {{ form_field.add.label.text }}
+        <button class="btn btn-outline-success form-control btn-responsive {%if form_field.add.data %}active{%endif%}">
+            {{ form_field.add(checked=form_field.add.data) }} {{ form_field.add.label.text }}
         </button>
         <button class="btn btn-outline-success form-control btn-responsive">
             {{ form_field.add_partner(checked=False) }} {{ form_field.add_partner.label.text }}

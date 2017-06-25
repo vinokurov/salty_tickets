@@ -42,7 +42,7 @@ def send_registration_confirmation(user_order):
 
     subj = '{} - Registration'.format(user_order.event.name)
 
-    send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, body_html)
+    return send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, body_html)
 
 
 def send_acceptance_from_waiting_list(order_product):

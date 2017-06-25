@@ -9,6 +9,32 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js"></script>
+
+<script>
+    $('body').on('change', '.form-check-input', update_partner_link)
+    $('body').ready(update_partner_link)
+    //$('body').on('click', '#copy_url', copy_partner_url)
+    new Clipboard('#copy_url')
+
+    function update_partner_link(e) {
+        partner_link = '{{ order_summary_controller.event.registration_url }}';
+        data = $('.form-check-input').map(function () {
+            if(this.checked)return this.value;
+        }).get()
+        if(data.length>0) {
+            partner_link = partner_link + '?tokens='+data.join(',');
+        }
+
+        $('#partner_link').html('<a id="partner_link_a" href="'+partner_link+'">'+partner_link+'</a>');
+    }
+
+    function copy_partner_url() {
+        console.log('test');
+        $('#partner_link').select()
+        document.execCommand("copy");
+    }
+</script>
 
 {%- endblock %}
 
@@ -22,7 +48,96 @@
 
 {% block content %}
     <div class="container container-fluid my-5">
-        <h4 class="display-4">Thank you for registration!</h4>
-        <p><a href="{{url_for('register_form', event_key=event_key)}}"> Back to the event page</a></p>
+        <!--<h4 class="display-4">Thank you for registration!</h4>-->
+        <!--<div class="card">-->
+
+        <!--</div>-->
+        <div class="card"><div class="card-block">
+    <h5 class="card-title">Order Summary</h5>
+        <small>
+        <table class="table">
+            <thead>
+                <tr>
+                    <td></td>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Partner</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for order_product in order_summary_controller.order_products %}
+                {% if order_product.is_waiting %}
+                <tr class="table-warning">
+                    <td><input class="form-check-input" type="checkbox" value="{{order_product.token}}"
+                               {% if not order_product.can_add_partner %}disabled{%else%}checked{%endif%}></td>
+                    <td><strong>Waiting list</strong>: {{ order_product.name }}
+                        <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(order_product._order_product) }}</small></p></td>
+                    <td>{{ order_product.price }}</td>
+                    <td>{{ order_product.status }}</td>
+                    <td>{{ message(order_product.partner_info) }}</td>
+                    <td><a class="btn btn-warning btn-sm" href="{{order_product.cancel_url}}">Cancel</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td><input class="form-check-input" type="checkbox" value="{{order_product.token}}"
+                               {% if not order_product.can_add_partner %}disabled{%else%}checked{%endif%}></td>
+                    <td>{{ order_product.name }}</td>
+                    <td>{{ order_product.price }}</td>
+                    <td>{{ order_product.status }}</td>
+                    <td>{{ message(order_product.partner_info) }}</td>
+                    <td></td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+                <tr>
+                    <td></td>
+                    <td>Transaction fee</td>
+                    <td>{{ order_summary_controller.transaction_fee }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <th>Total</th>
+                    <th>{{ order_summary_controller.total_price }}</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+            </small>
+            </div></div>
+
+        <div class="card"><div class="card-block">
+            <h5 class="card-title">Invite your partner</h5>
+            <p class="card-text">Select items and forward the link to your partner:</p>
+            <p class="card-text"><small id="partner_link" ></small></p>
+            <p class="card-text"><button class="btn btn-primary btn-sm" id="copy_url" data-clipboard-target="#partner_link"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i> Copy to clipboard</button></p>
+        </div> </div>
+        <!--<p>Link to invite your partner for for the selected items: <span id="partner_link"></span></p>-->
+        <!--<p><a href="{{ order_summary_controller.event.registration_url }}"> To the event page</a></p>-->
     </div>
 {% endblock %}
+
+{% macro message(message_controller) %}
+    {% if message_controller is iterable and var is not string %}
+        {% for m in message_controller %}
+            <div>{{ message(m) }}</div>
+        {% endfor %}
+    {% else %}
+        {% if message_controller.bs_class %}
+            <div class="{{message_controller.bs_class}}">
+                {% if message_controller.icon %}
+                    <i class="fa fa-{{message_controller.icon}} fa-fw" aria-hidden="true"></i>
+                {% endif %}
+                {{ message_controller.text }}
+            </div>
+        {% else %}
+            {{ message_controller.text }}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
