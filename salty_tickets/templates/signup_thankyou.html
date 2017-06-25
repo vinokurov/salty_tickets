@@ -150,9 +150,9 @@
     {% else %}
         {% if message_controller.message_type == 'token' %}
             <div class="input-group">
-              <input type="text" class="form-control form-control-sm" id="{{ message_controller.text }}" value="{{ message_controller.text }}" readonly>
+              <input type="text" class="form-control form-control-sm" id="{{ message_controller.text }}" value="{{ message_controller.text }}" readonly style="min-width: 55px;font-family:monospace;">
               <span class="input-group-btn">
-                <button class="btn btn-secondary btn-sm btn-clipboard" type="button" data-clipboard-target="#{{ message_controller.text }}"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i></button>
+                <button class="btn btn-secondary btn-sm btn-clipboard hidden-sx-down" type="button" data-clipboard-target="#{{ message_controller.text }}"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i></button>
               </span>
             </div>
         {% else %}
