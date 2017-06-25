@@ -7,3 +7,4 @@ PyMySQL
 itsdangerous
 pytest
 mock
+hashids

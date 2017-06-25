@@ -15,7 +15,7 @@
     $('body').on('change', '.form-check-input', update_partner_link)
     $('body').ready(update_partner_link)
     //$('body').on('click', '#copy_url', copy_partner_url)
-    new Clipboard('#copy_url')
+    new Clipboard('.btn-clipboard')
 
     function update_partner_link(e) {
         partner_link = '{{ order_summary_controller.event.registration_url }}';
@@ -66,7 +66,7 @@
                 </tr>
                 <tr>
                     <th>Registration date</th>
-                    <td>{{ order_summary_controller._order.order_datetime}}</td>
+                    <td>{{ order_summary_controller.order_datetime}}</td>
                 </tr>
             </table>
                 </small>
@@ -135,7 +135,7 @@
             <h5 class="card-title">Invite your partner</h5>
             <p class="card-text">Select items and forward the link to your partner:</p>
             <p class="card-text"><small id="partner_link" ></small></p>
-            <p class="card-text"><button class="btn btn-primary btn-sm" id="copy_url" data-clipboard-target="#partner_link"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i> Copy to clipboard</button></p>
+            <p class="card-text"><button class="btn btn-primary btn-sm btn-clipboard" data-clipboard-target="#partner_link"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i> Copy to clipboard</button></p>
         </div> </div>
         <!--<p>Link to invite your partner for for the selected items: <span id="partner_link"></span></p>-->
         <!--<p><a href="{{ order_summary_controller.event.registration_url }}"> To the event page</a></p>-->
@@ -148,15 +148,24 @@
             <div>{{ message(m) }}</div>
         {% endfor %}
     {% else %}
-        {% if message_controller.bs_class %}
-            <div class="{{message_controller.bs_class}}">
-                {% if message_controller.icon %}
-                    <i class="fa fa-{{message_controller.icon}} fa-fw" aria-hidden="true"></i>
-                {% endif %}
-                {{ message_controller.text }}
+        {% if message_controller.message_type == 'token' %}
+            <div class="input-group">
+              <input type="text" class="form-control form-control-sm" id="{{ message_controller.text }}" value="{{ message_controller.text }}" readonly>
+              <span class="input-group-btn">
+                <button class="btn btn-secondary btn-sm btn-clipboard" type="button" data-clipboard-target="#{{ message_controller.text }}"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i></button>
+              </span>
             </div>
         {% else %}
-            {{ message_controller.text }}
+            {% if message_controller.bs_class %}
+                <div class="{{message_controller.bs_class}}">
+                    {% if message_controller.icon %}
+                        <i class="fa fa-{{message_controller.icon}} fa-fw" aria-hidden="true"></i>
+                    {% endif %}
+                        {{ message_controller.text }}
+                </div>
+            {% else %}
+                {{ message_controller.text }}
+            {% endif %}
         {% endif %}
     {% endif %}
 {% endmacro %}

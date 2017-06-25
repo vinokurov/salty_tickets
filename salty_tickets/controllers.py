@@ -13,6 +13,12 @@ def price_format(func):
     return func_wrap
 
 
+def timestamp_format(func):
+    def func_wrap(self):
+        return '{:%d-%b-%Y %H:%M}'.format(func(self))
+    return func_wrap
+
+
 class OrderProductController:
     def __init__(self, order_product):
         self._order_product = order_product
@@ -53,11 +59,16 @@ class OrderProductController:
         return order_product_serialize(self._order_product)
 
     @property
-    def token_expiry(self):
+    def _token_expiry(self):
         if self.product_type == 'RegularPartnerWorkshop' and not self.is_waiting:
             return self._order_product.order.order_datetime + timedelta(days=1)
         else:
             return None
+
+    @property
+    @timestamp_format
+    def token_expiry(self):
+        return self.token_expiry
 
     @property
     def cancel_url(self):
@@ -71,6 +82,8 @@ class OrderProductController:
         if self.product_type not in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
             return False
         elif self.partner_order_product:
+            return False
+        elif self._token_expiry and datetime.now() > self._token_expiry:
             return False
         else:
             return True
@@ -95,20 +108,20 @@ class OrderProductController:
             return MessageController(partner_order_product._order_product.registrations[0].name.title(),
                                      status='success', icon='check')
         elif self._order_product.product.type in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
-            token_expiry = self.token_expiry
+            token_expiry = self._token_expiry
             if token_expiry:
                 if datetime.now() > token_expiry:
                     return [MessageController('No partner.'),
                             MessageController('Your token has expired on {:%d-%b-%Y %H:%M}'.format(token_expiry))]
                 else:
-                    return [MessageController('No partner.'),
+                    return [MessageController('No partner yet.'),
                             MessageController('Your token for {}:'.format(self._order_product.product.name)),
-                            MessageController(self.token),
-                            MessageController('Token expires on {:%d-%b-%Y %H:%M}'.format(token_expiry))]
+                            MessageController(self.token, message_type='token'),
+                            MessageController('Token expires on {:%d-%b-%Y %H:%M}'.format(token_expiry), status='muted', icon="exclamation-circle")]
             else:
-                return [MessageController('No partner.'),
+                return [MessageController('No partner yet.'),
                         MessageController('Your token for {}:'.format(self._order_product.product.name)),
-                        MessageController(self.token)]
+                        MessageController(self.token, message_type='token')]
         else:
             return None
 
@@ -157,6 +170,11 @@ class OrderSummaryController:
         return url_for('event_order_summary',
                        order_token=self.token,
                        _external=True)
+
+    @property
+    @timestamp_format
+    def order_datetime(self):
+        return self._order.order_datetime
 
     def get_waiting_reason(self, order_product):
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
@@ -228,10 +246,11 @@ class FormErrorController:
 
 
 class MessageController:
-    def __init__(self, text, status=None, icon=None):
+    def __init__(self, text, status=None, icon=None, message_type=None):
         self.text = text
         self.status = status
         self.icon = icon
+        self.message_type = message_type
 
     def __repr__(self):
         return self.text
@@ -241,5 +260,5 @@ class MessageController:
 
     @property
     def bs_class(self):
-        if self.status.lower() in ('success', 'danger', 'warning', 'info'):
+        if self.status.lower() in ('success', 'danger', 'warning', 'info', 'muted'):
             return 'text-{}'.format(self.status.lower())
