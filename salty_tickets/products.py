@@ -125,6 +125,7 @@ class WorkshopProduct:
     workshop_level = None
     workshop_price = None
     workshop_duration = None
+    workshop_location = None
 
 
 WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
@@ -219,6 +220,7 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
+            workshop_location = self.workshop_location
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
             waiting_lists = self.get_waiting_lists(product_model)
@@ -469,6 +471,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
             workshop_time = self.workshop_time
+            workshop_location = self.workshop_location
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
             waiting_lists = self.get_waiting_lists(product_model)
