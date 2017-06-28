@@ -7,8 +7,9 @@ from salty_tickets.controllers import OrderSummaryController, OrderProductContro
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
-    get_partner_registration_from_form, OrderProductCancelForm
-from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order
+    get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm
+from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
+    VotingSession
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
 from salty_tickets.products import flip_role
@@ -241,3 +242,61 @@ def render_event_order_summary(order_token, title=None):
 
     order_summary_controller = OrderSummaryController(user_order)
     return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, title=title)
+
+
+@app.route('/vote')
+def vote():
+    form = VoteForm()
+    return render_template('voting/vote.html', form=form)
+
+
+@app.route('/vote/submit', methods=['POST'])
+def vote_submit():
+    form = VoteForm()
+    if form.validate_on_submit():
+        print(form.csrf_token, form.options.data)
+        vote = Vote(voter_id=form.csrf_token.data, vote=form.options.data)
+        db_session.add(vote)
+        db_session.commit()
+        return 'Success'
+    else:
+        return jsonify(form.errors)
+        # return 'Something went wrong'
+
+
+@app.route('/vote/admin', methods=['GET', 'POST'])
+def vote_admin():
+    form = VoteAdminForm()
+    voting_session = VotingSession.query.order_by(VotingSession.id.desc()).first()
+    if form.validate_on_submit():
+        print(form.start_voting.data)
+        print(form.stop_voting.data)
+        if form.start_voting.data:
+            voting_session = VotingSession(name=form.name.data)
+            db_session.add(voting_session)
+            db_session.commit()
+        elif form.stop_voting.data:
+            voting_session.stop()
+            db_session.commit()
+
+    if voting_session:
+        form.name.data = voting_session.name
+        if voting_session.end_timestamp:
+            form.stop_voting.data = True
+        votes_query = Vote.query.filter(Vote.vote_timestamp > voting_session.start_timestamp)
+        if voting_session.end_timestamp:
+            votes_query = votes_query.filter(Vote.vote_timestamp < voting_session.end_timestamp)
+        all_votes = votes_query.all()
+        all_votes_dict = {v.voter_id:v.vote for v in all_votes}
+
+        print(all_votes_dict)
+
+        res_left = len([k for k,v in all_votes_dict.items() if v=='left'])
+        res_right = len([k for k,v in all_votes_dict.items() if v=='right'])
+        results_data = {
+            'left': res_left,
+            'right': res_right
+        }
+    else:
+        results_data = None
+    return render_template('voting/admin.html', form=form, results_data=results_data)

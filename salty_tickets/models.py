@@ -269,3 +269,23 @@ class RefundRequest(Base):
     refund_stripe_id = Column(String(255))
 
     product_order = relationship('OrderProduct', uselist=False)
+
+
+
+class Vote(Base):
+    __tablename__ = 'votes'
+    id = Column(Integer, primary_key=True)
+    voter_id = Column(String(255))
+    vote = Column(String(255))
+    vote_timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+
+
+class VotingSession(Base):
+    __tablename__ = 'voting_sessions'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+    start_timestamp = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    end_timestamp = Column(DateTime)
+
+    def stop(self):
+        self.end_timestamp = datetime.datetime.utcnow()

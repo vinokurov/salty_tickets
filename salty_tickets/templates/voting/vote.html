@@ -1,0 +1,45 @@
+{% import "bootstrap/wtf.html" as wtf %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Salty Jitterbugs Voting</title>
+        <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
+<script>
+    $('body').on('click', '.vote_submit', function(e) {
+            var url = "{{ url_for('vote_submit') }}";
+            $('#options').val($(this).data('value'));
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('form').serialize(),
+                success: function (data) {
+                    console.log(data);
+                }
+            });
+            e.preventDefault();
+    });
+</script>
+
+<div class="container-fluid">
+    <div class="container my-4">
+        <form class="form form-vertical">
+            <div class="form-group">
+            {{ form.hidden_tag() }}
+                <input type="hidden" name="options" id="options" value="">
+                <button class="btn btn-lg btn-responsive btn-primary form-control vote_submit mb-4" data-value="left"><i class="fa fa-hand-o-left fa-fw" aria-hidden="true"></i> LEFT</button>
+                <button class="btn btn-lg btn-responsive btn-primary form-control vote_submit mb-4" data-value="right">RIGHT <i class="fa fa-hand-o-right fa-fw" aria-hidden="true"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

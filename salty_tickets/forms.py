@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, TextAreaField
+from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
+    HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError, Optional
 from wtforms import Form as NoCsrfForm
 from salty_tickets.models import Event, Registration
@@ -96,3 +97,13 @@ class OrderProductCancelForm(FlaskForm):
     confirm = BooleanField('I confirm I want to cancel', validators=[DataRequired()])
     comment = TextAreaField('Reason to cancel')
     submit = SubmitField('Cancel my participation')
+
+
+class VoteForm(FlaskForm):
+    options = RadioField(choices=[('left', 'left'), ('right', 'right')])
+
+
+class VoteAdminForm(FlaskForm):
+    name = StringField('Name')
+    start_voting = SubmitField('Start Voting')
+    stop_voting = SubmitField('Stop Voting')
