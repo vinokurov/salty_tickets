@@ -332,3 +332,10 @@ header .intro-text {
 Salty Jitterbugs - {{event.name}}
 {% if config.MODE_TESTING %}[TEST MODE]{% endif %}
 {% endblock %}
+
+{% block head %}
+{{super()}}
+<meta property="og:title" content="Salty Jitterbugs - {{event.name}}">
+<meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
+<meta property="og:url" content="{{ url_for('register_form', event_key=event.event_key, _external=True) }}">
+{% endblock %}
