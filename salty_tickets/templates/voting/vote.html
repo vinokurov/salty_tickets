@@ -38,6 +38,7 @@
                 }
             });
             e.preventDefault();
+            $('#voting_success').modal();
     });
 </script>
 
@@ -59,5 +60,21 @@
     </div>
 </div></div>
         </form>
+
+
+<!-- Modal -->
+<div class="modal fade" id="voting_success" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content card-success">
+      <div class="modal-body">
+          Vote submitted!
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
