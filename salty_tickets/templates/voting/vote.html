@@ -20,10 +20,8 @@
 <script>
 
     $('body').ready(function() {
-        console.log('test');
         var client = new ClientJS();
-        console.log(client.getFingerprint());
-        $('#options').val(client.getFingerprint());
+        $('#client_fingerprint').val(client.getFingerprint());
     });
 
     $('body').on('click', '.vote_submit', function(e) {
@@ -34,11 +32,16 @@
                 url: url,
                 data: $('form').serialize(),
                 success: function (data) {
-                    console.log(data);
+                    if(data=="Success") {
+                        $('#voting_success').modal();
+                    } else if(data.errors && 'csrf_token' in data.errors) {
+                        window.location.reload();
+                    } else {
+                        console.log(data);
+                    }
                 }
             });
             e.preventDefault();
-            $('#voting_success').modal();
     });
 </script>
 

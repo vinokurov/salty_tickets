@@ -254,14 +254,12 @@ def vote():
 def vote_submit():
     form = VoteForm()
     if form.validate_on_submit():
-        print(form.csrf_token, form.options.data)
         vote = Vote(voter_id=form.client_fingerprint.data, vote=form.options.data)
         db_session.add(vote)
         db_session.commit()
         return 'Success'
     else:
         return jsonify(form.errors)
-        # return 'Something went wrong'
 
 
 @app.route('/vote/admin', methods=['GET', 'POST'])
@@ -269,27 +267,27 @@ def vote_admin():
     form = VoteAdminForm()
     voting_session = VotingSession.query.order_by(VotingSession.id.desc()).first()
     if form.validate_on_submit():
-        print(form.start_voting.data)
-        print(form.stop_voting.data)
+
         if form.start_voting.data:
             voting_session = VotingSession(name=form.name.data)
             db_session.add(voting_session)
             db_session.commit()
+
         elif form.stop_voting.data:
             voting_session.stop()
             db_session.commit()
 
     if voting_session:
         form.name.data = voting_session.name
+
         if voting_session.end_timestamp:
             form.stop_voting.data = True
+
         votes_query = Vote.query.filter(Vote.vote_timestamp > voting_session.start_timestamp)
         if voting_session.end_timestamp:
             votes_query = votes_query.filter(Vote.vote_timestamp < voting_session.end_timestamp)
         all_votes = votes_query.all()
         all_votes_dict = {v.voter_id:v.vote for v in all_votes}
-
-        print(all_votes_dict)
 
         res_left = len([k for k,v in all_votes_dict.items() if v=='left'])
         res_right = len([k for k,v in all_votes_dict.items() if v=='right'])
