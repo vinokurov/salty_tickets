@@ -100,6 +100,7 @@ class OrderProductCancelForm(FlaskForm):
 
 
 class VoteForm(FlaskForm):
+    client_fingerprint = StringField(255)
     options = RadioField(choices=[('left', 'left'), ('right', 'right')])
 
 

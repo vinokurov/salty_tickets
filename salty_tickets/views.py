@@ -255,7 +255,7 @@ def vote_submit():
     form = VoteForm()
     if form.validate_on_submit():
         print(form.csrf_token, form.options.data)
-        vote = Vote(voter_id=form.csrf_token.data, vote=form.options.data)
+        vote = Vote(voter_id=form.client_fingerprint, vote=form.options.data)
         db_session.add(vote)
         db_session.commit()
         return 'Success'
