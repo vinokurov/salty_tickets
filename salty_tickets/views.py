@@ -122,6 +122,7 @@ def get_validated_partner_tokens(form):
 @app.route('/c')
 @app.route('/crowdfunding')
 @app.route('/crowdfunding/')
+@app.route('/crowdfunding_campaign')
 def crowdfunding_index():
     event = Event.query.filter_by(active=True, event_type='crowdfunding').order_by(Event.start_date).first()
     if event:
