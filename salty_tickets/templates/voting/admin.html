@@ -36,7 +36,7 @@
             <div class="form-group">
                 {{ form.hidden_tag() }}
                 {{ form.name }}
-                {% if form.stop_voting.data %}
+                {% if not results_data or form.stop_voting.data  %}
                     {{ form.start_voting(class="btn btn-primary") }}
                 {% else %}
                     {{ form.stop_voting(class="btn btn-primary") }}
