@@ -25,7 +25,7 @@ def flip_role(dance_role):
         return DANCE_ROLE_FOLLOWER
 
 
-class ProductTemplate:
+class BaseProduct:
     name = ''
     info = ''
     max_available = 0
@@ -128,39 +128,44 @@ class WorkshopProduct:
     workshop_location = None
 
 
+class ContestProduct:
+    contest_date = None
+    contest_time = None
+    contest_level = None
+    contest_price = None
+    contest_prize = None
+    contest_location = None
+
+
 WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
 WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
 
 
-class CouplesOnlyWorkshopOld(ProductTemplate, ProductDiscountPrices, WorkshopProduct):
+class StrictlyContest(BaseProduct, ContestProduct):
+    partner_name = None
 
     def get_form(self, product_model=None):
-        class CouplesOnlyWorkshopForm(NoCsrfForm):
-            product_name = self.name
+        class StrictlyContestForm(NoCsrfForm):
             info = self.info
             price = self.price
-            discount_keys = self._get_discount_keys()
             add = BooleanField(label='Book with partner')
-            partner_name = StringField('Your partner name')
             product_type = self.__class__.__name__
-            workshop_date = self.workshop_date
-            workshop_time = self.workshop_time
-            workshop_level = self.workshop_level
-            workshop_price = self.workshop_price
+            contest_date = self.contest_date
+            contest_time = self.contest_time
+            contest_level = self.contest_level
+            contest_price = self.contest_price
+            contest_prize = self.contest_prize
+            contest_location = self.contest_location
             waiting_list = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
-                return self.add.data
+                return True
 
-        return CouplesOnlyWorkshopForm
+        return StrictlyContestForm
 
     def get_total_price(self, product_form, order_form):
         if product_form.add.data:
-            discount_price = self.get_discount_price(product_form, order_form)
-            if discount_price:
-                return discount_price
-            else:
-                return self.price
+            return self.price
         else:
             return 0
 
@@ -169,14 +174,15 @@ class CouplesOnlyWorkshopOld(ProductTemplate, ProductDiscountPrices, WorkshopPro
             return self.name
         else:
             name1 = order_product_model.registrations[0].name
-            name2 = order_product_model.registrations[1].name
+            name2 = order_product_model.details_as_dict['partner_name']
             return '{} ({} + {})'.format(self.name, name1, name2)
 
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
+        partner_name = form.partner_name.data
         ws = self.get_waiting_lists(product_model)
         status = ORDER_PRODUCT_STATUS_WAITING if ws else ORDER_PRODUCT_STATUS_ACCEPTED
-        order_product = OrderProduct(product_model, price, status=status)
+        order_product = OrderProduct(product_model, price, status=status, details_dict={'partner_name':partner_name})
         return order_product
 
     @staticmethod
@@ -201,8 +207,18 @@ class CouplesOnlyWorkshopOld(ProductTemplate, ProductDiscountPrices, WorkshopPro
         else:
             return 0
 
+    @classmethod
+    def get_available_quantity(cls, product_model):
+        reg_stats = cls.get_registration_stats(product_model)
+        return product_model.max_available - reg_stats.accepted
 
-class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
+    @classmethod
+    def can_balance_waiting_list_one_couple(cls, product_model):
+        # TODO: this actually doesn't balance anything yet
+        return False
+
+
+class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
     ratio = None
     allow_first = 0
 
@@ -454,10 +470,10 @@ class RegularPartnerWorkshop(ProductTemplate, WorkshopProduct):
         db_session.commit()
 
 
-class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduct):
+class CouplesOnlyWorkshop(BaseProduct, ProductDiscountPrices, WorkshopProduct):
 
     def get_form(self, product_model=None):
-        class CouplesOnlyWorkshopForm(NoCsrfForm):
+        class CouplesContestForm(NoCsrfForm):
             product_name = self.name
             product_id = product_model.id
             info = self.info
@@ -483,7 +499,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
                 else:
                     return False
 
-        return CouplesOnlyWorkshopForm
+        return CouplesContestForm
 
     def get_total_price(self, product_form, order_form):
         if product_form.add.data:
@@ -621,7 +637,7 @@ class CouplesOnlyWorkshop(ProductTemplate, ProductDiscountPrices, WorkshopProduc
         db_session.commit()
 
 
-class MarketingProduct(ProductTemplate):
+class MarketingProduct(BaseProduct):
     allow_select = None
     img_src = None
 
@@ -661,7 +677,7 @@ class MarketingProduct(ProductTemplate):
             return 0
 
 
-class DonateProduct(ProductTemplate):
+class DonateProduct(BaseProduct):
     make_public = True
 
     def get_form(self, product_model=None):
@@ -704,6 +720,7 @@ product_mapping = {
     'CouplesOnlyWorkshop': CouplesOnlyWorkshop,
     'MarketingProduct': MarketingProduct,
     'DonateProduct': DonateProduct,
+    'StrictlyContest': StrictlyContest,
 }
 
 
@@ -711,7 +728,7 @@ def get_product_by_model(db_model):
     assert (isinstance(db_model, Product))
     class_name = db_model.type
     product_class = product_mapping[class_name]
-    assert issubclass(product_class, ProductTemplate)
+    assert issubclass(product_class, BaseProduct)
     return product_class.from_model(db_model)
 
 
