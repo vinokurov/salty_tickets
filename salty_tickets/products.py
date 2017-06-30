@@ -135,6 +135,7 @@ class ContestProduct:
     contest_price = None
     contest_prize = None
     contest_location = None
+    contest_format = None
 
 
 WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couples'])
@@ -143,9 +144,12 @@ WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
 
 class StrictlyContest(BaseProduct, ContestProduct):
     partner_name = None
+    partner_email = None
 
     def get_form(self, product_model=None):
         class StrictlyContestForm(NoCsrfForm):
+            product_name = self.name
+            product_id = product_model.id
             info = self.info
             price = self.price
             add = BooleanField(label='Book with partner')
@@ -156,10 +160,13 @@ class StrictlyContest(BaseProduct, ContestProduct):
             contest_price = self.contest_price
             contest_prize = self.contest_prize
             contest_location = self.contest_location
-            waiting_list = self.get_waiting_lists(product_model)
+            contest_format = self.contest_format
+            available_quantity = self.get_available_quantity(product_model)
+            waiting_lists = self.get_waiting_lists(product_model)
 
             def needs_partner(self):
-                return True
+                if self.add.data:
+                    return True
 
         return StrictlyContestForm
 
@@ -180,9 +187,11 @@ class StrictlyContest(BaseProduct, ContestProduct):
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_form, form)
         partner_name = form.partner_name.data
+        partner_email = form.partner_email.data
         ws = self.get_waiting_lists(product_model)
         status = ORDER_PRODUCT_STATUS_WAITING if ws else ORDER_PRODUCT_STATUS_ACCEPTED
-        order_product = OrderProduct(product_model, price, status=status, details_dict={'partner_name':partner_name})
+        order_product = OrderProduct(product_model, price, status=status,
+                                     details_dict={'partner_name':partner_name, 'partner_email':partner_email})
         return order_product
 
     @staticmethod

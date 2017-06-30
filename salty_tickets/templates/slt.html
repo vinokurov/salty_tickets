@@ -10,6 +10,8 @@
     {{ couples_only_workshop_old_product(form_field, event) }}
 {% elif form_field.product_type in ('RegularPartnerWorkshop', 'CouplesOnlyWorkshop') %}
     {{ regular_partner_workshop_product(form_field, event) }}
+{% elif form_field.product_type in ('StrictlyContest') %}
+    {{ contest_product(form_field, event) }}
 {% else %}
    <div class="card-body">
     {%- for subfield in form_field %}
@@ -194,6 +196,32 @@
         </button>
         <button class="btn btn-outline-success form-control btn-responsive">
             {{ form_field.add_partner(checked=False) }} {{ form_field.add_partner.label.text }}
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro contest_product(form_field, event) %}
+<div class="card-block">
+    <h4 class="card-title">{{ form_field.product_name }}</h4>
+    <p>
+        <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.contest_date }}</small><br>
+        <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.contest_time }}</small><br>
+        <small class="text-muted"><i class="fa fa-sitemap fa-fw" aria-hidden="true"></i> {{ form_field.contest_format }}</small><br>
+        <small class="text-muted"><i class="fa fa-thermometer fa-fw" aria-hidden="true"></i> {{ form_field.contest_level }}</small><br>
+        <small class="text-muted"><i class="fa fa-trophy fa-fw" aria-hidden="true"></i> {{ form_field.contest_prize }}</small><br>
+        <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ form_field.contest_location }}</small><br>
+        <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.contest_price }}</small><br>
+        <small class="text-muted"><i class="fa fa-ticket fa-fw" aria-hidden="true"></i> {{ ticket_availability_status(form_field.available_quantity, form_field.waiting_lists, 6, form_field.product_type) }}</small><br>
+        <small>
+                {{ availability_badge('Couple', form_field.waiting_lists) }}
+        </small>
+    </p>
+    <p class="card-text"><small class="text-muted">{{ form_field.info | safe}} </small></p>
+    <div class="btn-group" data-toggle="buttons">
+        <button class="btn btn-outline-success form-control btn-responsive {%if form_field.add.data %}active{%endif%}">
+            {{ form_field.add(checked=form_field.add.data) }} {{ form_field.add.label.text }}
         </button>
     </div>
 </div>

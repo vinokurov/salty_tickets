@@ -100,9 +100,18 @@
                 <span class="badge badge-default">{{ order_product.status }}</span>
                 {% endif %}
                 <p class="card-text">
+                    {% if order_product.product_type in ('RegularPartnerWorkshop', 'CouplesOnlyWorkshop') %}
                     <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_date'] }}</small><br>
                     <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_time'] }}</small><br>
                     <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_location'] }}</small><br>
+                    {% elif order_product.product_type in ('StrictlyContest') %}
+                    <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_date'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_time'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-sitemap fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_format'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-thermometer fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_level'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-trophy fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_prize'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_location'] }}</small><br>
+                    {% endif %}
                     <small class="text-muted"> {{ order_product._order_product.product.info }}</small><br>
                     <small>{{ message(order_product.partner_info) }}</small>
                 </p>

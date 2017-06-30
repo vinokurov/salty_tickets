@@ -167,7 +167,8 @@ header {
     background-size:cover;
     -o-background-size:cover;
     text-align:center;
-    color:#fff
+    color:#fff;
+    background-color: #333;
 }
 header .intro-text {
     padding-top: 100px;
@@ -335,7 +336,7 @@ Salty Jitterbugs - {{event.name}}
 
 {% block head %}
 {{super()}}
-<meta property="og:title" content="Salty Jitterbugs - {{event.name}}">
+<meta property="og:title" content="{{event.name}}">
 <meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
 <meta property="og:url" content="{{ url_for('register_form', event_key=event.event_key, _external=True) }}">
 {% endblock %}
