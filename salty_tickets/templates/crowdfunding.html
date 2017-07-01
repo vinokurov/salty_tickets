@@ -273,7 +273,6 @@ Salty Jitterbugs - {{event.name}}
     {% block og_meta %}
     <meta property="og:title" content="{{event.name}}">
     <meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
-    <meta property="og:url" content="{{ url_for('register_form', event_key=event.event_key, _external=True) }}">
     {% endblock %}
 {% endblock %}
 
