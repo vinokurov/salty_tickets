@@ -1,3 +1,6 @@
+{% extends "crowdfunding.html" %}
+
+{% block info_section %}
 <div class="container-fluid mb-4">
 <div class="container">
     <div class="embed-responsive embed-responsive-16by9">
@@ -35,8 +38,8 @@
             <p> In September she will start a Master in Illustration at Kingston University, London which has a cost of £8.000.</p>
 
             <p>Through this crowdfunding campaign you will have the opportunity to get very original pieces of art or services in
-            exchange of your contribution which will enormously help Simona in facing the Master’s expenses.
-            Together with Simona’s offers you can get also others from Simona’s friends who have warmly offered their help
+                exchange of your contribution which will enormously help Simona in facing the Master’s expenses.
+                Together with Simona’s offers you can get also others from Simona’s friends who have warmly offered their help
                 and availability.</p>
 
             <p>You can also just donate an amount of your choice. Every little help will make a difference!</p>
@@ -72,3 +75,17 @@
 
    </div>
 </div>
+{% endblock %}
+
+
+{% block og_meta %}
+{{ super() }}
+<meta property="og:description"
+      content="Simona De Leo is an Italian illustrator now based in London.
+                In September she will start a Master in Illustration at Kingston University, London which has a cost of £8.000.
+                Through this crowdfunding campaign you will have the opportunity to get very original pieces of art or services in
+                exchange of your contribution which will enormously help Simona in facing the Master’s expenses.
+                Together with Simona’s offers you can get also others from Simona’s friends who have warmly offered their help
+                and availability.">
+{% endblock %}
+

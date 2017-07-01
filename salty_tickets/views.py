@@ -158,7 +158,7 @@ def crowdfunding_form(event_key):
         join(Order, aliased=True).join(Event, aliased=True).filter_by(event_key=event_key).\
         order_by(desc(Registration.registered_datetime)).all()
     return render_template(
-        'crowdfunding.html',
+        'events/{}/crowdfunding.html'.format(event_key),
         event=event,
         form=form,
         total_stats=total_stats,
