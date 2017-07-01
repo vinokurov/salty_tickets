@@ -176,6 +176,7 @@ section {
 {% block content %}
    <!--<div class="container">-->
       <!--<div class="jumbotron">-->
+{% block header_section %}
 <header class="mb-4">
           <div class="container">
               <div class="intro-text">
@@ -184,7 +185,8 @@ section {
                   <h4 class="lead">Supporters: <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h4>
               </div>
           </div>
-    </header>
+</header>
+{% endblock %}
 
 {% block info_section %}
 {% endblock %}
