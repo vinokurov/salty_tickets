@@ -9,6 +9,12 @@
         <!-- Bootstrap -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!--<style>-->
+        <!--.vote_submit{-->
+            <!--font-size:50px;-->
+        <!--}-->
+    <!--</style>-->
 </head>
 <body>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -52,11 +58,11 @@
             {{ form.hidden_tag() }}
                 <input type="hidden" name="client_fingerprint" id="client_fingerprint" value="">
                 <input type="hidden" name="options" id="options" value="">
-                <div class="card">
+                <div class="card text-center">
                     <div class="card-block">
                         <h4 class="card-title">Salty Voting</h4>
-                        <button type="buttone" class="btn btn-lg btn-primary form-control vote_submit mb-4" data-value="left"><i class="fa fa-hand-o-left fa-fw" aria-hidden="true"></i> LEFT</button>
-                        <button type="buttone" class="btn btn-lg btn-primary form-control vote_submit mb-4" data-value="right">RIGHT <i class="fa fa-hand-o-right fa-fw" aria-hidden="true"></i></button>
+                        <button type="buttone" class="btn btn-lg btn-danger form-control vote_submit mb-4" data-value="left"><h1 class="display-2"><i class="fa fa-hand-o-left fa-fw" aria-hidden="true"></i></h1>LEFT</button>
+                        <button type="buttone" class="btn btn-lg btn-danger form-control vote_submit mb-4" data-value="right"><h1 class="display-2"><i class="fa fa-hand-o-right fa-fw" aria-hidden="true"></i></h1>RIGHT</button>
                     </div>
                 </div>
             </div>
@@ -78,6 +84,12 @@
     </div>
   </div>
 </div>
+
+<nav class="navbar bottom navbar-light bg-faded my-4">
+    <div class="container">
+        <p><small class="text-muted">Implemented by Alexander Vinokurov</small></p>
+    </div>
+</nav>
 
 </body>
 </html>

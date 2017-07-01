@@ -297,6 +297,12 @@ def vote_admin():
             'left': res_left,
             'right': res_right
         }
+        progess_max = max(20, max(res_left,res_right))
+        progress_data = {
+            'total_max': progess_max,
+            'left_pcnt': int(res_left*100/progess_max),
+            'right_pcnt': int(res_right*100/progess_max),
+        }
     else:
         results_data = None
-    return render_template('voting/admin.html', form=form, results_data=results_data)
+    return render_template('voting/admin.html', form=form, results_data=results_data, progress_data=progress_data)

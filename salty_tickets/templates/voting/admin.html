@@ -45,8 +45,39 @@
             </div>
         </form>
         {% if results_data %}
-            <p>Left {{ results_data['left'] }}</p>
-            <p>Right {{ results_data['right'] }}</p>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th class="col-5"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>{% if results_data['left']> results_data['right'] %}<i class="fa fa-star text-warning" aria-hidden="true"></i>{% endif %}</td>
+                <td>Left</td>
+                <td>{{ results_data['left'] }}</td>
+                <td>
+                    <div class="progress">
+                      <div class="progress-bar" role="progressbar" style="width: {{progress_data['left_pcnt']}}%;" aria-valuenow="{{progress_left}}" aria-valuemin="0" aria-valuemax="{{ progress_data['total_max'] }}"></div>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>{% if results_data['right']> results_data['left'] %}<i class="fa fa-star text-warning" aria-hidden="true"></i>{% endif %}</td>
+                <td>Right</td>
+                <td>{{ results_data['right'] }}</td>
+                <td>
+                    <div class="progress">
+                      <div class="progress-bar" role="progressbar" style="width: {{progress_data['right_pcnt']}}%;" aria-valuenow="{{progress_right}}" aria-valuemin="0" aria-valuemax="{{ progress_data['total_max'] }}"></div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
         {% endif %}
     </div>
 </div>
