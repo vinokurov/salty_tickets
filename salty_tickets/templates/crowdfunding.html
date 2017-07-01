@@ -159,7 +159,8 @@ header {
     background-size:cover;
     -o-background-size:cover;
     text-align:center;
-    color:#fff
+    color:#fff;
+    background-color: #333;
 }
 header .intro-text {
     padding-top: 100px;
@@ -175,7 +176,7 @@ section {
 {% block content %}
    <!--<div class="container">-->
       <!--<div class="jumbotron">-->
-<header>
+<header class="mb-4">
           <div class="container">
               <div class="intro-text">
                   <h2 class="display-4">{{ event.name }}</h2>
@@ -183,7 +184,6 @@ section {
                   <h4 class="lead">Supporters: <div class="badge badge-default">{{ total_stats['contributors'] }}</div></h4>
               </div>
           </div>
-      <!--</div>-->
     </header>
 
 {% include "events/"+event.event_key+"/info.html" %}
