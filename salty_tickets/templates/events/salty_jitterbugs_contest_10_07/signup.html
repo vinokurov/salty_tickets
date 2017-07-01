@@ -1,0 +1,15 @@
+{% extends "signup.html" %}
+
+{% block og_meta %}
+<meta property="og:title" content="{{event.name}}">
+<meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview_1.jpg'.format(event.event_key), _external=True) }}">
+<meta property="og:url" content="{{ url_for('register_form', event_key=event.event_key, _external=True) }}">
+{% endblock %}
+
+{% block info_section %}
+<section class="container-fluid my-5">
+   <div class="container">
+        <p>All styles Salty Jitterbug Contest at the last Salty Monday of the season.</p>
+   </div>
+</section>
+{% endblock %}

@@ -77,7 +77,7 @@ def register_form(event_key):
                     form[order_product.product.product_key].add.data = 1
             except BadSignature:
                 pass
-    return render_template('signup.html', event=event, form=form, config=config)
+    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config)
 
 
 @app.route('/register/checkout/<string:event_key>', methods=['POST'])

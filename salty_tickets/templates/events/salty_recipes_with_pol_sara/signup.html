@@ -1,14 +1,6 @@
-<header>
-          <p class="container">
-              <div class="intro-text">
-                  <h3 class="display-5">29-30 July</h3>
-                  <h3 class="display-5">London</h3>
-                  <h2 class="display-4">{{ event.name }}</h2>
-              </div>
-          </div>
-      <!--</div>-->
-    </header>
+{% extends "signup.html" %}
 
+{% block info_section %}
 <section class="container-fluid my-5">
    <div class="container">
         <p>This Summer we invited the world's famous jitterbugs Pol Prats and Sara Planas
@@ -91,3 +83,4 @@
 
     </div>
 </section>
+{% endblock %}
