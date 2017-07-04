@@ -96,11 +96,13 @@ def register_checkout(event_key):
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
+        return_dict['disable_checkout'] = user_order.order_products.count() == 0
     else:
         form_errors_controller = FormErrorController(form)
         return_dict['order_summary_html'] = render_template('form_errors.html',
                                                             form_errors=form_errors_controller)
         return_dict['errors'] = {v:k for v,k in form_errors_controller.errors}
+        return_dict['disable_checkout'] = True
     return jsonify(return_dict)
 
 
@@ -181,11 +183,13 @@ def crowdfunding_checkout(event_key):
         order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller)
+        return_dict['disable_checkout'] = user_order.order_products.count() == 0
     else:
         form_errors_controller = FormErrorController(form)
         return_dict['order_summary_html'] = render_template('form_errors.html',
                                                             form_errors=form_errors_controller)
         return_dict['errors'] = {v: k for v, k in form_errors_controller.errors}
+        return_dict['disable_checkout'] = True
     return jsonify(return_dict)
 
 

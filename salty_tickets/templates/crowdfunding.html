@@ -63,7 +63,7 @@ jQuery.fn.extend({
                     console.log(data);  // display the returned data in the console.
                     $('div#order_summary').html(data.order_summary_html);
                     show_form_validation_errors(data.errors);
-                    $('button#checkout').disable(Object.keys(data.errors).length>0);
+                    $('button#checkout').disable(data.disable_checkout);
                 }
             });
         }
