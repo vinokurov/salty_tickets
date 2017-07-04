@@ -1,7 +1,8 @@
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
-    Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING
+    Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING, \
+    ORDER_STATUS_PAID
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize
 
@@ -74,9 +75,10 @@ def transaction_fee(price):
 
 def get_total_raised(event):
     assert isinstance(event, Event)
+    orders_query = event.orders.filter_by(status=ORDER_STATUS_PAID)
     total_stats = {
-        'amount': sum([o.total_price for o in event.orders.all()]),
-        'contributors': len(event.orders.all())
+        'amount': sum([o.total_price for o in orders_query.all()]),
+        'contributors': orders_query.count()
     }
     return total_stats
 
