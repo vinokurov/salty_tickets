@@ -42,6 +42,15 @@ def register_index():
 @app.route('/register/<string:event_key>', methods=('GET', 'POST'))
 def register_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
+    if not event:
+        event = Event.query.\
+            filter_by(active=True, event_type='dance').\
+            filter(Event.name.startswith(event_key)).first()
+        if event:
+            return redirect(url_for('register_form', event_key=event.event_key))
+        else:
+            return redirect(url_for('register_index'))
+
     form = create_event_form(event)()
 
     if form.validate_on_submit():
@@ -130,11 +139,22 @@ def crowdfunding_index():
     event = Event.query.filter_by(active=True, event_type='crowdfunding').order_by(Event.start_date).first()
     if event:
         return redirect(url_for('crowdfunding_form', event_key=event.event_key))
+    else:
+        return redirect('/')
 
 
 @app.route('/crowdfunding/<string:event_key>', methods=('GET', 'POST'))
 def crowdfunding_form(event_key):
     event = Event.query.filter_by(event_key=event_key).first()
+    if not event:
+        event = Event.query.\
+            filter_by(active=True, event_type='crowdfunding').\
+            filter(Event.name.startswith(event_key)).first()
+        if event:
+            return redirect(url_for('crowdfunding_form', event_key=event.event_key))
+        else:
+            return redirect(url_for('crowdfunding_index'))
+
     form = create_crowdfunding_form(event)()
 
     total_stats = get_total_raised(event)
