@@ -44,6 +44,7 @@ jQuery.fn.extend({
     function update_total_price(e) {
         if(form_changed) {
             form_changed = false;
+            payment_ready_change_status(false);
             console.log('focusout');
             var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
             $.ajax({
@@ -92,44 +93,64 @@ jQuery.fn.extend({
     }
 
     $('body').on('click', 'button#checkout', function(e) {
-        var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: $('form').serialize(), // serializes the form's elements.
-            success: function (data) {
+        if(!payment_ready) {
+            var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: $('form').serialize(), // serializes the form's elements.
+                success: function (data) {
 
-                console.log(data);  // display the returned data in the console.
+                    //console.log(data);  // display the returned data in the console.
 
-                if(data.stripe.amount) {
-                    var handler = StripeCheckout.configure({
-                      key: '{{ config.STRIPE_PK }}',
-                      image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
-                      locale: 'auto',
-                      token: function(token) {
-                        // You can access the token ID with `token.id`.
-                        // Get the token ID to your server-side code for use.
-                        console.log(token)
-                        $('#{{ form.stripe_token.id }}').val(token.id);
-                        $('form').submit()
-                      }
-                    });
-
-                    handler.open({
-                        name: 'Salty Jittergugs',
-                        description: '{{ event.name }}',
-                        currency: 'gbp',
-                        amount: data.stripe.amount,
-                        email: data.stripe.email,
-                        zipCode: true,
-                        billingAddress: true,
-                        allowRememberMe: false
-                    })
+                    if(data.stripe.amount) {
+                        payment_ready_change_status(true);
+                        payment_stripe_data = data.stripe;
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            var handler = StripeCheckout.configure({
+              key: '{{ config.STRIPE_PK }}',
+              image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+              locale: 'auto',
+              token: function(token) {
+                // You can access the token ID with `token.id`.
+                // Get the token ID to your server-side code for use.
+                //console.log(token)
+                $('#{{ form.stripe_token.id }}').val(token.id);
+                $('form').submit()
+              }
+            });
+
+            handler.open({
+                name: 'Salty Jittergugs',
+                description: '{{ event.name | safe}}',
+                currency: 'gbp',
+                amount: payment_stripe_data.amount,
+                email: payment_stripe_data.email,
+                zipCode: true,
+                billingAddress: true,
+                allowRememberMe: false
+            })
+        }
         e.preventDefault(); // block the traditional submission of the form.
+        document.activeElement.blur();
     });
+
+
+    var payment_ready = false;
+    var payment_stripe_data = 0;
+
+    function payment_ready_change_status(status) {
+        if(status) {
+            payment_ready = true;
+            $('#checkout_text').html('Sign up and pay');
+        } else {
+            payment_ready = false;
+            $('#checkout_text').html('Check availability');
+        }
+    }
 
 
 // http://stackoverflow.com/questions/3860351/relative-position-in-dom-of-elements-in-jquery
@@ -249,7 +270,7 @@ header .intro-text {
                                 <div class="form-group form-vertical">
                                     <button type="button" id="checkout" class="btn btn-lg btn-responsive btn-success form-control" disabled>
                                         <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
-                                        Sign up and pay
+                                        <span id="checkout_text">Sign up and pay</span>
                                     </button>
                                 </div>
                             </div>
