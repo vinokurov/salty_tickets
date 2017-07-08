@@ -5,3 +5,6 @@ flask-wtf
 stripe
 premailer
 hashids
+PyMySQL
+pytest
+mock
