@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from flask import url_for
-from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
+from salty_tickets.models import Event, OrderProduct, Order, Registration, OrderProductStatus, SignupGroup, \
     SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping
 from salty_tickets.products import get_product_by_model
 from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize
@@ -48,7 +48,7 @@ class OrderProductController:
 
     @property
     def is_waiting(self):
-        return self._order_product.status == ORDER_PRODUCT_STATUS_WAITING
+        return self._order_product.status == OrderProductStatus.WAITING
 
     @property
     def product_type(self):
@@ -177,7 +177,7 @@ class OrderSummaryController:
         return self._order.order_datetime
 
     def get_waiting_reason(self, order_product):
-        if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
+        if order_product.status == OrderProductStatus.WAITING:
             if order_product.product.type == 'CouplesOnlyWorkshop':
                 if len([op for op in self._order.order_products if op.product.id==order_product.product.id]) == 1:
                     return 'You are put in the waiting list until your partner signs up'

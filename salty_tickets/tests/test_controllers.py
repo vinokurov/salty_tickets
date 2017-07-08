@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, price_format
-from salty_tickets.models import ORDER_PRODUCT_STATUS_WAITING, ORDER_PRODUCT_STATUS_ACCEPTED, Order, OrderProduct, \
+from salty_tickets.models import OrderProductStatus.WAITING, OrderProductStatus.ACCEPTED, Order, OrderProduct, \
     Product
 from mock import Mock
 from salty_tickets.tokens import order_product_serialize
@@ -17,19 +17,19 @@ def test_OrderProductController_price():
 
 def test_OrderProductController_status():
     order_product = Mock(spec=OrderProduct)
-    order_product.status = ORDER_PRODUCT_STATUS_WAITING
+    order_product.status = OrderProductStatus.WAITING
     controller = OrderProductController(order_product)
-    assert controller.status == ORDER_PRODUCT_STATUS_WAITING
+    assert controller.status == OrderProductStatus.WAITING
 
 
 def test_OrderProductController_is_waiting():
     order_product = Mock(spec=OrderProduct)
-    order_product.status = ORDER_PRODUCT_STATUS_WAITING
+    order_product.status = OrderProductStatus.WAITING
     controller = OrderProductController(order_product)
     assert controller.is_waiting == True
 
     order_product = Mock(spec=OrderProduct)
-    order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
+    order_product.status = OrderProductStatus.ACCEPTED
     controller = OrderProductController(order_product)
     assert controller.is_waiting == False
 
@@ -40,19 +40,19 @@ def test_OrderProductController_token():
     token = order_product_serialize(order_product)
 
     # waiting list => return token
-    order_product.status = ORDER_PRODUCT_STATUS_WAITING
+    order_product.status = OrderProductStatus.WAITING
     order_product.order = Mock(order_datetime=datetime(2015, 1, 1, 17, 0))
     controller = OrderProductController(order_product)
     assert controller.token == token
 
     # registered less than a day ago => return token
-    order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
+    order_product.status = OrderProductStatus.ACCEPTED
     order_product.order = Mock(order_datetime=datetime.now() - timedelta(hours=23))
     controller = OrderProductController(order_product)
     assert controller.token == token
 
     # registered more than a day ago => no token
-    order_product.status = ORDER_PRODUCT_STATUS_ACCEPTED
+    order_product.status = OrderProductStatus.ACCEPTED
     order_product.order = Mock(order_datetime=datetime.now() - timedelta(hours=25))
     controller = OrderProductController(order_product)
     assert controller.token == ''

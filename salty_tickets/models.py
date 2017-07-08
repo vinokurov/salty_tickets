@@ -13,16 +13,19 @@ from sqlalchemy.orm import relationship
 __author__ = 'vnkrv'
 
 
-ORDER_STATUS_NEW = 'new'
-ORDER_STATUS_PAID = 'paid'
-ORDER_STATUS_FAILED = 'failed'
+class OrderStatus:
+    NEW = 'new'
+    PAID = 'paid'
+    FAILED = 'failed'
 
 DANCE_ROLE_LEADER = 'leader'
 DANCE_ROLE_FOLLOWER = 'follower'
 
-ORDER_PRODUCT_STATUS_WAITING = 'waiting'
-ORDER_PRODUCT_STATUS_ACCEPTED = 'accepted'
-ORDER_PRODUCT_STATUS_CANCELLED = 'cancelled'
+class OrderProductStatus:
+    WAITING = 'waiting'
+    WAITING_NONPAID = 'waiting-nonpaid'
+    ACCEPTED = 'accepted'
+    CANCELLED = 'cancelled'
 
 SIGNUP_GROUP_TYPE_PARTNERS = 'partners'
 
@@ -125,7 +128,7 @@ class Order(Base):
     event_id = Column(Integer, ForeignKey('events.id'))
     total_price = Column(Float, nullable=False, default=0)
     transaction_fee = Column(Float, nullable=False, default=0)
-    status = Column(String(50), nullable=False, default=ORDER_STATUS_NEW)
+    status = Column(String(50), nullable=False, default=OrderStatus.NEW)
     order_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
     stripe_charge_id = Column(String(50))
     # stripe_charge = Column(Text)
@@ -162,7 +165,7 @@ class Order(Base):
             print(charge)
             self.stripe_charge_id = charge['id']
             # self.stripe_charge = jsonify(charge)
-            self.status = ORDER_STATUS_PAID
+            self.status = OrderStatus.PAID
             return True, charge
         except stripe.CardError as ce:
             # self.stripe_charge_id = charge.get('id', '')
@@ -199,13 +202,13 @@ class OrderProduct(Base):
         return details_dict
 
     def cancel(self):
-        self.status = ORDER_PRODUCT_STATUS_CANCELLED
+        self.status = OrderProductStatus.CANCELLED
 
     def refund(self, amount):
         raise NotImplementedError
 
     def accept(self):
-        self.status = ORDER_PRODUCT_STATUS_ACCEPTED
+        self.status = OrderProductStatus.ACCEPTED
 
 
 class OrderProductDetail(Base):
