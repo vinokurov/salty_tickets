@@ -1,9 +1,7 @@
 flask
-sqlalchemy
-flask_bootstrap
-flask_sqlalchemy
-wtforms
-sqlalchemy_utils
+flask-bootstrap
+flask-sqlalchemy
 flask-wtf
 stripe
 premailer
+hashids
