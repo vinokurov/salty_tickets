@@ -31,7 +31,7 @@ def need_partner_check(form, field):
             raise ValidationError('Partner details are required')
 
 
-class DanceSignupForm(SignupForm, FormWithProducts):
+class DanceSignupForm(FormWithProducts, SignupForm):
     partner_name = StringField(u'Partner\'s name', validators=[need_partner_check])
     partner_email = StringField(u'Partner\'s email', validators=[need_partner_check])
 

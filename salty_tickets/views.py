@@ -33,8 +33,8 @@ def index():
 @app.route('/register')
 @app.route('/register/')
 def register_index():
-    # event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
-    event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.id).first()
+    event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.start_date).first()
+    # event = Event.query.filter_by(active=True, event_type='dance').order_by(Event.id).first()
     if event:
         return redirect(url_for('register_form', event_key=event.event_key))
 

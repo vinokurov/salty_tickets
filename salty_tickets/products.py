@@ -78,26 +78,44 @@ class BaseProduct:
         params_dict = {a: getattr(self, a) for a in attrs}
         return params_dict
 
-    def get_total_price(self, produc_form, form):
+    def get_total_price(self, product_model, product_form, form):
         raise NotImplementedError()
 
     def get_order_product_model(self, product_model, product_form, form):
-        price = self.get_total_price(product_form, form)
+        price = self.get_total_price(product_model, product_form, form)
         status =  ORDER_PRODUCT_STATUS_ACCEPTED
         order_product = OrderProduct(product_model, price, status=status)
         return order_product
 
 
+def get_total_paid(product_model):
+    return product_model.product_orders.join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID).count()
+
+
 class ProductDiscountPrices:
     discount_prices = None
+    discount_persons = None
+    discount_amounts = None
 
     def get_discount_price_by_key(self, key):
         discount_prices_dict = json.loads(self.discount_prices)
         return discount_prices_dict[key]
 
-    def get_discount_price(self, product_form, order_form):
+    def get_discount_price(self, product_model, product_form, order_form, name=None):
+        discount_prices = [
+            self.get_discount_price_for_keys(order_form),
+            self.get_discount_price_for_person(product_form, order_form, name),
+            self.get_discount_price_for_amount(product_model, product_form, order_form)
+        ]
+
+        discount_prices = [p for p in discount_prices if p is not None]
+        print(discount_prices)
+        if discount_prices:
+            return min(discount_prices)
+
+    def get_discount_price_for_keys(self, order_form):
         prices = [self.get_discount_price_by_key(k)
-                  for k in self._get_applicable_discount_keys(product_form, order_form)]
+                  for k in self._get_applicable_discount_keys(order_form)]
         if prices:
             return min(prices)
 
@@ -105,17 +123,35 @@ class ProductDiscountPrices:
         discount_prices_dict = json.loads(self.discount_prices)
         return list(discount_prices_dict.keys())
 
-    def _get_applicable_discount_keys(self, product_form, order_form):
+    def _get_applicable_discount_keys(self, order_form):
         discount_keys = self._get_discount_keys()
         if discount_keys:
             for product_key in order_form.product_keys:
                 if discount_keys:
                     order_form_product = order_form.get_product_by_key(product_key)
+                    print(product_key, hasattr(order_form_product, 'discount_keys'), order_form_product.add.data)
                     if hasattr(order_form_product, 'discount_keys') and not order_form_product.add.data:
                         affected_keys = set(discount_keys).intersection(order_form_product.discount_keys)
                         for key in affected_keys:
                             discount_keys.remove(key)
         return discount_keys
+
+    def get_discount_price_for_person(self, product_form, order_form, name=None):
+        if self.discount_persons:
+            if not name:
+                name = order_form.name.data
+            name_key = name.strip().lower()
+            discount_persons = json.loads(self.discount_persons)
+            if name_key in discount_persons.keys():
+                return discount_persons[name_key]
+
+    def get_discount_price_for_amount(self, product_model, product_form, order_form):
+        if self.discount_amounts:
+            total_paid = get_total_paid(product_model)
+            discount_amounts = json.loads(self.discount_amounts)
+            applicable_keys = [int(amount_key) for amount_key in discount_amounts.keys() if total_paid<int(amount_key)]
+            if applicable_keys:
+                return discount_amounts[str(min(applicable_keys))]
 
 
 
@@ -170,7 +206,7 @@ class StrictlyContest(BaseProduct, ContestProduct):
 
         return StrictlyContestForm
 
-    def get_total_price(self, product_form, order_form):
+    def get_total_price(self, product_model, product_form, order_form):
         if product_form.add.data:
             return self.price
         else:
@@ -185,7 +221,7 @@ class StrictlyContest(BaseProduct, ContestProduct):
             return '{} ({} + {})'.format(self.name, name1, name2)
 
     def get_order_product_model(self, product_model, product_form, form):
-        price = self.get_total_price(product_form, form)
+        price = self.get_total_price(product_model, product_form, form)
         partner_name = form.partner_name.data
         partner_email = form.partner_email.data
         ws = self.get_waiting_lists(product_model)
@@ -227,7 +263,7 @@ class StrictlyContest(BaseProduct, ContestProduct):
         return False
 
 
-class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
+class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct):
     ratio = None
     allow_first = 0
 
@@ -237,6 +273,7 @@ class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
             product_id = product_model.id
             info = self.info
             price = self.price
+            discount_keys = self._get_discount_keys()
             add = BooleanField(label='Book for yourself')
             dance_role = SelectField(label='Your role',
                                      choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
@@ -259,14 +296,18 @@ class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
 
         return RegularPartnerWorkshopForm
 
-    def get_total_price(self, product_form, order_form=None):
+    def get_total_price(self, product_model, product_form, order_form, name=None):
         if product_form.add.data:
-            return self.price
+            discount_price = self.get_discount_price(product_model, product_form, order_form, name)
+            if discount_price:
+                return discount_price
+            else:
+                return self.price
         else:
             return 0
 
     def get_order_product_model(self, product_model, product_form, form):
-        price = self.get_total_price(product_form, form)
+        price = self.get_total_price(product_model, product_form, form)
         ws = self.get_waiting_lists(product_model)
         dance_role = product_form.dance_role.data
 
@@ -284,6 +325,9 @@ class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
 
         # register partner
         if product_form.add_partner.data:
+            partner_name = form.partner_name.data
+            price = self.get_total_price(product_model, product_form, form, partner_name)
+            print('price', partner_name, price)
             dance_role = flip_role(dance_role)
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
             order_product2 = OrderProduct(product_model, price,
@@ -479,7 +523,7 @@ class RegularPartnerWorkshop(BaseProduct, WorkshopProduct):
         db_session.commit()
 
 
-class CouplesOnlyWorkshop(BaseProduct, ProductDiscountPrices, WorkshopProduct):
+class CouplesOnlyWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct):
 
     def get_form(self, product_model=None):
         class CouplesContestForm(NoCsrfForm):
@@ -510,9 +554,9 @@ class CouplesOnlyWorkshop(BaseProduct, ProductDiscountPrices, WorkshopProduct):
 
         return CouplesContestForm
 
-    def get_total_price(self, product_form, order_form):
+    def get_total_price(self, product_model, product_form, order_form):
         if product_form.add.data:
-            discount_price = self.get_discount_price(product_form, order_form)
+            discount_price = self.get_discount_price(product_model, product_form, order_form)
             if discount_price:
                 return discount_price
             else:
@@ -521,7 +565,7 @@ class CouplesOnlyWorkshop(BaseProduct, ProductDiscountPrices, WorkshopProduct):
             return 0
 
     def get_order_product_model(self, product_model, product_form, form):
-        price = self.get_total_price(product_form, form)
+        price = self.get_total_price(product_model, product_form, form)
         ws = self.get_waiting_lists(product_model)
         dance_role = product_form.dance_role.data
 
@@ -679,7 +723,7 @@ class MarketingProduct(BaseProduct):
         ordered_quantity = OrderProduct.query.filter(OrderProduct.product == product_model).count()
         return max(self.max_available - ordered_quantity, 0)
 
-    def get_total_price(self, product_form, order_form=None):
+    def get_total_price(self, product_model, product_form, order_form=None):
         if product_form.add.data:
             return self.price
         else:
@@ -701,7 +745,7 @@ class DonateProduct(BaseProduct):
 
         return DonateForm
 
-    def get_total_price(self, product_form, order_form=None):
+    def get_total_price(self, product_model, product_form, order_form=None):
         if product_form.amount.data:
             return float(product_form.amount.data)
         else:

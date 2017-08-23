@@ -1,0 +1,49 @@
+{% extends "signup.html" %}
+
+{% block header_section %}
+<header>
+    <div class="container">
+      <div class="intro-text">
+          <h3 class="display-5">17 September</h3>
+          <h3 class="display-5">London</h3>
+          <h2 class="display-4">{{ event.name }}</h2>
+      </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block info_section %}
+<section class="container-fluid my-5">
+   <div class="container">
+        <p>Just like Popeye found his Olivia, our good-looking leader found the perfect follower to team up for our next Salty Recipes.</p>
+
+       <p>There will be two Shag recipes to satisfy the most extravagant tastes: "Spinach - boost your Shag"
+       and "Olive oil - smooth your Shag".</p>
+
+       <p>The workshops will have a limited capacity - maximum 25 persons
+           in order to bring the maximum value to those who will attend them.
+       In addition, first 15 will have a special discount price.</p>
+
+        <p>Prices (for each recipe):
+            <ul>
+                <li>Full price: £35</li>
+                <li>Early registration discount price: £25 (first 15 registered)</li>
+                <li>Full menu discount price: £30 (if book both workshops)</li>
+                <li>Salty discount price: £25 (if attended previous Salty Recipes)</li>
+            </ul>
+        </p>
+
+        <p>Dress code:
+            <ul>
+                <li>comfortable clothes,</li>
+                <li>your favourite dancing shoes,</li>
+                <li>please bring set of spare t-shirts</li>
+            </ul>
+        </p>
+
+
+       <p>For more information and updates please see <a href="https://www.facebook.com/events/1295234280594338" target="_blank"><i class="fa fa-facebook-official" aria-hidden="true"></i> Salty Recipes ☆ Aerials / Shag with Pol & Sara</a>. </p>
+
+    </div>
+</section>
+{% endblock %}

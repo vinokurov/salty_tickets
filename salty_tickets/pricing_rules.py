@@ -14,7 +14,7 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
     for product_model in event.products:
         product = get_product_by_model(product_model)
         product_form = form.get_product_by_key(product_model.product_key)
-        price = product.get_total_price(product_form, form)
+        price = product.get_total_price(product_model, product_form, form)
         if price > 0:
             order_product = product.get_order_product_model(product_model, product_form, form)
             if type(order_product) is list:
@@ -46,7 +46,7 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
     for product_model in event.products:
         product = get_product_by_model(product_model)
         product_form = form.get_product_by_key(product_model.product_key)
-        price = product.get_total_price(product_form, form)
+        price = product.get_total_price(product_model, product_form, form)
         if price > 0:
             # registration_model = get_registration_from_form(form)
             if hasattr(product_form, 'add'):
