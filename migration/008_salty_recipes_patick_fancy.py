@@ -36,10 +36,11 @@ discount_keys = {'both_recipes': 30}
 
 event.products.append(
     products.RegularPartnerWorkshop(
-        name='Spinach - boost your shag',
-        info='In these two hours we\'ll look at some energetic combos, '
-             'revisit some standard moves and show you some interesting variations for them.',
         max_available=25,
+        name='Olive oil - smooth your shag',
+        info='These two hours will be all about dancing smoother, faster and more elegantly. '
+             'We\'ll work on the basics to get you to hover over the dancefloor '
+             'like Lenny Smith and combine moves with some fancy flows.',
         ratio=1.4,
         allow_first=10,
         price=35,
@@ -55,10 +56,9 @@ event.products.append(
 )
 event.products.append(
     products.RegularPartnerWorkshop(
-        name='Olive oil - smooth your shag',
-        info='These two hours will be all about dancing smoother, faster and more elegantly. '
-             'We\'ll work on the basics to get you to hover over the dancefloor '
-             'like Lenny Smith and combine moves with some fancy flows.',
+        name='Spinach - boost your shag',
+        info='In these two hours we\'ll look at some energetic combos, '
+             'revisit some standard moves and show you some interesting variations for them.',
         max_available=25,
         ratio=1.4,
         allow_first=10,
