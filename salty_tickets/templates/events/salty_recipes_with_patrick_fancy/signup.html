@@ -47,3 +47,7 @@
     </div>
 </section>
 {% endblock %}
+
+{% block og_meta %}
+<meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
+{% endblock %}
