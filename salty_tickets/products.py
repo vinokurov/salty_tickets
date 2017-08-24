@@ -5,6 +5,7 @@ import math
 
 from itsdangerous import BadSignature
 from salty_tickets.database import db_session
+from salty_tickets.discounts import discount_users
 from salty_tickets.tokens import order_product_deserialize, order_product_token_expired
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
@@ -109,7 +110,6 @@ class ProductDiscountPrices:
         ]
 
         discount_prices = [p for p in discount_prices if p is not None]
-        print(discount_prices)
         if discount_prices:
             return min(discount_prices)
 
@@ -129,7 +129,6 @@ class ProductDiscountPrices:
             for product_key in order_form.product_keys:
                 if discount_keys:
                     order_form_product = order_form.get_product_by_key(product_key)
-                    print(product_key, hasattr(order_form_product, 'discount_keys'), order_form_product.add.data)
                     if hasattr(order_form_product, 'discount_keys') and not order_form_product.add.data:
                         affected_keys = set(discount_keys).intersection(order_form_product.discount_keys)
                         for key in affected_keys:
@@ -141,7 +140,7 @@ class ProductDiscountPrices:
             if not name:
                 name = order_form.name.data
             name_key = name.strip().lower()
-            discount_persons = json.loads(self.discount_persons)
+            discount_persons = discount_users[self.discount_persons]
             if name_key in discount_persons.keys():
                 return discount_persons[name_key]
 
@@ -327,7 +326,6 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
         if product_form.add_partner.data:
             partner_name = form.partner_name.data
             price = self.get_total_price(product_model, product_form, form, partner_name)
-            print('price', partner_name, price)
             dance_role = flip_role(dance_role)
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
             order_product2 = OrderProduct(product_model, price,

@@ -5,48 +5,28 @@ from salty_tickets import database
 from salty_tickets import models
 from salty_tickets import products
 
-event = models.Event.query.filter_by(event_key='salty_recipes_with_pol_sara').one()
-event.active = False
+# event = models.Event.query.filter_by(event_key='salty_recipes_with_pol_sara').one()
+# event.active = False
+# database.db_session.commit()
+#
+# event = models.Event.query.filter_by(event_key='salty_jitterbugs_contest_10_07').one()
+# event.active = False
+# database.db_session.commit()
+#
+#
+# event = models.Event(
+#     name='Salty Recipes with Patrick & Fancy',
+#     start_date=datetime.datetime(2017, 9, 17),
+#     event_type='dance'
+# )
+
+event = models.Event.query.filter_by(event_key='salty_recipes_with_patrick_fancy').one()
+for product in event.products.all():
+    database.db_session.delete(product)
+
 database.db_session.commit()
 
-event = models.Event.query.filter_by(event_key='salty_jitterbugs_contest_10_07').one()
-event.active = False
-database.db_session.commit()
-
-
-event = models.Event(
-    name='Salty Recipes with Patrick & Fancy',
-    start_date=datetime.datetime(2017, 9, 17),
-    event_type='dance'
-)
-
-database.db_session.add(event)
-
-salty_persons = [
-    "Alison porter",
-    "Aman Hothi",
-    "Amelie Rousseau",
-    "Anitha Baliga",
-    "Anthony Carr",
-    "Carla Sanchez Martinez",
-    "Cathy Kennedy",
-    "Despoina Magka",
-    "Emma Vaughan",
-    "Kwong-Ning Chan",
-    "Leonardo",
-    "Liz Waight",
-    "Lottie Bovingdon",
-    "Michellie Young",
-    "Poppy Michell",
-    "Robert Goldie",
-    "Sandy McNicol",
-    "Simon Chan",
-    "Svenja Noack",
-    "Sydney Jeffers",
-    "Linda Enstein",
-]
-# persons with names from the list above get price £25
-discount_persons = {name.strip().lower():25 for name in salty_persons}
+# database.db_session.add(event)
 
 # first 15 get price £25
 discount_amounts = {15:25, 25:35}
@@ -69,7 +49,7 @@ event.products.append(
         workshop_price='First 15 - £25 per person, then £35',
         workshop_location='Studio 3, Factory Studios, 407 Hornsey Rd., N194DX',
         discount_prices=json.dumps(discount_keys),
-        discount_persons=json.dumps(discount_persons),
+        discount_persons='salty_recipes_patrick_fancy',
         discount_amounts=json.dumps(discount_amounts)
     ).model
 )
@@ -89,7 +69,7 @@ event.products.append(
         workshop_price='First 15 - £25 per person, then £35',
         workshop_location='Studio 3, Factory Studios, 407 Hornsey Rd., N194DX',
         discount_prices=json.dumps(discount_keys),
-        discount_persons=json.dumps(discount_persons),
+        discount_persons='salty_recipes_patrick_fancy',
         discount_amounts=json.dumps(discount_amounts)
     ).model
 )
