@@ -1,6 +1,6 @@
 discount_users = {
     'salty_recipes_patrick_fancy':
-        {u:25 for u in
+        {u.strip().lower():25 for u in
             [
                 "Alison Porter",
                 "Aman Hothi",
