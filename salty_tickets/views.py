@@ -1,4 +1,4 @@
-from flask import render_template, request
+from flask import render_template, request, Response
 from flask import url_for, jsonify
 from itsdangerous import BadSignature
 from salty_tickets import app
@@ -340,11 +340,13 @@ def vote_admin():
 def vote_data():
     import pandas as pd
     from salty_tickets.database import engine
+    voting_sessions_df = pd.read_sql_query(VotingSession.query.statement, engine)
+    votes_df = pd.read_sql_query(Vote.query.statement, engine)
+
     start_date = pd.datetime.today().date() - pd.DateOffset(days=2)
-    voting_sessions_df = pd.read_sql(VotingSession.query.filter(VotingSession.end_timestamp > start_date).statement,
-                                      engine)
+    voting_sessions_df = voting_sessions_df[voting_sessions_df.end_timestamp > start_date]
     votes_start = voting_sessions_df.start_timestamp.iloc[0]
-    votes_df = pd.read_sql(Vote.query.filter(Vote.vote_timestamp >= votes_start).statement, engine)
+    votes_df = votes_df[votes_df.vote_timestamp >= votes_start]
 
     votes_df['session_id'] = None
     for ix, voting_session in voting_sessions_df.iterrows():
@@ -356,8 +358,8 @@ def vote_data():
     votes_df = votes_df.join(voting_sessions_df, on='session_id', how='inner')
 
     vote_options = votes_df.vote.unique()
-    for vote in vote_options:
-        votes_df[vote] = None
+    for vote_option in vote_options:
+        votes_df[vote_option] = None
 
     for ix, vote in votes_df.iterrows():
         query_votes = votes_df[votes_df.vote_timestamp.between(vote.start_timestamp, vote.vote_timestamp)]
@@ -366,7 +368,12 @@ def vote_data():
         for vote_option in vote_options:
             votes_df.loc[ix, vote_option] = grouped.vote[grouped.vote == vote_option].count()
 
-    return votes_df.to_csv
+    data_csv = votes_df.to_csv(index=False)
+    return Response(
+        data_csv,
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                 "attachment; filename=data.csv"})
 
 
 
