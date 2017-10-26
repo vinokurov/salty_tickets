@@ -364,7 +364,7 @@ def vote_data():
         grouped = query_votes.groupby('voter_id').last()
 
         for vote_option in vote_options:
-            votes_df.loc[ix, vote_option] = grouped.Value[grouped.Value == vote_option].count()
+            votes_df.loc[ix, vote_option] = grouped.vote[grouped.vote == vote_option].count()
 
     return votes_df.to_csv
 
