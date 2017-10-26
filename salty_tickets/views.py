@@ -361,7 +361,7 @@ def vote_data():
 
     for ix, vote in votes_df.iterrows():
         query_votes = votes_df[votes_df.vote_timestamp.between(vote.start_timestamp, vote.vote_timestamp)]
-        grouped = query_votes.groupby('Voter').last()
+        grouped = query_votes.groupby('voter_id').last()
 
         for vote_option in vote_options:
             votes_df.loc[ix, vote_option] = grouped.Value[grouped.Value == vote_option].count()
