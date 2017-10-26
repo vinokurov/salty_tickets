@@ -270,6 +270,9 @@ def render_event_order_summary(order_token, title=None):
     return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, title=title)
 
 
+VOTER_UUID_COOKIE_NAME = 'voter'
+
+
 @app.route('/vote')
 def vote():
     form = VoteForm()
@@ -280,7 +283,8 @@ def vote():
 def vote_submit():
     form = VoteForm()
     if form.validate_on_submit():
-        vote = Vote(voter_id=form.client_fingerprint.data, vote=form.options.data)
+        voter_uuid = form.client_fingerprint.data
+        vote = Vote(voter_id=voter_uuid, vote=form.options.data)
         db_session.add(vote)
         db_session.commit()
         return 'Success'
@@ -330,3 +334,39 @@ def vote_admin():
     else:
         results_data = None
     return render_template('voting/admin.html', form=form, results_data=results_data, progress_data=progress_data)
+
+
+@app.route('/vote/admin/data.csv')
+def vote_data():
+    import pandas as pd
+    from salty_tickets.database import engine
+    start_date = pd.datetime.today().date() - pd.DateOffset(days=2)
+    voting_sessions_df = pd.read_sql(VotingSession.query.filter(VotingSession.end_timestamp > start_date).statement,
+                                      engine)
+    votes_start = voting_sessions_df.start_timestamp.iloc[0]
+    votes_df = pd.read_sql(Vote.query.filter(Vote.vote_timestamp >= votes_start).statement, engine)
+
+    votes_df['session_id'] = None
+    for ix, voting_session in voting_sessions_df.iterrows():
+        votes_mask = votes_df.vote_timestamp.between(voting_session.start_timestamp, voting_session.end_timestamp)
+        votes_df.session_id[votes_mask] = voting_session.id
+
+    voting_sessions_df.index = voting_sessions_df.id
+    voting_sessions_df.drop('id', axis=1, inplace=True)
+    votes_df = votes_df.join(voting_sessions_df, on='session_id', how='inner')
+
+    vote_options = votes_df.vote.unique()
+    for vote in vote_options:
+        votes_df[vote] = None
+
+    for ix, vote in votes_df.iterrows():
+        query_votes = votes_df[votes_df.vote_timestamp.between(vote.start_timestamp, vote.vote_timestamp)]
+        grouped = query_votes.groupby('Voter').last()
+
+        for vote_option in vote_options:
+            votes_df.loc[ix, vote_option] = grouped.Value[grouped.Value == vote_option].count()
+
+    return votes_df.to_csv
+
+
+
