@@ -165,6 +165,11 @@ class OrderSummaryController:
 
     @property
     @price_format
+    def total_to_pay(self):
+        return self._payment.amount + self._payment.transaction_fee
+
+    @property
+    @price_format
     def total_transaction_fee(self):
         total_paid = sum([p.transaction_fee for p in self._order.payments])
         return total_paid
@@ -177,6 +182,11 @@ class OrderSummaryController:
     def order_products(self):
         for order_product in self._order.order_products:
             yield OrderProductController(order_product)
+
+    @property
+    def payment_items(self):
+        for payment_item in self._payment.payment_items:
+            yield PaymentItemController(payment_item)
 
     @property
     def has_waiting_list(self):
@@ -213,6 +223,19 @@ class OrderSummaryController:
                     return 'There are no available places in the workshop'
             return 'You are put on the waiting list due to the current imbalance in leads and followers'
 
+
+class PaymentItemController:
+    def __init__(self, payment_item):
+        self._payment_item = payment_item
+
+    @property
+    def product(self):
+        return OrderProductController(self._payment_item.order_product)
+
+    @property
+    @price_format
+    def amount(self):
+        return self._payment_item.amount
 
 class EventController:
     def __init__(self, event):

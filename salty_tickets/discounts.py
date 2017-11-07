@@ -24,5 +24,33 @@ discount_users = {
                 "Sydney Jeffers",
                 "Linda Enstein",
             ]
-         }
+         },
+
+    'salty_recipes_simona_rokas':
+        {u.strip().lower():25 for u in
+            [
+                "Anitha Baliga",
+                "Emilie Ploquin",
+                "Jessica Radcliffe",
+                "Anna Skye Bird",
+                "Johanna Vannesjo",
+                "Caroline Butler",
+                "Emma Vaughan",
+                "Ben Maiden",
+                "Neus Roca",
+                "Despoina Magka",
+                "Sydney Jeffers",
+                "Sandy McNicol",
+                "Micah Fowler",
+                "Liz Waight",
+                "Gary Morgan",
+                "Mohammed Al Radi",
+                "Ruta Kuodyte",
+                "Sheng Yu",
+                "Robert Goldie",
+                "Sabine",
+                "Simon Chan",
+                "Luke Saint",
+            ]
+         },
 }

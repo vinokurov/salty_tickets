@@ -82,7 +82,7 @@ class BaseProduct:
 
     def get_waiting_list_price(self, product_model, total_price):
         if self.waiting_list_price:
-            return self.waiting_list_price
+            return float(self.waiting_list_price)
         else:
             return total_price
 
@@ -95,7 +95,7 @@ class BaseProduct:
     def get_payment_item(self, order_product):
         payment_item = PaymentItem()
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
-            amount = self.get_waiting_list_price(order_product.product, order_product.total_price)
+            amount = self.get_waiting_list_price(order_product.product, order_product.price)
             payment_item.amount = amount
             payment_item.description = 'Refundable deposit'
 
