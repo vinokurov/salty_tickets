@@ -4,7 +4,6 @@ from salty_tickets.models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
 
 
 def process_payment(payment, stripe_token, stripe_sk=None):
-    # update_payment_total(payment)
     is_success, response = charge(payment, stripe_token, stripe_sk)
 
     if is_success:
@@ -34,7 +33,6 @@ def charge(payment, stripe_token, stripe_sk=None):
         )
         print(charge)
         payment.stripe_charge_id = charge['id']
-        # self.stripe_charge = jsonify(charge)
         payment.status = PAYMENT_STATUS_PAID
         return True, charge
     except stripe.CardError as ce:

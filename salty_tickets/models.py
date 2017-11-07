@@ -146,36 +146,6 @@ class Order(Base):
         # return self.order_products.with_entities(func.sum(OrderProduct.price)).scalar()
         return sum([p.price for p in self.order_products.all()])
 
-    # @property
-    # def stripe_amount(self):
-    #     return int((self.total_price + self.transaction_fee) * 100)
-
-    # def charge(self, stripe_token, stripe_sk=None):
-    #     import stripe
-    #     if not stripe_sk:
-    #         stripe_sk = stripe.api_key = config.STRIPE_SK
-    #
-    #     stripe.api_key = stripe_sk
-    #
-    #     try:
-    #         charge = stripe.Charge.create(
-    #             amount=self.stripe_amount,
-    #             currency='gbp',
-    #             description=self.event.name,
-    #             metadata=dict(order_id=self.id),
-    #             source=stripe_token
-    #         )
-    #         print(charge)
-    #         self.stripe_charge_id = charge['id']
-    #         # self.stripe_charge = jsonify(charge)
-    #         self.status = ORDER_STATUS_PAID
-    #         return True, charge
-    #     except stripe.CardError as ce:
-    #         # self.stripe_charge_id = charge.get('id', '')
-    #         # self.stripe_charge = jsonify(ce)
-    #         # self.status = ORDER_STATUS_FAILED
-    #         return False, ce
-
 
 class OrderProduct(Base):
     __tablename__ = 'order_products'
