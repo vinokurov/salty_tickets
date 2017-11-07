@@ -10,6 +10,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
+from salty_tickets.payments import process_payment
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
 from salty_tickets.products import flip_role
@@ -60,9 +61,10 @@ def register_form(event_key):
         user_order.registration = registration
         event.orders.append(user_order)
         db_session.commit()
-        success, response = user_order.charge(form.stripe_token.data)
+        # success, response = user_order.charge(form.stripe_token.data)
+        success, response = process_payment(user_order.payments[0], form.stripe_token.data)
         if success:
-            db_session.commit()
+            # db_session.commit()
             process_partner_registrations(user_order, form)
             balance_results = balance_event_waiting_lists(event)
             email_result = send_registration_confirmation(user_order)
@@ -100,6 +102,9 @@ def register_checkout(event_key):
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
         user_order = get_order_for_event(event, form, registration, partner_registration)
+        # payment = user_order.payments[0]
+        print(user_order.payments[0])
+        print(user_order.payments[0].amount)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
         order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = render_template('order_summary.html',

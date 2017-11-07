@@ -15,6 +15,7 @@ __author__ = 'vnkrv'
 
 ORDER_STATUS_NEW = 'new'
 ORDER_STATUS_PAID = 'paid'
+ORDER_STATUS_PAID_PARTIALLY = 'paid_part'
 ORDER_STATUS_FAILED = 'failed'
 
 DANCE_ROLE_LEADER = 'leader'
@@ -32,6 +33,9 @@ CANCELLATION_STATUS_DECLINED = 'declined'
 
 SIGNUP_GROUP_PARTNERS = 'partners'
 
+PAYMENT_STATUS_NEW = 'new'
+PAYMENT_STATUS_PAID = 'paid'
+PAYMENT_STATUS_FAILED = 'failed'
 
 class Event(Base):
     __tablename__ = 'events'
@@ -124,6 +128,7 @@ class Order(Base):
     registration_id = Column(Integer, ForeignKey('registrations.id'))
     event_id = Column(Integer, ForeignKey('events.id'))
     total_price = Column(Float, nullable=False, default=0)
+    payment_due = Column(Float, nullable=False, default=0)
     transaction_fee = Column(Float, nullable=False, default=0)
     status = Column(String(50), nullable=False, default=ORDER_STATUS_NEW)
     order_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
@@ -133,6 +138,7 @@ class Order(Base):
     registration = relationship('Registration', uselist=False)
     event = relationship("Event", uselist=False)
     order_products = relationship('OrderProduct', lazy='dynamic')
+    payments = relationship('Payment', lazy='dynamic')
 
     # @aggregated('order_products', Column(Float))
     @property
@@ -140,35 +146,35 @@ class Order(Base):
         # return self.order_products.with_entities(func.sum(OrderProduct.price)).scalar()
         return sum([p.price for p in self.order_products.all()])
 
-    @property
-    def stripe_amount(self):
-        return int((self.total_price + self.transaction_fee) * 100)
+    # @property
+    # def stripe_amount(self):
+    #     return int((self.total_price + self.transaction_fee) * 100)
 
-    def charge(self, stripe_token, stripe_sk=None):
-        import stripe
-        if not stripe_sk:
-            stripe_sk = stripe.api_key = config.STRIPE_SK
-
-        stripe.api_key = stripe_sk
-
-        try:
-            charge = stripe.Charge.create(
-                amount=self.stripe_amount,
-                currency='gbp',
-                description=self.event.name,
-                metadata=dict(order_id=self.id),
-                source=stripe_token
-            )
-            print(charge)
-            self.stripe_charge_id = charge['id']
-            # self.stripe_charge = jsonify(charge)
-            self.status = ORDER_STATUS_PAID
-            return True, charge
-        except stripe.CardError as ce:
-            # self.stripe_charge_id = charge.get('id', '')
-            # self.stripe_charge = jsonify(ce)
-            # self.status = ORDER_STATUS_FAILED
-            return False, ce
+    # def charge(self, stripe_token, stripe_sk=None):
+    #     import stripe
+    #     if not stripe_sk:
+    #         stripe_sk = stripe.api_key = config.STRIPE_SK
+    #
+    #     stripe.api_key = stripe_sk
+    #
+    #     try:
+    #         charge = stripe.Charge.create(
+    #             amount=self.stripe_amount,
+    #             currency='gbp',
+    #             description=self.event.name,
+    #             metadata=dict(order_id=self.id),
+    #             source=stripe_token
+    #         )
+    #         print(charge)
+    #         self.stripe_charge_id = charge['id']
+    #         # self.stripe_charge = jsonify(charge)
+    #         self.status = ORDER_STATUS_PAID
+    #         return True, charge
+    #     except stripe.CardError as ce:
+    #         # self.stripe_charge_id = charge.get('id', '')
+    #         # self.stripe_charge = jsonify(ce)
+    #         # self.status = ORDER_STATUS_FAILED
+    #         return False, ce
 
 
 class OrderProduct(Base):
@@ -184,6 +190,7 @@ class OrderProduct(Base):
     product = relationship('Product', uselist=False)
 
     registrations = relationship('Registration', secondary='order_product_registrations_mapping')
+    payment_items = relationship('PaymentItem', lazy='dynamic')
 
     def __init__(self, product, price, details_dict=None, **kwargs):
         self.product = product
@@ -269,6 +276,33 @@ class RefundRequest(Base):
     refund_stripe_id = Column(String(255))
 
     product_order = relationship('OrderProduct', uselist=False)
+
+
+class Payment(Base):
+    __tablename__ = 'payments'
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey('orders.id'))
+    payment_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
+    amount = Column(Float)
+    transaction_fee = Column(Float)
+    comment = Column(Text)
+    stripe_charge_id = Column(String(50))
+    status = Column(String(10), default=PAYMENT_STATUS_NEW)
+
+    order = relationship('Order', uselist=False)
+    payment_items = relationship('PaymentItem', lazy='dynamic')
+
+
+class PaymentItem(Base):
+    __tablename__ = 'payment_items'
+    id = Column(Integer, primary_key=True)
+    payment_id = Column(Integer, ForeignKey('payments.id'))
+    order_product_id = Column(Integer, ForeignKey('order_products.id'))
+    amount = Column(Float)
+    description = Column(String(255))
+
+    payment = relationship('Payment', uselist=False)
+    order_product = relationship('OrderProduct', uselist=False)
 
 
 

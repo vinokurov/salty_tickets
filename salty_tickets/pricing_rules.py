@@ -2,7 +2,8 @@ from salty_tickets.database import db_session
 from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
     Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING, \
-    ORDER_STATUS_PAID
+    ORDER_STATUS_PAID, Payment
+from salty_tickets.payments import stripe_amount, update_payment_total
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize
 
@@ -36,7 +37,22 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
     user_order.transaction_fee = transaction_fee(products_price)
     user_order.total_price = user_order.products_price
 
+    add_payment_to_user_order(user_order)
+
     return user_order
+
+
+def add_payment_to_user_order(user_order):
+    payment = Payment()
+
+    for order_product in user_order.order_products:
+        product = get_product_by_model(order_product.product)
+        payment_item = product.get_payment_item(order_product)
+        payment.payment_items.append(payment_item)
+
+    update_payment_total(payment)
+    payment.transaction_fee = transaction_fee(payment.amount)
+    user_order.payments.append(payment)
 
 
 def get_order_for_crowdfunding_event(event, form, registration=None, partner_registration=None):
@@ -66,6 +82,8 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
     user_order.transaction_fee = transaction_fee(products_price)
     user_order.total_price = user_order.products_price
 
+    add_payment_to_user_order(user_order)
+
     return user_order
 
 
@@ -86,7 +104,7 @@ def get_total_raised(event):
 def get_stripe_properties(event, order, form):
     stripe_props = {}
     stripe_props['email'] = form.email.data
-    stripe_props['amount'] = order.stripe_amount
+    stripe_props['amount'] = stripe_amount(order.payments[0])
     return stripe_props
 
 

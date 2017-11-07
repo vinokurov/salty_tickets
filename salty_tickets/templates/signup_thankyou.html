@@ -78,12 +78,16 @@
                     <tr>
                         <td>{{ order_summary_controller.order_datetime}}</td>
                     </tr>
+                    <tr>
+                        <td><strong>Total price: {{order_summary_controller.total_price}}</strong></td>
+                    </tr>
                 </table>
                     </small>
             </div>
             <div class="card-footer">
-                <strong>Total paid: {{order_summary_controller.total_price}}</strong><br>
-                <small class="text-muted">Transaction fee: {{ order_summary_controller.transaction_fee }}</small>
+                <strong>Paid: {{order_summary_controller.total_paid}}</strong><br>
+                <!--<strong>Paid: {{order_summary_controller.total_paid}}</strong><br>-->
+                <small class="text-muted">Transaction fee: {{ order_summary_controller.total_transaction_fee }}</small>
             </div>
         </div>
 
@@ -134,7 +138,8 @@
                 {% if order_product.is_waiting %}<a class="btn btn-danger btn-responsive" href="{{order_product.cancel_url}}">Cancel & refund</a>{% endif %}
             </div>
             <div class="card-footer">
-                Paid: {{ order_product.price }}
+                Price: {{ order_product.price }} <br>
+                Paid: {{order_product.total_paid}}
             </div>
         </div>
         {% endfor %}

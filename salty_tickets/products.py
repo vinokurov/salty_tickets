@@ -15,7 +15,7 @@ from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
     ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
-    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS
+    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem
 import json
 
 
@@ -32,6 +32,7 @@ class BaseProduct:
     max_available = 0
     price = None
     image_url = None
+    waiting_list_price = None
     _basic_attrs = ['name', 'info', 'max_available', 'price', 'image_url']
 
     def __init__(self, name, **kwargs):
@@ -67,9 +68,6 @@ class BaseProduct:
         product = cls(**kwargs)
         return product
 
-    def get_ordered_product_model(self, product_form):
-        order_product_model = OrderProduct(price=product_form.price)
-
     @property
     def _parameters_dict(self):
         cls = type(self)
@@ -82,11 +80,30 @@ class BaseProduct:
     def get_total_price(self, product_model, product_form, form):
         raise NotImplementedError()
 
+    def get_waiting_list_price(self, product_model, total_price):
+        if self.waiting_list_price:
+            return self.waiting_list_price
+        else:
+            return total_price
+
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_model, product_form, form)
         status =  ORDER_PRODUCT_STATUS_ACCEPTED
         order_product = OrderProduct(product_model, price, status=status)
         return order_product
+
+    def get_payment_item(self, order_product):
+        payment_item = PaymentItem()
+        if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
+            amount = self.get_waiting_list_price(order_product.product, order_product.total_price)
+            payment_item.amount = amount
+            payment_item.description = 'Refundable deposit'
+
+        else:
+            payment_item.amount = order_product.price
+        payment_item.order_product = order_product
+        return payment_item
+
 
 
 def get_total_paid(product_model):

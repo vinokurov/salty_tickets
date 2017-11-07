@@ -19,6 +19,13 @@ def timestamp_format(func):
     return func_wrap
 
 
+class PaymentController:
+    def __init__(self, payment):
+        self._payment = payment
+
+
+
+
 class OrderProductController:
     def __init__(self, order_product):
         self._order_product = order_product
@@ -41,6 +48,11 @@ class OrderProductController:
     @price_format
     def price(self):
         return self._order_product.price
+
+    @property
+    @price_format
+    def total_paid(self):
+        return sum([item.amount for item in self._order_product.payment_items])
 
     @property
     def status(self):
@@ -127,19 +139,35 @@ class OrderProductController:
 
 
 class OrderSummaryController:
-    def __init__(self, order):
+    def __init__(self, order, payment=None):
         self._order = order
+
+        if not payment:
+            payment = self._order.payments[0]
+        self._payment = payment
 
     @property
     @price_format
     def transaction_fee(self):
-        return self._order.transaction_fee
+        return self._payment.transaction_fee
 
     @property
     @price_format
     def total_price(self):
-        total_price = self._order.total_price + self._order.transaction_fee
+        total_price = self._order.total_price
         return total_price
+
+    @property
+    @price_format
+    def total_paid(self):
+        total_paid = sum([p.amount for p in self._order.payments])
+        return total_paid
+
+    @property
+    @price_format
+    def total_transaction_fee(self):
+        total_paid = sum([p.transaction_fee for p in self._order.payments])
+        return total_paid
 
     @property
     def show_order_summary(self):
