@@ -173,9 +173,10 @@ def crowdfunding_form(event_key):
         user_order.registration = registration
         event.orders.append(user_order)
         db_session.commit()
-        success, response = user_order.charge(form.stripe_token.data, stripe_sk=config.STRIPE_SIMONA_SK)
+        # success, response = user_order.charge(form.stripe_token.data, stripe_sk=config.STRIPE_SIMONA_SK)
+        success, response = process_payment(user_order.payments[0], form.stripe_token.data)
         if success:
-            db_session.commit()
+            # db_session.commit()
             return redirect(url_for('crowdfunding_thankyou', event_key=event.event_key))
         else:
             print(response)
