@@ -45,14 +45,16 @@ class OrderProductController:
             return self._order_product.product.name
 
     @property
-    @price_format
     def price(self):
         return self._order_product.price
 
     @property
-    @price_format
     def total_paid(self):
         return sum([item.amount for item in self._order_product.payment_items])
+
+    @property
+    def total_remaining(self):
+        return self._order_product.price - sum([item.amount for item in self._order_product.payment_items])
 
     @property
     def status(self):
@@ -147,32 +149,31 @@ class OrderSummaryController:
         self._payment = payment
 
     @property
-    @price_format
     def transaction_fee(self):
         return self._payment.transaction_fee
 
     @property
-    @price_format
     def total_price(self):
         total_price = self._order.total_price
         return total_price
 
     @property
-    @price_format
     def total_paid(self):
         total_paid = sum([p.amount for p in self._order.payments])
         return total_paid
 
     @property
-    @price_format
     def total_to_pay(self):
         return self._payment.amount + self._payment.transaction_fee
 
     @property
-    @price_format
     def total_transaction_fee(self):
         total_paid = sum([p.transaction_fee for p in self._order.payments])
         return total_paid
+
+    @property
+    def total_remaining_amount(self):
+        return self.total_price - self.total_paid
 
     @property
     def show_order_summary(self):
@@ -210,6 +211,12 @@ class OrderSummaryController:
                        _external=True)
 
     @property
+    def invite_partner_url(self):
+        tokens = [op.token for op in self.order_products if op.can_add_partner]
+        if len(tokens) > 0:
+            return url_for('register_form', event_key=self.event.event_key, tokens=','.join(tokens), _external=True)
+
+    @property
     @timestamp_format
     def order_datetime(self):
         return self._order.order_datetime
@@ -233,7 +240,6 @@ class PaymentItemController:
         return OrderProductController(self._payment_item.order_product)
 
     @property
-    @price_format
     def amount(self):
         return self._payment_item.amount
 

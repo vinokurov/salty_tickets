@@ -392,56 +392,90 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
             DANCE_ROLE_FOLLOWER: WorkshopRegStats(accepted=follows_accepted, waiting=follows_waiting)
         }
 
+    @staticmethod
+    def get_partner_registration_stats(product_model):
+        query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_ACCEPTED). \
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID). \
+            join(group_order_product_mapping).join(SignupGroup, aliased=True).filter_by(type=SIGNUP_GROUP_PARTNERS)
+        leads_accepted = len(
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
+                .all()
+        )
+        follows_accepted = len(
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
+                .all()
+        )
+
+        query = product_model.product_orders.filter_by(status=ORDER_PRODUCT_STATUS_WAITING). \
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID). \
+            join(group_order_product_mapping).join(SignupGroup, aliased=True).filter_by(type=SIGNUP_GROUP_PARTNERS)
+        leads_waiting = len(
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_LEADER)
+                .all()
+        )
+        follows_waiting = len(
+            query.join(aliased(OrderProductDetail))
+                .filter_by(field_name='dance_role', field_value=DANCE_ROLE_FOLLOWER)
+                .all()
+        )
+        return {
+            DANCE_ROLE_LEADER: WorkshopRegStats(accepted=leads_accepted, waiting=leads_waiting),
+            DANCE_ROLE_FOLLOWER: WorkshopRegStats(accepted=follows_accepted, waiting=follows_waiting)
+        }
+
     @classmethod
     def get_waiting_lists(cls, product_model):
-        registration_stats = cls.get_registration_stats(product_model)
+        reg_stats = cls.get_registration_stats(product_model)
         ratio = float(product_model.parameters_as_dict['ratio'])
         allow_first = int(product_model.parameters_as_dict['allow_first'])
         solo_leads_waiting = cls.get_waiting_list_for_role(
-            registration_stats[DANCE_ROLE_LEADER].accepted,
-            registration_stats[DANCE_ROLE_LEADER].waiting,
-            registration_stats[DANCE_ROLE_FOLLOWER].accepted,
+            reg_stats[DANCE_ROLE_LEADER].accepted,
+            reg_stats[DANCE_ROLE_LEADER].waiting,
+            reg_stats[DANCE_ROLE_FOLLOWER].accepted,
             product_model.max_available, ratio, allow_first
         )
         solo_follows_waiting = cls.get_waiting_list_for_role(
-            registration_stats[DANCE_ROLE_FOLLOWER].accepted,
-            registration_stats[DANCE_ROLE_FOLLOWER].waiting,
-            registration_stats[DANCE_ROLE_LEADER].accepted,
+            reg_stats[DANCE_ROLE_FOLLOWER].accepted,
+            reg_stats[DANCE_ROLE_FOLLOWER].waiting,
+            reg_stats[DANCE_ROLE_LEADER].accepted,
             product_model.max_available, ratio, allow_first
         )
         ws_solo = {
             DANCE_ROLE_LEADER: solo_leads_waiting,
             DANCE_ROLE_FOLLOWER: solo_follows_waiting
         }
-        total_accepted = registration_stats[DANCE_ROLE_LEADER].accepted + registration_stats[DANCE_ROLE_FOLLOWER].accepted
+        total_accepted = reg_stats[DANCE_ROLE_LEADER].accepted + reg_stats[DANCE_ROLE_FOLLOWER].accepted
 
-        each_role_max_available = int(math.ceil(product_model.max_available/(1.0 + 1.0/ratio)))
+        max_ratio = 2
+        partner_reg_stats = cls.get_partner_registration_stats(product_model)
+
+        partner_leads_waiting = cls.get_waiting_list_for_role(
+            reg_stats[DANCE_ROLE_LEADER].accepted,
+            partner_reg_stats[DANCE_ROLE_LEADER].waiting,
+            reg_stats[DANCE_ROLE_FOLLOWER].accepted,
+            product_model.max_available, max_ratio, allow_first
+        )
+
+        partner_follows_waiting = cls.get_waiting_list_for_role(
+            reg_stats[DANCE_ROLE_FOLLOWER].accepted,
+            partner_reg_stats[DANCE_ROLE_FOLLOWER].waiting,
+            reg_stats[DANCE_ROLE_LEADER].accepted,
+            product_model.max_available, max_ratio, allow_first
+        )
 
         if product_model.max_available - total_accepted == 1:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 1,
-                DANCE_ROLE_FOLLOWER: 0
-            }
-        elif registration_stats[DANCE_ROLE_LEADER].accepted + 1 > each_role_max_available:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 1,
-                DANCE_ROLE_FOLLOWER: 0
-            }
-        elif registration_stats[DANCE_ROLE_FOLLOWER].accepted + 1 > each_role_max_available:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 0,
-                DANCE_ROLE_FOLLOWER: 1
-            }
-        elif total_accepted + 2 <= product_model.max_available:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 0,
-                DANCE_ROLE_FOLLOWER: 0
-            }
-        else:
-            ws_with_couple = {
-                DANCE_ROLE_LEADER: 1,
-                DANCE_ROLE_FOLLOWER: 1
-            }
+            if reg_stats[DANCE_ROLE_FOLLOWER].accepted > reg_stats[DANCE_ROLE_LEADER].accepted:
+                partner_leads_waiting += 1
+            else:
+                partner_follows_waiting += 1
+
+        ws_with_couple = {
+            DANCE_ROLE_LEADER: partner_leads_waiting,
+            DANCE_ROLE_FOLLOWER: partner_follows_waiting
+        }
 
         return ws_solo, ws_with_couple
 
@@ -470,6 +504,7 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
     def can_balance_waiting_list_one(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
         ratio = float(product_model.parameters_as_dict['ratio'])
+        max_ratio = 2
         # both waiting lists empty => None
         if reg_stats[DANCE_ROLE_LEADER].waiting == 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting == 0:
             return False

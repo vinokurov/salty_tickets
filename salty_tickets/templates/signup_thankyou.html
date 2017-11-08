@@ -11,6 +11,9 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js"></script>
 
+    <script src="https://checkout.stripe.com/checkout.js"></script>
+
+
 <script>
     $('body').on('change', '.custom-control-input', update_partner_link)
     $('body').ready(update_partner_link)
@@ -32,6 +35,35 @@
         console.log('test');
         $('#partner_link').select()
         document.execCommand("copy");
+    }
+
+
+
+
+    function pay_remaining(amount, order_product) {
+        var handler = StripeCheckout.configure({
+          key: '{{ config.STRIPE_PK }}',
+          image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+          locale: 'auto',
+          token: function(token) {
+            // You can access the token ID with `token.id`.
+            // Get the token ID to your server-side code for use.
+            //console.log(token)
+            // //$('#\{\{ form.stripe_token.id }}').val(token.id);
+            // //$('form').submit()
+          }
+        });
+
+        handler.open({
+            name: 'Salty Jitterbugs Ltd.',
+            description: '{{ order_summary_controller.event.name | safe}}',
+            currency: 'gbp',
+            amount: amount,
+            email: '{{ order_summary_controller._order.registration.email}}',
+            zipCode: true,
+            billingAddress: true,
+            allowRememberMe: false
+        })
     }
 </script>
 
@@ -79,22 +111,26 @@
                         <td>{{ order_summary_controller.order_datetime}}</td>
                     </tr>
                     <tr>
-                        <td><strong>Total price: {{order_summary_controller.total_price}}</strong></td>
+                        <td><strong>Total price: {{ order_summary_controller.total_price | price }}</strong></td>
                     </tr>
                 </table>
                     </small>
             </div>
             <div class="card-footer">
                 <strong>Paid: {{order_summary_controller.total_paid}}</strong><br>
-                <!--<strong>Paid: {{order_summary_controller.total_paid}}</strong><br>-->
-                <small class="text-muted">Transaction fee: {{ order_summary_controller.total_transaction_fee }}</small>
+                <small class="text-muted">Transaction fee: {{ order_summary_controller.total_transaction_fee | price }}</small>
+                {% if order_summary_controller.total_remaining_amount %}
+                <br><small class="text-info">Remaining: {{ order_summary_controller.total_remaining_amount | price }}</small>
+                {% endif %}
             </div>
         </div>
 
         {% for order_product in order_summary_controller.order_products %}
         <div class="card mb-4{% if order_product.is_waiting %} card-outline-warning{% endif%}"{% if order_product.is_waiting %} style="background-color: #FFFFE0; "{% endif%}>
             <div class="card-block">
+                <!--<h4 class="card-title"><span class="badge badge-default">{{ order_product.price }}</span> {{order_product.name}}</h4>-->
                 <h4 class="card-title">{{order_product.name}}</h4>
+                <h6 class="card-subtitle mb-2 text-muted">{{ order_product.price | price }}</h6>
                 {% if order_product.status=="Waiting" %}
                 <span class="badge badge-warning">{{ order_product.status }}</span><br>
                 <small class="text-muted"><i class="fa fa-exclamation-triangle fa-fw" aria-hidden="true"></i>{{ order_summary_controller.get_waiting_reason(order_product._order_product) }}</small>
@@ -136,20 +172,26 @@
                 </p>
 
                 {% if order_product.is_waiting %}<a class="btn btn-danger btn-responsive" href="{{order_product.cancel_url}}">Cancel & refund</a>{% endif %}
+                <!--{% if order_product.total_remaining > 0 %}<a class="btn btn-info btn-responsive" href="{{order_product.cancel_url}}">Pay remaining {{ order_product.total_remaining | price }}</a>{% endif %}-->
             </div>
             <div class="card-footer">
-                Price: {{ order_product.price }} <br>
-                Paid: {{order_product.total_paid}}
+                <!--Price: {{ order_product.price }} <br>-->
+                Paid: {{ order_product.total_paid | price}}
+                {% if order_product.total_remaining > 0 %}
+                <br><small class="text-info">Remaining: {{ order_product.total_remaining | price }}</small>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
 
+        {% if order_summary_controller.invite_partner_url %}
         <div class="card"  style="background-color: #F0FFFF; "><div class="card-block">
             <h5 class="card-title">Invite your partner</h5>
             <p class="card-text">Select items and forward the link to your partner:</p>
             <p class="card-text"><small id="partner_link" ></small></p>
             <p class="card-text"><button class="btn btn-primary btn-sm btn-clipboard" data-clipboard-target="#partner_link"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i> Copy to clipboard</button></p>
         </div> </div>
+        {% endif %}
         <!--<p>Link to invite your partner for for the selected items: <span id="partner_link"></span></p>-->
         <!--<p><a href="{{ order_summary_controller.event.registration_url }}"> To the event page</a></p>-->
     </div>

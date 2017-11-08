@@ -375,4 +375,6 @@ def vote_data():
                  "attachment; filename=data.csv"})
 
 
-
+@app.template_filter('price')
+def price_filter(amount):
+    return '£{:.2f}'.format(amount)

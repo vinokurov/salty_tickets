@@ -45,61 +45,91 @@
     {% else %}
     <p>We would like to confirm your place! Looking forward to see you soon!</p>
     {% endif %}
-</div>
-<div class="container-fluid small-text">
-    <h5>Order Summary</h5>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Partner</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for order_product in order_summary_controller.order_products %}
-                {% if order_product.is_waiting %}
-                <tr class="table-warning">
-                    <td><strong>Waiting list</strong>: {{ order_product.name }}
-                        <p><small class="text-muted">{{ order_summary_controller.get_waiting_reason(order_product._order_product) }}</small></p></td>
-                    <td>{{ order_product.price }}</td>
-                    <td>{{ order_product.status }}</td>
-                    <td>{{ message(order_product.partner_info) }}</td>
-                    <td><a class="btn btn-warning btn-sm" href="{{order_product.cancel_url}}">Cancel</a></td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td>{{ order_product.name }}</td>
-                    <td>{{ order_product.price }}</td>
-                    <td>{{ order_product.status }}</td>
-                    <td>{{ message(order_product.partner_info) }}</td>
-                    <td></td>
-                </tr>
-                {% endif %}
-            {% endfor %}
-                <tr>
-                    <td>Transaction fee</td>
-                    <td>{{ order_summary_controller.transaction_fee }}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <th>Total</th>
-                    <th>{{ order_summary_controller.total_price }}</th>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-</div>
 
-<div class="container-fluid small-text">
-    You can see your order status following this link: <a href="{{order_summary_controller.order_status_url}}">{{order_summary_controller.order_status_url}}</a>
-</div>
+        <!--<div class="container container-fluid my-5">-->
+        <div class="card mb-4">
+            <div class="card-block">
+                <small>
+                <table class="table">
+                    <tr>
+                        <th><a href="{{ order_summary_controller.event.registration_url }}">{{order_summary_controller.event.name}}</a></th>
+                    </tr>
+                    <tr>
+                        <td>{{ order_summary_controller._order.registration.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ order_summary_controller._order.registration.email}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{ order_summary_controller.order_datetime}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total price: {{ order_summary_controller.total_price | price }}</strong></td>
+                    </tr>
+                </table>
+                    </small>
+                <h6 class="card-subtitle">Paid: {{ order_summary_controller.total_paid | price }}</h6>
+                <small class="text-muted">Transaction fee: {{ order_summary_controller.total_transaction_fee | price}}</small>
+                {% if order_summary_controller.total_remaining_amount %}
+                <br><small class="text-info">Remaining: {{ order_summary_controller.total_remaining_amount | price }}</small>
+                {% endif %}
+            </p>
+            </div>
+        </div>
+
+        {% for order_product in order_summary_controller.order_products %}
+        <div class="card mb-4{% if order_product.is_waiting %} card-outline-warning{% endif%}"{% if order_product.is_waiting %} style="background-color: #FFFFE0; "{% endif%}>
+            <div class="card-block">
+                <!--<h4 class="card-title"><span class="badge badge-default">{{ order_product.price }}</span> {{order_product.name}}</h4>-->
+                <h5 class="card-title">{{order_product.name}}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ order_product.price | price }}</h6>
+                {% if order_product.status=="Waiting" %}
+                <span class="badge badge-warning">{{ order_product.status }}</span><br>
+                <small class="text-muted"><i class="fa fa-exclamation-triangle fa-fw" aria-hidden="true"></i>{{ order_summary_controller.get_waiting_reason(order_product._order_product) }}</small>
+                {% elif order_product.status=="Accepted" %}
+                <span class="badge badge-success">{{ order_product.status }}</span>
+                {% else %}
+                <span class="badge badge-default">{{ order_product.status }}</span>
+                {% endif %}
+                <p class="card-text">
+                    {% if order_product.product_type in ('RegularPartnerWorkshop', 'CouplesOnlyWorkshop') %}
+                    <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_date'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_time'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['workshop_location'] }}</small><br>
+                    {% elif order_product.product_type in ('StrictlyContest') %}
+                    <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_date'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_time'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-sitemap fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_format'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-thermometer fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_level'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-trophy fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_prize'] }}</small><br>
+                    <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_location'] }}</small><br>
+                    {% endif %}
+                    <small class="text-muted"> {{ order_product._order_product.product.info }}</small><br>
+                    <small>{{ message(order_product.partner_info) }}</small>
+                </p>
+                <h6 class="card-subtitle">Paid: {{ order_product.total_paid | price}}</h6>
+                <!--Price: {{ order_product.price }} <br>-->
+
+                {% if order_product.total_remaining > 0 %}
+                <small class="text-info">Remaining: {{ order_product.total_remaining | price }}</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if order_summary_controller.invite_partner_url %}
+        <div class="card"  style="background-color: #F0FFFF; "><div class="card-block">
+            <h5 class="card-title">Invite your partner</h5>
+            <p class="card-text">Send this link to your partner: {{ order_summary_controller.invite_partner_url }}</p>
+        </div> </div>
+        {% endif %}
+        <!--<p>Link to invite your partner for for the selected items: <span id="partner_link"></span></p>-->
+        <!--<p><a href="{{ order_summary_controller.event.registration_url }}"> To the event page</a></p>-->
+
+        <div class="card"><div class="card-block">
+            Please use this link to see and manage your order: <a href="{{order_summary_controller.order_status_url}}">{{ order_summary_controller.order_status_url }}</a>
+        </div> </div>
+    </div>
 
 <div class="container-fluid small-text">
     Lots of love,<br>
