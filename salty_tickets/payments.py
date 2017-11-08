@@ -42,7 +42,6 @@ def charge(payment, stripe_token, stripe_sk=None):
         return False, ce
 
 def update_payment_total(payment):
-    print([(item.id, item.amount) for item in payment.payment_items if item.amount])
     amount = sum([item.amount for item in payment.payment_items if item.amount])
     payment.amount = amount
 

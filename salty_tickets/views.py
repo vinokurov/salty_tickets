@@ -71,7 +71,7 @@ def register_form(event_key):
             #                        event_key=event.event_key)
             return redirect(url_for('signup_thankyou', order_token=order_serialize(user_order)))
         else:
-            print(response)
+            # print(response)
             return render_template('event_purchase_error.html', error_message=response)
 
     tokens = request.args.get('tokens')
@@ -106,6 +106,12 @@ def register_checkout(event_key):
                                                             order_summary_controller=order_summary_controller)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
+        print(
+            form.name.data,
+            request.remote_addr,
+            [(payment_item.product.name, price_filter(payment_item.amount), payment_item.product.status) for payment_item in order_summary_controller.payment_items]
+
+        )
     else:
         form_errors_controller = FormErrorController(form)
         return_dict['order_summary_html'] = render_template('form_errors.html',
@@ -172,7 +178,7 @@ def crowdfunding_form(event_key):
         if success:
             return redirect(url_for('crowdfunding_thankyou', event_key=event.event_key))
         else:
-            print(response)
+            # print(response)
             return render_template('event_purchase_error.html', error_message=response)
 
     contributors = Registration.query.\
