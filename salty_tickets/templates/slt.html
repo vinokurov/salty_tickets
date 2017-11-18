@@ -227,11 +227,25 @@
 </div>
 {% endmacro %}
 
+{#
 {% macro partner_workshop_availability(waiting_lists) %}
     {{ availability_badge('Leader', waiting_lists[0]['leader']) }}
     {{ availability_badge('Follower', waiting_lists[0]['follower']) }}
     {{ availability_badge('Leader with partner', waiting_lists[1]['leader']) }}
     {{ availability_badge('Follower with partner', waiting_lists[1]['follower']) }}
+{% endmacro %}
+#}
+
+{% macro partner_workshop_availability(waiting_lists) %}
+    {{ partner_availability_badge('Leader', waiting_lists[0]['leader'], waiting_lists[1]['leader']) }}
+    {{ partner_availability_badge('Follower', waiting_lists[0]['follower'], waiting_lists[1]['follower']) }}
+{% endmacro %}
+
+{% macro partner_availability_badge(text, wait, wait_with_partn) %}
+    {{ availability_badge(text, wait) }}
+    {% if wait > 0 %}
+        {{ availability_badge('%s with partner' % text, wait_with_partn) }}
+    {% endif %}
 {% endmacro %}
 
 
