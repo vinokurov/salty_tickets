@@ -1,18 +1,55 @@
-from salty_tickets import models, database
+from salty_tickets import models
+from salty_tickets.controllers import OrderSummaryController
+from salty_tickets.database import db_session
+from salty_tickets.models import Registration, Order, ORDER_PRODUCT_STATUS_ACCEPTED, OrderProduct, DANCE_ROLE_LEADER, \
+    ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
+from salty_tickets.pricing_rules import add_payment_to_user_order, balance_event_waiting_lists
 
-event = models.Event.query.filter_by(id=1).one()
+event = models.Event.query.filter_by(event_key='salty_recipes_with_simona_rokas').one()
 print(event.name)
 
-order = models.Order()
-order.registration = models.Registration(name='Neal Jackson', email='nealjc@aol.com')
-order.status = models.ORDER_STATUS_PAID
-database.db_session.add(order)
-database.db_session.commit()
+NAME = 'Marco Mazza'
+# EMAIL = 'alexander.a.vinokurov@gmail.com'
+EMAIL = 'mazza.marco@hotmail.it'
+PRICE = 0
+ROLE = DANCE_ROLE_LEADER
 
-product = models.Product.query.filter_by(name='Collegiate Shag').one()
-order_product = models.OrderProduct(product, 0, {'dance_role':models.DANCE_ROLE_LEADER})
-order_product.status = models.ORDER_PRODUCT_STATUS_ACCEPTED
-order_product.registrations.append(order.registration)
+registration = Registration(
+        name=NAME,
+        email=EMAIL,
+        comment='Manually added'
+)
 
-order.order_products.append(order_product)
-database.db_session.commit()
+user_order = Order()
+for product_model in event.products:
+    order_product = OrderProduct(
+        product_model,
+        PRICE,
+        dict(dance_role=ROLE),
+        status=ORDER_PRODUCT_STATUS_ACCEPTED
+    )
+    order_product.registrations.append(registration)
+    user_order.order_products.append(order_product)
+
+user_order.transaction_fee = 0
+user_order.total_price = user_order.products_price
+
+user_order.registration = registration
+add_payment_to_user_order(user_order)
+
+total_paid = sum([p.amount for p in user_order.payments]) or 0
+user_order.payment_due = user_order.total_price - total_paid
+
+has_paid = any([p.status == PAYMENT_STATUS_PAID for p in user_order.payments])
+if has_paid:
+    user_order.status = ORDER_STATUS_PAID
+
+event.orders.append(user_order)
+
+db_session.commit()
+
+balance_results = balance_event_waiting_lists(event)
+
+order_summary_controller = OrderSummaryController(user_order)
+print(order_summary_controller.token)
+
