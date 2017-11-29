@@ -40,9 +40,8 @@ add_payment_to_user_order(user_order)
 total_paid = sum([p.amount for p in user_order.payments]) or 0
 user_order.payment_due = user_order.total_price - total_paid
 
-has_paid = any([p.status == PAYMENT_STATUS_PAID for p in user_order.payments])
-if has_paid:
-    user_order.status = ORDER_STATUS_PAID
+# has_paid = any([p.status == PAYMENT_STATUS_PAID for p in user_order.payments])
+user_order.status = ORDER_STATUS_PAID
 
 event.orders.append(user_order)
 
