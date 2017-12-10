@@ -3,7 +3,7 @@ from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField,
     HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError, Optional
 from wtforms import Form as NoCsrfForm
-from salty_tickets.models import Event, Registration
+from salty_tickets.models import Event, Registration, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
 from salty_tickets.products import get_product_by_model
 
 
@@ -11,6 +11,7 @@ class SignupForm(FlaskForm):
     stripe_token = HiddenField()
     name = StringField(u'Your name', validators=[DataRequired()])
     email = StringField(u'Email', validators=[Email(), DataRequired()])
+    dance_role = SelectField('Dance Role', choices=[(DANCE_ROLE_LEADER, 'Leader'), (DANCE_ROLE_FOLLOWER, 'Follower')], default=DANCE_ROLE_LEADER)
     comment = TextAreaField('Comment')
     # submit = SubmitField(u'Signup')
 

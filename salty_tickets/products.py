@@ -281,10 +281,10 @@ class StrictlyContest(ContestProductMixin, BaseProduct):
         return False
 
 class WORKSHOP_OPTIONS:
-    LEADER = DANCE_ROLE_FOLLOWER
+    LEADER = DANCE_ROLE_LEADER
     FOLLOWER = DANCE_ROLE_FOLLOWER
     COUPLE = 'couple'
-    NONE = 'none'
+    NONE = ''
 
 
 class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, BaseProduct):
@@ -299,10 +299,10 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             price = self.price
             discount_keys = self._get_discount_keys()
             add = RadioField(label='Add', default=WORKSHOP_OPTIONS.NONE, choices=[
-                ('Leader', WORKSHOP_OPTIONS.LEADER),
-                ('Follower', WORKSHOP_OPTIONS.FOLLOWER),
-                ('Couple', WORKSHOP_OPTIONS.COUPLE),
-                ('None', WORKSHOP_OPTIONS.NONE)
+                (WORKSHOP_OPTIONS.LEADER, 'Leader'),
+                (WORKSHOP_OPTIONS.FOLLOWER, 'Follower'),
+                (WORKSHOP_OPTIONS.COUPLE, 'Couple'),
+                (WORKSHOP_OPTIONS.NONE, 'None')
             ])
             # add = BooleanField(label='Book for yourself')
             # dance_role = SelectField(label='Your role',
@@ -339,7 +339,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
     def _get_buyer_role(self, product_form, form):
         if product_form.add.data == WORKSHOP_OPTIONS.COUPLE:
             if form.dance_role:
-                return form.dance_role
+                return form.dance_role.data
             else:
                 return DANCE_ROLE_LEADER
         elif product_form.add.data in (DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER):

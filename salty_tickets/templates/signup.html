@@ -240,6 +240,7 @@ header .intro-text {
               {{ form.stripe_token }}
               {{ slt.name_field(form.name) }}
               {{ slt.email_field(form.email) }}
+              <div class="form-group">{{ form.dance_role.label.text }}{{ form.dance_role(class='form-control') }}</div>
                        <h3> Your partner details</h3>
                        <small>(*If you are buying tickets for yourself and for your partner)</small>
               {{ slt.name_field(form.partner_name) }}

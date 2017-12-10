@@ -178,25 +178,33 @@
         <small class="text-muted"><i class="fa fa-thermometer fa-fw" aria-hidden="true"></i> {{ form_field.workshop_level }}</small><br>
         <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.workshop_price }}</small><br>
         <small class="text-muted"><i class="fa fa-ticket fa-fw" aria-hidden="true"></i> {{ ticket_availability_status(form_field.available_quantity, form_field.waiting_lists, 6, form_field.product_type) }}</small><br>
-        <small>
-            {% if form_field.product_type == 'RegularPartnerWorkshop' %}
-                {{ partner_workshop_availability(form_field.waiting_lists) }}
-            {% elif form_field.product_type == 'CouplesOnlyWorkshop' %}
-                {{ availability_badge('Leader with partner', form_field.waiting_lists) }}
-                {{ availability_badge('Follower with partner', form_field.waiting_lists) }}
-            {% endif %}
-        </small>
     </p>
     <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
-    <div class="form-group">{{ form_field.dance_role.label.text }}{{ form_field.dance_role(class='form-control') }}</div>
     {{ partner_token_field(form_field.partner_token) }}
     <div class="btn-group" data-toggle="buttons">
-        <button class="btn btn-outline-success form-control btn-responsive {%if form_field.add.data %}active{%endif%}">
-            {{ form_field.add(checked=form_field.add.data) }} {{ form_field.add.label.text }}
-        </button>
-        <button class="btn btn-outline-success form-control btn-responsive">
-            {{ form_field.add_partner(checked=False) }} {{ form_field.add_partner.label.text }}
-        </button>
+        {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+            {% if radio_value == '' %}
+            <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" checked><i class="fa fa-times" aria-hidden="true"></i>
+            </button>
+            {% elif radio_value == 'couple' %}
+                {% if form_field.waiting_lists[1]['leader']+form_field.waiting_lists[1]['follower'] == 0 %}
+            <button class="btn btn-outline-success form-control btn-responsive ">
+                {% else %}
+            <button class="btn btn-outline-warning form-control btn-responsive ">
+                {% endif %}
+                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
+            </button>
+            {% else %}
+                {% if form_field.waiting_lists[0][radio_value] == 0 %}
+            <button class="btn btn-outline-success form-control btn-responsive ">
+                {% else %}
+            <button class="btn btn-outline-warning form-control btn-responsive ">
+                {% endif %}
+                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
+            </button>
+            {% endif %}
+        {% endfor %}
     </div>
 </div>
 {% endmacro %}
