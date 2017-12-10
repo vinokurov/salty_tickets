@@ -94,18 +94,24 @@ jQuery.fn.extend({
 
     $('body').on('click', 'button#checkout', function(e) {
         if(!payment_ready) {
-            var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
+            var url = "{{ url_for('register_checkout', event_key=event.event_key, validate='validate') }}"; // send the form data here.
             $.ajax({
                 type: "POST",
                 url: url,
                 data: $('form').serialize(), // serializes the form's elements.
                 success: function (data) {
 
-                    //console.log(data);  // display the returned data in the console.
-
-                    if(data.stripe.amount) {
-                        payment_ready_change_status(true);
-                        payment_stripe_data = data.stripe;
+                    console.log(data);  // display the returned data in the console.
+                    if(data.disable_checkout) {
+                        $('div#order_summary').html(data.order_summary_html);
+                        show_form_validation_errors(data.errors, data.validated_partner_tokens);
+                        $('button#checkout').disable(data.disable_checkout);
+                    }else{
+                        console.log('ready to pay');
+                        if(data.stripe.amount) {
+                            payment_ready_change_status(true);
+                            payment_stripe_data = data.stripe;
+                        }
                     }
                 }
             });

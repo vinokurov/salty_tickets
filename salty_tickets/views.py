@@ -90,13 +90,19 @@ def register_form(event_key):
 
 
 @app.route('/register/checkout/<string:event_key>', methods=['POST'])
-def register_checkout(event_key):
+@app.route('/register/checkout/<string:event_key>/<validate>', methods=['POST'])
+def register_checkout(event_key, validate='novalidate'):
     event = Event.query.filter_by(event_key=event_key).first()
     form = create_event_form(event)()
 
     return_dict = dict(errors={})
 
-    if form.validate_on_submit():
+    if validate == 'validate':
+        form_check = form.validate_on_submit
+    else:
+        form_check = form.is_submitted
+
+    if form_check():
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
         user_order = get_order_for_event(event, form, registration, partner_registration)
