@@ -65,8 +65,11 @@ jQuery.fn.extend({
         $('.has-danger').each(function() {
             $(this).removeClass('has-danger');
         })
-        $('.form-control-danger').each(function() {
-            $(this).removeClass('form-control-danger');
+        $('.is-invalid').each(function() {
+            $(this).removeClass('is-invalid');
+        })
+        $('.invalid-feedback').each(function() {
+            $(this).removeClass('invalid-feedback');
         })
         $('.form-control-feedback').each(function() {
             $(this).html('');
@@ -79,7 +82,8 @@ jQuery.fn.extend({
 
             console.log(form_field_id, form_errors[form_field_id]);
             $('#'+form_field_id+'-form-group').addClass('has-danger');
-            $('#'+form_field_id).addClass('form-control-danger');
+            $('#'+form_field_id).addClass('is-invalid');
+            $('#'+form_field_id+'-feedback').addClass('invalid-feedback');
             $('#'+form_field_id+'-feedback').html(form_errors[form_field_id])
         }
 
