@@ -826,6 +826,46 @@ class DonateProduct(BaseProduct):
         else:
             return 0
 
+class FESTIVAL_TICKET:
+    SINGLE = 'single'
+    COUPLE = 'couple'
+    NONE = 'none'
+
+class FestivalTicketProduct(BaseProduct):
+    def get_form(self, product_model=None):
+        class FestivalTrackForm(NoCsrfForm):
+            product_name = self.name
+            info = self.info
+            product_type = self.__class__.__name__
+            amount = FloatField(label='Amount', validators=[Optional()])
+            add = RadioField(label='Add', choices=[
+                (FESTIVAL_TICKET.SINGLE, 'Single'),
+                (FESTIVAL_TICKET.COUPLE, 'Couple'),
+                (FESTIVAL_TICKET.NONE, 'None')
+            ])
+
+            def needs_partner(self):
+                return self.add.data == FESTIVAL_TICKET.COUPLE
+
+        return FestivalTrackForm
+
+    def get_total_price(self, product_model, product_form, order_form=None):
+        if product_form.amount.data:
+            return float(product_form.amount.data)
+        else:
+            return 0
+
+    def is_selected(self, product_form):
+        return product_form.add.data != FESTIVAL_TICKET.NONE
+
+class FestivalTrackProduct(FestivalTicketProduct):
+    classes_to_chose = None
+    includes = None
+
+class FestivalPartyProduct(FestivalTicketProduct):
+    party_date = None
+    party_time = None
+    party_location = None
 
 
 # def get_class_by_name(class_name):
@@ -849,6 +889,8 @@ product_mapping = {
     'MarketingProduct': MarketingProduct,
     'DonateProduct': DonateProduct,
     'StrictlyContest': StrictlyContest,
+    'FestivalTrackProduct': FestivalTrackProduct,
+    'FestivalPartyProduct': FestivalPartyProduct,
 }
 
 
@@ -884,48 +926,5 @@ class PartnerTokenValid:
                 raise ValidationError('Your partner has already signed up with a partner')
 
 
-class FESTIVAL_TICKET:
-    SINGLE = 'single'
-    COUPLE = 'couple'
-    NONE = 'none'
-
-
-class FestivalTicketProduct(BaseProduct):
-    def get_form(self, product_model=None):
-        class FestivalTrackForm(NoCsrfForm):
-            product_name = self.name
-            info = self.info
-            product_type = self.__class__.__name__
-            amount = FloatField(label='Amount', validators=[Optional()])
-            add = RadioField(label='Add', choices=[
-                (FESTIVAL_TICKET.SINGLE, 'Single'),
-                (FESTIVAL_TICKET.COUPLE, 'Couple'),
-                (FESTIVAL_TICKET.NONE, 'None')
-            ])
-
-            def needs_partner(self):
-                return self.add.data == FESTIVAL_TICKET.COUPLE
-
-        return FestivalTrackForm
-
-    def get_total_price(self, product_model, product_form, order_form=None):
-        if product_form.amount.data:
-            return float(product_form.amount.data)
-        else:
-            return 0
-
-    def is_selected(self, product_form):
-        return product_form.add.data != FESTIVAL_TICKET.NONE
-
-
-class FestivalTrackProduct(FestivalTicketProduct):
-    classes_to_chose = None
-    includes = None
-
-
-class FestivalPartyProduct(FestivalTicketProduct):
-    party_date = None
-    party_time = None
-    party_location = None
 
 

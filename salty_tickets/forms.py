@@ -11,7 +11,7 @@ class SignupForm(FlaskForm):
     stripe_token = HiddenField()
     name = StringField(u'Your name', validators=[DataRequired()])
     email = StringField(u'Email', validators=[Email(), DataRequired()])
-    dance_role = SelectField('Dance Role', choices=[(DANCE_ROLE_LEADER, 'Leader'), (DANCE_ROLE_FOLLOWER, 'Follower')], default=DANCE_ROLE_LEADER)
+    dance_role = SelectField('Your Dance Role in Couple', choices=[(DANCE_ROLE_LEADER, 'Leader'), (DANCE_ROLE_FOLLOWER, 'Follower')], default=DANCE_ROLE_LEADER)
     comment = TextAreaField('Comment')
     # submit = SubmitField(u'Signup')
 
