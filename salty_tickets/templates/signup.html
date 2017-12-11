@@ -233,6 +233,23 @@ header .intro-text {
     </div>
 </header>
 {% endblock %}
+<header class="sticky-top bg-dark py-1 mb-1">
+    <div class="container">
+        <div class="row">
+            <div class="col-3"><h3 class="display-5">
+                <a data-toggle="collapse" href="#order_summary" aria-expanded="false" aria-controls="order_summary">Total: £120</a>
+            </h3></div>
+            <div class="col">
+                                            <button type="button" id="checkout" class="btn btn-dark btn-outline-light">
+                                        <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
+                                        <span id="checkout_text">Sign up and pay</span>
+                                    </button>
+
+            </div>
+        </div>
+        <div class ="collapse mt-1 text-dark" id="order_summary"></div>
+    </div>
+</header>
 
 {% block info_section %}
 {% endblock %}
@@ -241,6 +258,7 @@ header .intro-text {
        {{wtf.quick_form(form, novalidate=True)}}
      {%- else -%}
        <form class="form form-vertical" method="post" role="form">
+
            <div id="form_fields">
 
                <div class="container-fluid">
@@ -272,23 +290,6 @@ header .intro-text {
                         <!--</div>-->
                     </div>
 
-               </div>
-
-               <div class="container-fluid">
-                   <div class="container my-4">
-                        <div class="card card-default">
-                            <div class="card-body">
-                                <h4 class="card-title">Summary</h4>
-                                <div id="order_summary"></div>
-                                <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-lg btn-responsive btn-success form-control" disabled>
-                                        <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
-                                        <span id="checkout_text">Sign up and pay</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                   </div>
                </div>
            </div>
         </form>
