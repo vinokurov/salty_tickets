@@ -112,6 +112,7 @@ def register_checkout(event_key, validate='novalidate'):
                                                             order_summary_controller=order_summary_controller)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
+        return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
         print(
             form.name.data,
             request.remote_addr,

@@ -56,6 +56,13 @@ jQuery.fn.extend({
                     $('div#order_summary').html(data.order_summary_html);
                     show_form_validation_errors(data.errors, data.validated_partner_tokens);
                     $('button#checkout').disable(data.disable_checkout);
+                    console.log(data.order_summary_total)
+                    if(data.order_summary_total) {
+                        console.log('setting total', 'Total: '+data.order_summary_total)
+                        $('a#order_summary_total').text('Total: '+data.order_summary_total);
+                    } else {
+                        $('a#order_summary_total').text('Total: £0.00');
+                    }
                 }
             });
         }
@@ -237,17 +244,15 @@ header .intro-text {
     <div class="container">
         <div class="row">
             <div class="col-3"><h3 class="display-5">
-                <a data-toggle="collapse" href="#order_summary" aria-expanded="false" aria-controls="order_summary">Total: £120</a>
+                <a href="#order_summary_container" id="order_summary_total">Total: £0</a>
             </h3></div>
             <div class="col">
-                                            <button type="button" id="checkout" class="btn btn-dark btn-outline-light">
-                                        <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
-                                        <span id="checkout_text">Sign up and pay</span>
-                                    </button>
-
+                <button type="button" id="checkout" class="btn btn-dark btn-outline-light">
+                    <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
+                    <span id="checkout_text">Sign up and pay</span>
+                </button>
             </div>
         </div>
-        <div class ="collapse mt-1 text-dark" id="order_summary"></div>
     </div>
 </header>
 
@@ -290,6 +295,17 @@ header .intro-text {
                         <!--</div>-->
                     </div>
 
+               </div>
+
+               <div class="container-fluid" id="order_summary_container">
+                   <div class="container my-4">
+                        <div class="card card-default">
+                            <div class="card-body">
+                                <h4 class="card-title">Order Summary</h4>
+                                <div id="order_summary"></div>
+                            </div>
+                        </div>
+                   </div>
                </div>
            </div>
         </form>
