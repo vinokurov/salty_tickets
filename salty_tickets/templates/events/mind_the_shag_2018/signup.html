@@ -19,12 +19,18 @@
         <div class="container-fluid">
             <div class="container my-4">
                 <h3 >Weekend Tickets</h3>
+                <div class="card-deck my-2">
                 {{ mts_weekend_ticket(form.get_product_by_key('full_weekend_ticket'), event) }}
                 {{ mts_weekend_ticket(form.get_product_by_key('full_weekend_ticket_no_parties'), event) }}
+                </div>
+                <div class="card-deck my-2">
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_collegiate_shag'), event) }}
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_collegiate_shag_no_parties'), event) }}
+                </div>
+                <div class="card-deck my-2">
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag'), event) }}
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag_no_parties'), event) }}
+                </div>
             </div>
         </div>
 
@@ -81,9 +87,11 @@
             <div class="container my-4">
                 <h3 >Parties</h3>
                 {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event) }}
+                <div class="card-deck mt-2">
                 {{ mts_party_ticket(form.get_product_by_key('friday_party'), event) }}
                 {{ mts_party_ticket(form.get_product_by_key('saturday_party'), event) }}
                 {{ mts_party_ticket(form.get_product_by_key('sunday_party'), event) }}
+                </div>
             </div>
         </div>
 {% endblock %}
