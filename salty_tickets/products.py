@@ -315,6 +315,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             workshop_location = self.workshop_location
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
+            workshop_teachers = self.workshop_teachers
             waiting_lists = self.get_waiting_lists(product_model)
             available_quantity = self.get_available_quantity(product_model)
 
@@ -829,13 +830,14 @@ class DonateProduct(BaseProduct):
 class FESTIVAL_TICKET:
     SINGLE = 'single'
     COUPLE = 'couple'
-    NONE = 'none'
+    NONE = ''
 
 class FestivalTicketProduct(BaseProduct):
     def get_form(self, product_model=None):
         class FestivalTrackForm(NoCsrfForm):
             product_name = self.name
             info = self.info
+            price = self.price
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
             add = RadioField(label='Add', choices=[

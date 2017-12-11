@@ -284,19 +284,15 @@ header .intro-text {
               {{ wtf.form_field(form.comment) }}
                        </div>
                </div>
-
+{% block products %}
                 <div class="container-fluid">
                     <div class="container my-4">
-                        <!--<h2> Select a Reward</h2>-->
-                        <!--<div class="card-columns">-->
                {% for product_key in form.product_keys %}
                     {{ slt.render_workshop_form_field(form.get_product_by_key(product_key), event) }}
                {% endfor %}
-                        <!--</div>-->
                     </div>
-
                </div>
-
+{% endblock %}
                <div class="container-fluid" id="order_summary_container">
                    <div class="container my-4">
                         <div class="card card-default">

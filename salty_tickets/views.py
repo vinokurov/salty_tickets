@@ -391,3 +391,7 @@ def vote_data():
 @app.template_filter('price')
 def price_filter(amount):
     return '£{:.2f}'.format(amount)
+
+@app.template_filter('price_int')
+def price_int_filter(amount):
+    return '£{:.0f}'.format(amount)
