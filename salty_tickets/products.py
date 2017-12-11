@@ -318,6 +318,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             workshop_teachers = self.workshop_teachers
             waiting_lists = self.get_waiting_lists(product_model)
             available_quantity = self.get_available_quantity(product_model)
+            keywords = self.keywords
 
             def needs_partner(self):
                 return self.add.data == WORKSHOP_OPTIONS.COUPLE
@@ -868,6 +869,11 @@ class FestivalPartyProduct(FestivalTicketProduct):
     party_date = None
     party_time = None
     party_location = None
+
+    def get_form(self, product_model=None):
+        form = super(FestivalPartyProduct, self).get_form(product_model=product_model)
+        form.party_date = self.party_date
+        return form
 
 
 # def get_class_by_name(class_name):

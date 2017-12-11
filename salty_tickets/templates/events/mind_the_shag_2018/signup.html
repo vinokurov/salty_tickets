@@ -25,7 +25,6 @@
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_collegiate_shag_no_parties'), event) }}
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag'), event) }}
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag_no_parties'), event) }}
-                {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event) }}
             </div>
         </div>
 
@@ -76,6 +75,15 @@
                     </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="container my-4">
+                <h3 >Parties</h3>
+                {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event) }}
+                {{ mts_party_ticket(form.get_product_by_key('friday_party'), event) }}
+                {{ mts_party_ticket(form.get_product_by_key('saturday_party'), event) }}
+                {{ mts_party_ticket(form.get_product_by_key('sunday_party'), event) }}
             </div>
         </div>
 {% endblock %}
@@ -131,6 +139,30 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">{{ form_field.product_name }}</h5>
+            <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
+            <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
+               <div class="btn-group" data-toggle="buttons">
+                    {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                        {% if radio_value == '' %}
+                        <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" checked><i class="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline-success form-control btn-responsive ">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+               </div>
+            </div>
+    </div>
+{% endmacro %}
+
+{% macro mts_party_ticket(form_field, event) %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ form_field.product_name }}</h5>
+            <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.party_date }}</small><br>
             <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
             <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
                <div class="btn-group" data-toggle="buttons">
