@@ -34,25 +34,26 @@
             </div>
         </div>
 
+
         <div class="container-fluid">
             <div class="container my-4">
                 <h3 >Saturday Classes</h3>
-                <table class="table table-bordered">
+                <table class="table table-bordered bg-dark">
                     <tbody>
                     <tr>
-                        <td></td>
-                        {{ mts_station(form.get_product_by_key('st_louis_shag_essence'), event) }}
-                        {{ mts_station(form.get_product_by_key('flea_hops_tricks'), event) }}
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('st_louis_shag_essence'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('flea_hops_tricks'), event) }}</td>
                     </tr>
                     <tr>
-                        {{ mts_station(form.get_product_by_key('shag_roots'), event) }}
-                        {{ mts_station(form.get_product_by_key('pocket_rocket_shag'), event) }}
-                        {{ mts_station(form.get_product_by_key('superman_circle_pit'), event) }}
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('shag_roots'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('pocket_rocket_shag'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('superman_circle_pit'), event) }}</td>
                     </tr>
                     <tr>
-                        {{ mts_station(form.get_product_by_key('rising_shag'), event) }}
-                        {{ mts_station(form.get_product_by_key('rockabilly_bopper_shag'), event) }}
-                        <td></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rising_shag'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rockabilly_bopper_shag'), event) }}</td>
+                        <td class="w-25"></td>
                     </tr>
                     </tbody>
                 </table>
@@ -62,22 +63,22 @@
         <div class="container-fluid">
             <div class="container my-4">
                 <h3 >Sunday Classes</h3>
-                <table class="table table-bordered">
+                <table class="table table-bordered bg-dark">
                     <tbody>
                     <tr>
-                        <td></td>
-                        <td></td>
-                        {{ mts_station(form.get_product_by_key('swing_out_like_you_re_from_st_louis'), event) }}
+                        <td class="w-25"></td>
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('swing_out_like_you_re_from_st_louis'), event) }}</td>
                     </tr>
                     <tr>
-                        {{ mts_station(form.get_product_by_key('christian_jenny_s_original_shag_moves'), event) }}
-                        {{ mts_station(form.get_product_by_key('tandem_time'), event) }}
-                        {{ mts_station(form.get_product_by_key('rhythm_shag'), event) }}
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('christian_jenny_s_original_shag_moves'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('tandem_time'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rhythm_shag'), event) }}</td>
                     </tr>
                     <tr>
-                        <td></td>
-                        {{ mts_station(form.get_product_by_key('phony_boy'), event) }}
-                        {{ mts_station(form.get_product_by_key('momentum_madness'), event) }}
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('phony_boy'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('momentum_madness'), event) }}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -101,8 +102,8 @@
 {% endblock %}
 
 {% macro mts_station(form_field, event) %}
-           <td class="table">
-               <div class="container">
+               <div class="card bg-light">
+                   <div class="card-body">
                 <h5 class="t-title-8 p-b-8">{{ form_field.product_name }}</h5>
                <span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>
                 <!--<i class="fa fa-clock-o" aria-hidden="true"></i><small class="m-b-5">5:30pm-6:35pm</small>-->
@@ -111,26 +112,26 @@
                    <div class="btn-group" data-toggle="buttons">
                         {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
                             {% if radio_value == '' %}
-                            <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                            <button class="btn btn-sm btn-secondary form-control btn-responsive radio-none">
                                 <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" checked><i class="fa fa-times" aria-hidden="true"></i>
                             </button>
                             {% elif radio_value == 'couple' %}
                                 {% if form_field.waiting_lists[1]['leader']+form_field.waiting_lists[1]['follower'] == 0 %}
-                            <button class="btn btn-outline-success form-control btn-responsive ">
+                            <button class="btn btn-sm btn-outline-success form-control btn-responsive ">
                                 <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                             </button>
                                 {% else %}
-                            <button class="btn btn-outline-warning form-control btn-responsive ">
+                            <button class="btn btn-sm btn-outline-warning form-control btn-responsive ">
                                 <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                             </button>
                                 {% endif %}
                             {% else %}
                                 {% if form_field.waiting_lists[0][radio_value] == 0 %}
-                            <button class="btn btn-outline-success form-control btn-responsive ">
+                            <button class="btn btn-sm btn-outline-success form-control btn-responsive ">
                                 <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                             </button>
                                 {% else %}
-                                <button class="btn btn-outline-warning form-control btn-responsive ">
+                                <button class="btn btn-sm btn-outline-warning form-control btn-responsive ">
                                     <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                                 </button>
                                 {% endif %}
@@ -138,13 +139,12 @@
                             {% endif %}
                         {% endfor %}
                    </div>
+                       </div>
                </div>
-           </td>
-
 {% endmacro %}
 
 {% macro mts_weekend_ticket(form_field, event) %}
-    <div class="card">
+    <div class="card bg-light">
         <div class="card-body">
             <h5 class="card-title">{{ form_field.product_name }}</h5>
             <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
@@ -156,7 +156,7 @@
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" checked><i class="fa fa-times" aria-hidden="true"></i>
                         </button>
                         {% else %}
-                        <button class="btn btn-outline-dark form-control btn-responsive ">
+                        <button class="btn btn-outline-primary form-control btn-responsive ">
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                         </button>
                         {% endif %}
@@ -167,7 +167,7 @@
 {% endmacro %}
 
 {% macro mts_party_ticket(form_field, event) %}
-    <div class="card">
+    <div class="card bg-light">
         <div class="card-body">
             <h5 class="card-title">{{ form_field.product_name }}</h5>
             <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.party_date }}</small><br>
@@ -180,7 +180,7 @@
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" checked><i class="fa fa-times" aria-hidden="true"></i>
                         </button>
                         {% else %}
-                        <button class="btn btn-outline-dark form-control btn-responsive ">
+                        <button class="btn btn-outline-primary form-control btn-responsive ">
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}">{{radio_label}}
                         </button>
                         {% endif %}
