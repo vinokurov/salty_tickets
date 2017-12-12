@@ -19,6 +19,27 @@
             </div>
         </div>
 
+        {% if form_controller.full_pass_selected %}
+        <div class="container">
+            <div class="alert alert-dismissible {%if form_controller.selected_stations_count<3 %}alert-warning{%else%}alert-success{%endif%}">
+              <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
+                <i class="fa fa-fw {%if form_controller.selected_stations_count<3 %}fa-exclamation-triangle{%else%}fa-check-circle{%endif%}" aria-hidden="true"></i>
+              <strong>Full Weekend Pass includes 3 stations!</strong>
+                You have already selected {{ form_controller.selected_stations_count }}.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if form_controller.is_couples_only %}
+        <div class="container">
+            <div class="alert alert-dismissible alert-info">
+                <i class="fa fa-info-circle fa-fw" aria-hidden="true"></i>
+              <strong>You have chosen a Couple weekend ticket!</strong>
+                You can book classes only for both you and your partner.
+            </div>
+        </div>
+        {% endif %}
+
 
         <div class="container-fluid">
             <div class="container my-4">
@@ -88,7 +109,7 @@
                        <h5 class="card-title">{{ form_field.product_name }}</h5>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>-->
                        <div class="btn-group" data-toggle="buttons">
-                            {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                            {% for radio_value, radio_label, radio_bool in form_controller.iter_station_choices(form_field) %}
                                 {% if radio_value == '' %}
                                 <button class="btn btn-sm btn-secondary form-control btn-responsive radio-none">
                                     <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times text-muted" aria-hidden="true"></i>
@@ -110,7 +131,7 @@
                    </div>
                    <div class="card-footer">
                         <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small>
-                        <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small>
+                        <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small><br>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span>-->
                        {{form_controller.line_badges(form_field) | safe}}
                    </div>

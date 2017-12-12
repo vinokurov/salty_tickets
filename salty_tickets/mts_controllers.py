@@ -18,7 +18,6 @@ class MtsSignupFormController:
         selection_value = form_control.add.data
         if self.is_station_preselected(form_control):
             weekend_selection = self._weekend_ticket.add.data
-            print(form_control.product_name, weekend_selection)
             if weekend_selection == FESTIVAL_TICKET.COUPLE:
                 form_control.add.data = WORKSHOP_OPTIONS.COUPLE
             else:
@@ -45,9 +44,16 @@ class MtsSignupFormController:
             weekend_ticket = self._weekend_ticket
             if weekend_ticket:
                 includes = weekend_ticket.includes.split(',')
-                print(form_control.keywords, includes, form_control.keywords in includes)
                 return form_control.keywords in includes
         return False
+
+    def iter_station_choices(self, form_field):
+        for choice in form_field.add.iter_choices():
+            if choice[0] in (WORKSHOP_OPTIONS.LEADER, WORKSHOP_OPTIONS.FOLLOWER):
+                if not self.is_couples_only:
+                    yield choice
+            else:
+                yield choice
 
     def ticket_card_style(self, form_control):
         selection_value = form_control.add.data
@@ -99,6 +105,29 @@ class MtsSignupFormController:
     def is_couples_only(self):
         weekend_ticket = self._weekend_ticket
         return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.COUPLE)
+
+    @property
+    def has_couples_tickets(self):
+        for ticket_key in self.form.product_keys:
+            if self.form.get_product_by_key(ticket_key).add.data == 'couple':
+                return True
+        else:
+            return False
+
+    @property
+    def selected_stations_count(self):
+        stations = 0
+        for ticket_key in self.form.product_keys:
+            ticket = self.form.get_product_by_key(ticket_key)
+            if ticket.product_type == 'RegularPartnerWorkshop' and ticket.add.data:
+                stations += 1
+        return stations
+
+    @property
+    def full_pass_selected(self):
+        return self.form.get_product_by_key('full_weekend_ticket').add.data or \
+               self.form.get_product_by_key('full_weekend_ticket_no_parties').add.data
+
 
     @property
     def is_parties_included(self):
