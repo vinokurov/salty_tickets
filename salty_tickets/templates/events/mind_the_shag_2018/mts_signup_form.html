@@ -85,32 +85,35 @@
 {% macro mts_station(form_field, event) %}
                <div class="card {{form_controller.station_card_style(form_field)}}">
                    <div class="card-body">
-                <h5 class="t-title-8 p-b-8">{{ form_field.product_name }}</h5>
-               <span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>
-                <!--<i class="fa fa-clock-o" aria-hidden="true"></i><small class="m-b-5">5:30pm-6:35pm</small>-->
-                <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
-                <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small><br>
-                   <div class="btn-group" data-toggle="buttons">
-                        {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
-                            {% if radio_value == '' %}
-                            <button class="btn btn-sm btn-secondary form-control btn-responsive radio-none">
-                                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times text-muted" aria-hidden="true"></i>
-                            </button>
-                            {% else %}
-                                {% if form_field.waiting_lists[0][radio_value] == 0 %}
-                            <button class="btn btn-sm btn-outline-success form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
-                                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
-                            </button>
+                       <h5 class="card-title">{{ form_field.product_name }}</h5>
+                       <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>-->
+                       <div class="btn-group" data-toggle="buttons">
+                            {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                                {% if radio_value == '' %}
+                                <button class="btn btn-sm btn-secondary form-control btn-responsive radio-none">
+                                    <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times text-muted" aria-hidden="true"></i>
+                                </button>
                                 {% else %}
-                                <button class="btn btn-sm btn-outline-warning form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
+                                    {% if form_field.waiting_lists[0][radio_value] == 0 %}
+                                <button class="btn btn-sm btn-outline-success form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
                                     <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
                                 </button>
-                                {% endif %}
+                                    {% else %}
+                                    <button class="btn btn-sm btn-outline-warning form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
+                                        <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
+                                    </button>
+                                    {% endif %}
 
-                            {% endif %}
-                        {% endfor %}
-                   </div>
+                                {% endif %}
+                            {% endfor %}
                        </div>
+                   </div>
+                   <div class="card-footer">
+                        <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small>
+                        <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small>
+                       <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span>-->
+                       {{form_controller.line_badges(form_field) | safe}}
+                   </div>
                </div>
 {% endmacro %}
 
@@ -123,7 +126,7 @@
                <div class="btn-group" data-toggle="buttons">
                     {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
                         {% if radio_value == '' %}
-                        <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                        <button class="btn btn-outline-dark text-muted form-control btn-responsive radio-none">
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" id="{{form_field.add.id}}-none"><i class="fa fa-times" aria-hidden="true"></i>
                         </button>
                         {% else %}
@@ -147,7 +150,7 @@
                <div class="btn-group" data-toggle="buttons">
                     {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
                         {% if radio_value == '' %}
-                        <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                        <button class="btn btn-outline-dark text-muted form-control btn-responsive radio-none">
                             <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times" aria-hidden="true"></i>
                         </button>
                         {% else %}

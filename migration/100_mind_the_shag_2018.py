@@ -28,7 +28,7 @@ event.products.append(
         info='What makes it St. Louis Shag? Learn the basics of this dance, as well as traditional moves like kick-aways, sliding doors, and more.',
         workshop_date='7-April-2018',
         workshop_time='10:30-12:30',
-        workshop_level='Jitterbug, St.Louis',
+        workshop_level='Jitterbug,St.Louis',
         workshop_teachers='Christian & Jenny',
         keywords='stl_fast_train',
         **ARGS_BLOCK, **ARGS_STD2,

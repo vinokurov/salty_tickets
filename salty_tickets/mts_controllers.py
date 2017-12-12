@@ -110,3 +110,14 @@ class MtsSignupFormController:
         ]
         weekend_ticket_key = self._weekend_ticket_key
         return weekend_ticket_key and weekend_ticket_key in party_tickets_keys
+
+    def line_badges(self, form_field):
+        line_styles = {
+            'Jitterbug': 'badge-info',
+            'Collegiate': 'badge-danger',
+            'Collegiate Super': 'badge-danger',
+            'St.Louis': 'badge-success'
+        }
+        lines = form_field.workshop_level.split(',')
+        badges = ['<span class="badge badge-pill {}">{}</span>'.format(line_styles[line], line) for line in lines]
+        return ' '.join(badges)
