@@ -292,6 +292,10 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
     allow_first = 0
 
     def get_form(self, product_model=None):
+
+        waiting_lists0 = self.get_waiting_lists(product_model)
+        waiting_lists0[0]['couple'] = waiting_lists0[1][DANCE_ROLE_LEADER] + waiting_lists0[1][DANCE_ROLE_FOLLOWER]
+
         class RegularPartnerWorkshopForm(NoCsrfForm):
             product_name = self.name
             product_id = product_model.id
@@ -316,7 +320,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
             workshop_teachers = self.workshop_teachers
-            waiting_lists = self.get_waiting_lists(product_model)
+            waiting_lists = waiting_lists0
             available_quantity = self.get_available_quantity(product_model)
             keywords = self.keywords
 
@@ -839,6 +843,7 @@ class FestivalTicketProduct(BaseProduct):
             product_name = self.name
             info = self.info
             price = self.price
+            product_id = product_model.id
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
             add = RadioField(label='Add', choices=[
@@ -853,8 +858,10 @@ class FestivalTicketProduct(BaseProduct):
         return FestivalTrackForm
 
     def get_total_price(self, product_model, product_form, order_form=None):
-        if product_form.amount.data:
-            return float(product_form.amount.data)
+        if product_form.add.data == FESTIVAL_TICKET.SINGLE:
+            return float(self.price)
+        elif product_form.add.data == FESTIVAL_TICKET.COUPLE:
+            return 2*float(self.price)
         else:
             return 0
 
@@ -864,6 +871,11 @@ class FestivalTicketProduct(BaseProduct):
 class FestivalTrackProduct(FestivalTicketProduct):
     classes_to_chose = None
     includes = None
+
+    def get_form(self, product_model=None):
+        form = super(FestivalTrackProduct, self).get_form(product_model=product_model)
+        form.includes = self.includes
+        return form
 
 class FestivalPartyProduct(FestivalTicketProduct):
     party_date = None

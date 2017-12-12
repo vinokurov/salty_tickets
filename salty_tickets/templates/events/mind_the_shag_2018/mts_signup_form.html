@@ -1,0 +1,162 @@
+{% extends "signup_form.html" %}
+
+{% block products %}
+        <div class="container-fluid">
+            <div class="container my-4">
+                <h3 >Weekend Tickets</h3>
+                <div class="card-deck my-2">
+                {{ mts_weekend_ticket(form.get_product_by_key('full_weekend_ticket'), event) }}
+                {{ mts_weekend_ticket(form.get_product_by_key('full_weekend_ticket_no_parties'), event) }}
+                </div>
+                <div class="card-deck my-2">
+                {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_collegiate_shag'), event) }}
+                {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_collegiate_shag_no_parties'), event) }}
+                </div>
+                <div class="card-deck my-2">
+                {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag'), event) }}
+                {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag_no_parties'), event) }}
+                </div>
+            </div>
+        </div>
+
+
+        <div class="container-fluid">
+            <div class="container my-4">
+                <h3 >Saturday Classes</h3>
+                <table class="table table-bordered bg-light">
+                    <tbody>
+                    <tr>
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('st_louis_shag_essence'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('flea_hops_tricks'), event) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('shag_roots'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('pocket_rocket_shag'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('superman_circle_pit'), event) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rising_shag'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rockabilly_bopper_shag'), event) }}</td>
+                        <td class="w-25"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="container my-4">
+                <h3 >Sunday Classes</h3>
+                <table class="table table-bordered bg-light">
+                    <tbody>
+                    <tr>
+                        <td class="w-25"></td>
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('swing_out_like_you_re_from_st_louis'), event) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('christian_jenny_s_original_shag_moves'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('tandem_time'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('rhythm_shag'), event) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-25"></td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('phony_boy'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('momentum_madness'), event) }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="container-fluid">
+            <div class="container my-4">
+                <h3 >Parties</h3>
+                {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event) }}
+                <div class="card-deck mt-2">
+                {{ mts_party_ticket(form.get_product_by_key('friday_party'), event) }}
+                {{ mts_party_ticket(form.get_product_by_key('saturday_party'), event) }}
+                {{ mts_party_ticket(form.get_product_by_key('sunday_party'), event) }}
+                </div>
+            </div>
+        </div>
+{% endblock %}
+
+{% macro mts_station(form_field, event) %}
+               <div class="card {{form_controller.station_card_style(form_field)}}">
+                   <div class="card-body">
+                <h5 class="t-title-8 p-b-8">{{ form_field.product_name }}</h5>
+               <span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>
+                <!--<i class="fa fa-clock-o" aria-hidden="true"></i><small class="m-b-5">5:30pm-6:35pm</small>-->
+                <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small><br>
+                <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small><br>
+                   <div class="btn-group" data-toggle="buttons">
+                        {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                            {% if radio_value == '' %}
+                            <button class="btn btn-sm btn-secondary form-control btn-responsive radio-none">
+                                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times text-muted" aria-hidden="true"></i>
+                            </button>
+                            {% else %}
+                                {% if form_field.waiting_lists[0][radio_value] == 0 %}
+                            <button class="btn btn-sm btn-outline-success form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
+                                <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
+                            </button>
+                                {% else %}
+                                <button class="btn btn-sm btn-outline-warning form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
+                                    <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
+                                </button>
+                                {% endif %}
+
+                            {% endif %}
+                        {% endfor %}
+                   </div>
+                       </div>
+               </div>
+{% endmacro %}
+
+{% macro mts_weekend_ticket(form_field, event) %}
+    <div class="card {{form_controller.ticket_card_style(form_field)}}">
+        <div class="card-body">
+            <h5 class="card-title">{{ form_field.product_name }}</h5>
+            <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
+            <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
+               <div class="btn-group" data-toggle="buttons">
+                    {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                        {% if radio_value == '' %}
+                        <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" id="{{form_field.add.id}}-none"><i class="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline-primary form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}" onclick="uncheck_weekend_tickets('{{form_field.add.id}}')">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+               </div>
+            </div>
+    </div>
+{% endmacro %}
+
+{% macro mts_party_ticket(form_field, event) %}
+    <div class="card {{form_controller.party_card_style(form_field)}}">
+        <div class="card-body">
+            <h5 class="card-title">{{ form_field.product_name }}</h5>
+            <small class="text-muted"><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.party_date }}</small><br>
+            <small class="text-muted"><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
+            <p class="card-text"><small class="text-muted">{{ form_field.info }} </small></p>
+               <div class="btn-group" data-toggle="buttons">
+                    {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
+                        {% if radio_value == '' %}
+                        <button class="btn btn-outline-secondary form-control btn-responsive radio-none">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}"><i class="fa fa-times" aria-hidden="true"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-outline-primary form-control btn-responsive {{form_controller.radio_field_checked(form_field, radio_value, yes='active')}}">
+                            <input type="radio" name="{{form_field.add.id}}" value="{{radio_value}}" {{form_controller.radio_field_checked(form_field, radio_value)}}>{{radio_label}}
+                        </button>
+                        {% endif %}
+                    {% endfor %}
+               </div>
+            </div>
+    </div>
+{% endmacro %}

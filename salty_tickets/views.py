@@ -10,6 +10,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
+from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import process_payment
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
@@ -86,7 +87,8 @@ def register_form(event_key):
                     form[order_product.product.product_key].add.data = 1
             except BadSignature:
                 pass
-    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config)
+    form_controller = MtsSignupFormController(form)
+    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config, form_controller=form_controller)
 
 
 @app.route('/register/checkout/<string:event_key>', methods=['POST'])
@@ -113,6 +115,10 @@ def register_checkout(event_key, validate='novalidate'):
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
         return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
+        if event_key == 'mind_the_shag_2018':
+            form_controller = MtsSignupFormController(form)
+            return_dict['signup_form_html'] = render_template('events/mind_the_shag_2018/mts_signup_form.html',
+                                                         event=event, form=form, config=config, form_controller=form_controller)
         print(
             form.name.data,
             request.remote_addr,

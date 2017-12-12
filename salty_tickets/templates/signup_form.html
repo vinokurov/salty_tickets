@@ -1,0 +1,41 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "slt.html" as slt %}
+
+     {% if request.args.get('legacy') -%}
+       {{wtf.quick_form(form, novalidate=True)}}
+     {%- else -%}
+       <form class="form form-vertical" method="post" role="form">
+
+           <div id="form_fields">
+{% block products %}
+                <div class="container-fluid">
+                    <div class="container my-4">
+               {% for product_key in form.product_keys %}
+                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key), event) }}
+               {% endfor %}
+                    </div>
+               </div>
+{% endblock %}
+
+               <div class="container-fluid">
+                   <div class="container">
+                       <h2> Your details</h2>
+              {{ form.hidden_tag() }}
+              {{ wtf.form_errors(form) }}
+
+              {{ form.stripe_token }}
+              {{ slt.name_field(form.name) }}
+              {{ slt.email_field(form.email) }}
+              <div class="{%if form_controller.is_couples_only %}visible{% else %}hide{%endif%}">
+              <div class="form-group">{{ form.dance_role.label.text }}{{ form.dance_role(class='form-control') }}</div>
+                       <h3> Your partner details</h3>
+                       <small>(*If you are buying tickets for yourself and for your partner)</small>
+              {{ slt.name_field(form.partner_name) }}
+              {{ slt.email_field(form.partner_email) }}
+              </div>
+              {{ wtf.form_field(form.comment) }}
+                       </div>
+               </div>
+           </div>
+        </form>
+     {%- endif %}
