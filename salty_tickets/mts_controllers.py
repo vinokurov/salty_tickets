@@ -133,8 +133,8 @@ class MtsSignupFormController:
 
     @property
     def full_pass_selected(self):
-        return self.form.get_product_by_key('full_weekend_ticket').add.data or \
-               self.form.get_product_by_key('full_weekend_ticket_no_parties').add.data
+        return self.form.get_product_by_key('full_weekend_ticket').add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE) or \
+               self.form.get_product_by_key('full_weekend_ticket_no_parties').add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE)
 
 
     @property
@@ -171,4 +171,3 @@ class MtsSignupFormController:
         lines = form_field.workshop_level.split(',')
         badges = ['<span class="badge badge-pill {}">{}</span>'.format(line_styles[line], line) for line in lines]
         return ' '.join(badges)
-

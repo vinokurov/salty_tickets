@@ -19,6 +19,7 @@ from salty_tickets.products import flip_role
 from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
 from sqlalchemy import desc
 from werkzeug.utils import redirect
+from htmlmin import minify
 
 __author__ = 'vnkrv'
 
@@ -108,8 +109,8 @@ def register_checkout(event_key, validate='novalidate'):
     if form_check():
         if event_key == 'mind_the_shag_2018':
             form_controller = MtsSignupFormController(form)
-            return_dict['signup_form_html'] = render_template('events/mind_the_shag_2018/mts_signup_form.html',
-                                                         event=event, form=form, config=config, form_controller=form_controller)
+            return_dict['signup_form_html'] = minify(render_template('events/mind_the_shag_2018/mts_signup_form.html',
+                                                         event=event, form=form, config=config, form_controller=form_controller), remove_comments=True, remove_empty_space=True)
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
         if event_key == 'mind_the_shag_2018':
@@ -118,8 +119,8 @@ def register_checkout(event_key, validate='novalidate'):
             user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
         order_summary_controller = OrderSummaryController(user_order)
-        return_dict['order_summary_html'] = render_template('order_summary.html',
-                                                            order_summary_controller=order_summary_controller)
+        return_dict['order_summary_html'] = minify(render_template('order_summary.html',
+                                                            order_summary_controller=order_summary_controller), remove_comments=True, remove_empty_space=True)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
         return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
