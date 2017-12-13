@@ -2,14 +2,14 @@ from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET
 
 
 class MtsSignupFormController:
-    STATION_DEFAULT_CARD_STYLE = ''
-    STATION_ACCEPTED_CARD_STYLE = 'border-success'
-    STATION_WAITING_CARD_STYLE = 'border-warning'
+    STATION_DEFAULT_CARD_STYLE = 'bg-light'
+    STATION_ACCEPTED_CARD_STYLE = 'text-success bg-black border-success'
+    STATION_WAITING_CARD_STYLE = 'text-warning bg-secondary border-warning'
     STATION_PRESELECTED_ACCEPTED_CARD_STYLE = 'text-success bg-dark border-success'
     STATION_PRESELECTED_WAITING_CARD_STYLE = 'text-warning bg-dark border-warning'
 
-    TICKET_DEFAULT_CARD_STYLE = 'bg-light'
-    TICKET_SELECTED_CARD_STYLE = 'border-primary'
+    TICKET_DEFAULT_CARD_STYLE = 'bg-info text-light'
+    TICKET_SELECTED_CARD_STYLE = 'bg-dark text-light'
     PARTY_PRESELECTED_CARD_STYLE = 'text-light bg-dark border-success'
     def __init__(self, form):
         self.form = form
