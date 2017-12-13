@@ -32,6 +32,7 @@ CANCELLATION_STATUS_PROCESSED = 'processed'
 CANCELLATION_STATUS_DECLINED = 'declined'
 
 SIGNUP_GROUP_PARTNERS = 'partners'
+SIGNUP_GROUP_FESTIVAL = 'festival group'
 
 PAYMENT_STATUS_NEW = 'new'
 PAYMENT_STATUS_PAID = 'paid'
@@ -49,6 +50,7 @@ class Event(Base):
 
     products = relationship('Product', lazy='dynamic')
     orders = relationship('Order', lazy='dynamic')
+    registration_groups = relationship('RegistrationGroup', lazy='dynamic')
 
     def __init__(self, name, start_date, **kwargs):
         self.name = name
@@ -275,6 +277,17 @@ class PaymentItem(Base):
     order_product = relationship('OrderProduct', uselist=False)
 
 
+
+class RegistrationGroup(Base):
+    __tablename__ = 'registration_groups'
+    id = Column(Integer, primary_key=True)
+    signup_group_id = Column(Integer, ForeignKey('signup_groups.id'))
+    event_id = Column(Integer,ForeignKey('events.id'))
+    name = Column(String(255), nullable=False)
+    location = Column(String(255))
+    description = Column(Text)
+
+    signup_group = relationship('SignupGroup', uselist=False)
 
 class Vote(Base):
     __tablename__ = 'votes'

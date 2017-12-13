@@ -10,12 +10,13 @@ from salty_tickets.tokens import order_product_deserialize, order_product_token_
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField
+from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
+    HiddenField, IntegerField, FloatField, RadioField, TextField
 from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
     ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
-    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem
+    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem, RegistrationGroup
 import json
 
 
@@ -33,6 +34,7 @@ class BaseProduct:
     price = None
     image_url = None
     waiting_list_price = None
+    keywords=''
     _basic_attrs = ['name', 'info', 'max_available', 'price', 'image_url']
 
     def __init__(self, name, **kwargs):
@@ -95,9 +97,11 @@ class BaseProduct:
     def get_payment_item(self, order_product):
         payment_item = PaymentItem()
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
-            amount = self.get_waiting_list_price(order_product.product, order_product.price)
+            amount = min(order_product.price,
+                         self.get_waiting_list_price(order_product.product, order_product.price))
             payment_item.amount = amount
-            payment_item.description = 'Refundable deposit'
+            if amount:
+                payment_item.description = 'Refundable deposit'
 
         else:
             payment_item.amount = order_product.price
@@ -110,7 +114,7 @@ def get_total_paid(product_model):
     return product_model.product_orders.join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID).count()
 
 
-class ProductDiscountPrices:
+class ProductDiscountPricesMixin:
     discount_prices = None
     discount_persons = None
     discount_amounts = None
@@ -137,8 +141,11 @@ class ProductDiscountPrices:
             return min(prices)
 
     def _get_discount_keys(self):
-        discount_prices_dict = json.loads(self.discount_prices)
-        return list(discount_prices_dict.keys())
+        if self.discount_prices:
+            discount_prices_dict = json.loads(self.discount_prices)
+            return list(discount_prices_dict.keys())
+        else:
+            return []
 
     def _get_applicable_discount_keys(self, order_form):
         discount_keys = self._get_discount_keys()
@@ -171,16 +178,17 @@ class ProductDiscountPrices:
 
 
 
-class WorkshopProduct:
+class WorkshopProductMixin:
     workshop_date = None
     workshop_time = None
     workshop_level = None
     workshop_price = None
     workshop_duration = None
     workshop_location = None
+    workshop_teachers = None
 
 
-class ContestProduct:
+class ContestProductMixin:
     contest_date = None
     contest_time = None
     contest_level = None
@@ -194,7 +202,7 @@ WaitingListsStats = namedtuple('WaitingListsStats', ['leads', 'follows', 'couple
 WorkshopRegStats = namedtuple('WorkshopRegStats', ['accepted', 'waiting'])
 
 
-class StrictlyContest(BaseProduct, ContestProduct):
+class StrictlyContest(ContestProductMixin, BaseProduct):
     partner_name = None
     partner_email = None
 
@@ -278,22 +286,38 @@ class StrictlyContest(BaseProduct, ContestProduct):
         # TODO: this actually doesn't balance anything yet
         return False
 
+class WORKSHOP_OPTIONS:
+    LEADER = DANCE_ROLE_LEADER
+    FOLLOWER = DANCE_ROLE_FOLLOWER
+    COUPLE = 'couple'
+    NONE = ''
 
-class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct):
+
+class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, BaseProduct):
     ratio = None
     allow_first = 0
 
     def get_form(self, product_model=None):
+
+        waiting_lists0 = self.get_waiting_lists(product_model)
+        waiting_lists0[0]['couple'] = waiting_lists0[1][DANCE_ROLE_LEADER] + waiting_lists0[1][DANCE_ROLE_FOLLOWER]
+
         class RegularPartnerWorkshopForm(NoCsrfForm):
             product_name = self.name
             product_id = product_model.id
             info = self.info
             price = self.price
             discount_keys = self._get_discount_keys()
-            add = BooleanField(label='Book for yourself')
-            dance_role = SelectField(label='Your role',
-                                     choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
-            add_partner = BooleanField(label='Book for partner')
+            add = RadioField(label='Add', default=WORKSHOP_OPTIONS.NONE, validators=[Optional()], choices=[
+                (WORKSHOP_OPTIONS.LEADER, 'Leader'),
+                (WORKSHOP_OPTIONS.FOLLOWER, 'Follower'),
+                (WORKSHOP_OPTIONS.COUPLE, 'Couple'),
+                (WORKSHOP_OPTIONS.NONE, 'None')
+            ])
+            # add = BooleanField(label='Book for yourself')
+            # dance_role = SelectField(label='Your role',
+            #                          choices=[(DANCE_ROLE_FOLLOWER, 'Follower'), (DANCE_ROLE_LEADER, 'Leader')])
+            # add_partner = BooleanField(label='Book for partner')
             partner_token = StringField(label='Partner\'s registration token', validators=[PartnerTokenValid()])
             product_type = self.__class__.__name__
             workshop_date = self.workshop_date
@@ -301,14 +325,13 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
             workshop_location = self.workshop_location
             workshop_level = self.workshop_level
             workshop_price = self.workshop_price
-            waiting_lists = self.get_waiting_lists(product_model)
+            workshop_teachers = self.workshop_teachers
+            waiting_lists = waiting_lists0
             available_quantity = self.get_available_quantity(product_model)
+            keywords = self.keywords
 
             def needs_partner(self):
-                if self.add_partner.data:
-                    return True
-                else:
-                    return False
+                return self.add.data == WORKSHOP_OPTIONS.COUPLE
 
         return RegularPartnerWorkshopForm
 
@@ -322,12 +345,26 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
         else:
             return 0
 
+    def is_selected(self, product_form):
+        return product_form.add.data in (WORKSHOP_OPTIONS.LEADER, WORKSHOP_OPTIONS.FOLLOWER, WORKSHOP_OPTIONS.COUPLE)
+
+    def _get_buyer_role(self, product_form, form):
+        if product_form.add.data == WORKSHOP_OPTIONS.COUPLE:
+            if form.dance_role:
+                return form.dance_role.data
+            else:
+                return DANCE_ROLE_LEADER
+        elif product_form.add.data in (DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER):
+            return product_form.add.data
+        else:
+            raise Exception(f'Unknown dance role for choice {product_form.add.data}')
+
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_model, product_form, form)
         ws = self.get_waiting_lists(product_model)
-        dance_role = product_form.dance_role.data
+        dance_role = self._get_buyer_role(product_form, form)
 
-        if product_form.add_partner.data or product_form.partner_token.data:
+        if product_form.add.data == WORKSHOP_OPTIONS.COUPLE or product_form.partner_token.data:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
         else:
             status = ORDER_PRODUCT_STATUS_WAITING if ws[0][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
@@ -340,13 +377,13 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
         )
 
         # register partner
-        if product_form.add_partner.data:
+        if product_form.add.data == WORKSHOP_OPTIONS.COUPLE:
             partner_name = form.partner_name.data
-            price = self.get_total_price(product_model, product_form, form, partner_name)
-            dance_role = flip_role(dance_role)
-            status = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role] else ORDER_PRODUCT_STATUS_ACCEPTED
-            order_product2 = OrderProduct(product_model, price,
-                                         dict(dance_role=dance_role), status=status)
+            price2 = self.get_total_price(product_model, product_form, form, partner_name)
+            dance_role2 = flip_role(dance_role)
+            status2 = ORDER_PRODUCT_STATUS_WAITING if ws[1][dance_role2] else ORDER_PRODUCT_STATUS_ACCEPTED
+            order_product2 = OrderProduct(product_model, price2,
+                                         dict(dance_role=dance_role2), status=status2)
 
             return [order_product, order_product2]
         return order_product
@@ -358,7 +395,11 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
             name = order_product_model.registrations[0].name
             role = order_product_model.details_as_dict['dance_role']
             # name2 = order_product_model.registrations[1].name
-            return '{} ({} / {})'.format(self.name, name, role)
+            if name:
+                return '{} ({} / {})'.format(self.name, name, role)
+            else:
+                return '{} ({})'.format(self.name, role)
+
 
     @staticmethod
     def get_registration_stats(product_model):
@@ -573,7 +614,7 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
         db_session.commit()
 
 
-class CouplesOnlyWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct):
+class CouplesOnlyWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, BaseProduct):
 
     def get_form(self, product_model=None):
         class CouplesContestForm(NoCsrfForm):
@@ -801,7 +842,158 @@ class DonateProduct(BaseProduct):
         else:
             return 0
 
+class FESTIVAL_TICKET:
+    SINGLE = 'single'
+    COUPLE = 'couple'
+    NONE = ''
 
+class FestivalTicketProduct(BaseProduct):
+    def get_form(self, product_model=None):
+        class FestivalTrackForm(NoCsrfForm):
+            product_name = self.name
+            info = self.info
+            price = self.price
+            keywords = self.keywords
+            product_id = product_model.id
+            product_type = self.__class__.__name__
+            amount = FloatField(label='Amount', validators=[Optional()])
+            add = RadioField(label='Add', validators=[Optional()], choices=[
+                (FESTIVAL_TICKET.SINGLE, 'One Ticket'),
+                (FESTIVAL_TICKET.COUPLE, 'Two Tickets'),
+                (FESTIVAL_TICKET.NONE, 'None')
+            ])
+
+            def needs_partner(self):
+                return self.add.data == FESTIVAL_TICKET.COUPLE
+
+        return FestivalTrackForm
+
+    def get_total_price(self, product_model, product_form, order_form=None):
+        if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
+            return float(self.price)
+        else:
+            return 0
+
+    def is_selected(self, product_form):
+        return product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE)
+
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_model, product_form, form)
+        order_product = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+
+        # register partner
+        if product_form.add.data == FESTIVAL_TICKET.COUPLE:
+            partner_name = form.partner_name.data
+            price2 = self.get_total_price(product_model, product_form, form)
+            order_product2 = OrderProduct(product_model, price2, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+            return [order_product, order_product2]
+
+        return order_product
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name = order_product_model.registrations[0].name
+            # name2 = order_product_model.registrations[1].name
+            if name:
+                return '{} ({})'.format(self.name, name)
+            else:
+                return '{}'.format(self.name)
+
+
+
+class FestivalTrackProduct(FestivalTicketProduct):
+    classes_to_chose = None
+    includes = None
+
+    def get_form(self, product_model=None):
+        form = super(FestivalTrackProduct, self).get_form(product_model=product_model)
+        form.includes = self.includes
+        return form
+
+
+class FestivalPartyProduct(FestivalTicketProduct):
+    party_date = None
+    party_time = None
+    party_location = None
+
+    def get_form(self, product_model=None):
+        form = super(FestivalPartyProduct, self).get_form(product_model=product_model)
+        form.party_date = self.party_date
+        return form
+
+
+class FestivalGroupDiscountProduct(BaseProduct):
+    includes = None
+    def get_form(self, product_model=None):
+        class FestivalGroupDiscountForm(NoCsrfForm):
+            product_name = self.name
+            info = self.info
+            product_id = product_model.id
+            keywords = self.keywords
+            product_type = self.__class__.__name__
+            add = StringField('Group Name')
+            location = StringField('Group Location')
+            group_description = TextField('Group Description')
+
+            def needs_partner(self):
+                return False
+
+        return FestivalGroupDiscountForm
+
+    def get_total_price(self, product_model, product_form, order_form=None):
+        if order_form:
+            ticket_form = self._get_selected_included_product_form(order_form)
+            if ticket_form:
+                print(ticket_form)
+                return -float(self.price)
+        return 0
+
+    def is_selected(self, product_form):
+        return product_form.add.data and product_form.add.data.strip()
+
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_model, product_form, form)
+        order_product = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+
+        # register partner
+        ticket_form = self._get_selected_included_product_form(form)
+        if ticket_form and ticket_form.add.data == FESTIVAL_TICKET.COUPLE:
+            order_product2 = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+            return [order_product, order_product2]
+
+        return order_product
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name = order_product_model.registrations[0].name
+            # name2 = order_product_model.registrations[1].name
+            if name:
+                return '{} ({})'.format(self.name, name)
+            else:
+                return '{}'.format(self.name)
+
+    def _get_selected_included_product_form(self, form):
+        includes_keywords = self.includes.split(',')
+        for product_key in form.product_keys:
+            product_form = form.get_product_by_key(product_key)
+            if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
+                if product_form.keywords and set(product_form.keywords.split(',')).intersection(includes_keywords):
+                    return product_form
+
+    @staticmethod
+    def convert_group_name(name):
+        if name:
+            return name.strip().lower()
+
+    @staticmethod
+    def retrieve_group_details(name, event):
+        group = RegistrationGroup.query.filter_by(name=FestivalGroupDiscountProduct.convert_group_name(name),
+                                                  event_id=event.id).one_or_none()
+        return group
 
 # def get_class_by_name(class_name):
 #     import sys
@@ -824,6 +1016,9 @@ product_mapping = {
     'MarketingProduct': MarketingProduct,
     'DonateProduct': DonateProduct,
     'StrictlyContest': StrictlyContest,
+    'FestivalTrackProduct': FestivalTrackProduct,
+    'FestivalPartyProduct': FestivalPartyProduct,
+    'FestivalGroupDiscountProduct': FestivalGroupDiscountProduct,
 }
 
 
@@ -857,3 +1052,7 @@ class PartnerTokenValid:
                                 join(OrderProduct).filter_by(id=partner_product_order.id).all()) > 0)
             if has_partners:
                 raise ValidationError('Your partner has already signed up with a partner')
+
+
+
+
