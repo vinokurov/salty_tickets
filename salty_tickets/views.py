@@ -21,6 +21,11 @@ from werkzeug.utils import redirect
 __author__ = 'vnkrv'
 
 
+@app.route('/mts')
+def mts():
+    return render_template('events/mind_the_shag_2018/index.html')
+
+
 @app.route('/')
 def index():
     return redirect(url_for('register_index'))

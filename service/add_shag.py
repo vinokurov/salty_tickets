@@ -1,18 +1,18 @@
 from salty_tickets import models
 from salty_tickets.controllers import OrderSummaryController
 from salty_tickets.database import db_session
-from salty_tickets.models import Registration, Order, ORDER_PRODUCT_STATUS_ACCEPTED, OrderProduct, DANCE_ROLE_LEADER, \
+from salty_tickets.models import Registration, Order, ORDER_PRODUCT_STATUS_ACCEPTED, OrderProduct, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER, \
     ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
 from salty_tickets.pricing_rules import add_payment_to_user_order, balance_event_waiting_lists
 
 event = models.Event.query.filter_by(event_key='salty_recipes_with_simona_rokas').one()
 print(event.name)
 
-NAME = 'Marco Mazza'
-# EMAIL = 'alexander.a.vinokurov@gmail.com'
-EMAIL = 'mazza.marco@hotmail.it'
+NAME = 'Louis Carruthers'
+EMAIL = 'Louis93@live.co.uk'
 PRICE = 0
 ROLE = DANCE_ROLE_LEADER
+#ROLE = DANCE_ROLE_FOLLOWER
 
 registration = Registration(
         name=NAME,
@@ -41,8 +41,7 @@ total_paid = sum([p.amount for p in user_order.payments]) or 0
 user_order.payment_due = user_order.total_price - total_paid
 
 has_paid = any([p.status == PAYMENT_STATUS_PAID for p in user_order.payments])
-if has_paid:
-    user_order.status = ORDER_STATUS_PAID
+user_order.status = ORDER_STATUS_PAID
 
 event.orders.append(user_order)
 

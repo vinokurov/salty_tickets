@@ -455,14 +455,14 @@ class RegularPartnerWorkshop(ProductDiscountPrices, WorkshopProduct, BaseProduct
         partner_leads_waiting = cls.get_waiting_list_for_role(
             reg_stats[DANCE_ROLE_LEADER].accepted,
             partner_reg_stats[DANCE_ROLE_LEADER].waiting,
-            reg_stats[DANCE_ROLE_FOLLOWER].accepted,
+            reg_stats[DANCE_ROLE_FOLLOWER].accepted + 1,
             product_model.max_available, max_ratio, allow_first
         )
 
         partner_follows_waiting = cls.get_waiting_list_for_role(
             reg_stats[DANCE_ROLE_FOLLOWER].accepted,
             partner_reg_stats[DANCE_ROLE_FOLLOWER].waiting,
-            reg_stats[DANCE_ROLE_LEADER].accepted,
+            reg_stats[DANCE_ROLE_LEADER].accepted + 1,
             product_model.max_available, max_ratio, allow_first
         )
 
