@@ -16,6 +16,7 @@
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag'), event, icon='subway') }}
                 {{ mts_weekend_ticket(form.get_product_by_key('fast_train_to_st_louis_shag_no_parties'), event, icon='subway') }}
                 </div>
+                {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event, icon='ticket') }}
             </div>
         </div>
 
@@ -103,7 +104,6 @@
         <div class="container-fluid">
             <div class="container my-4">
                 <h3 >Parties</h3>
-                {{ mts_weekend_ticket(form.get_product_by_key('all_parties'), event) }}
                 <div class="card-deck mt-2">
                 {{ mts_party_ticket(form.get_product_by_key('friday_party'), event) }}
                 {{ mts_party_ticket(form.get_product_by_key('saturday_party'), event) }}
@@ -116,7 +116,7 @@
 {% macro mts_station(form_field, event) %}
                <div class="card {{form_controller.station_card_style(form_field)}}" id="{{form_field.add.id}}-card">
                    <div class="card-body">
-                       <h5 class="card-title">{{ form_field.product_name }}</h5>
+                       <h5 class="card-title">{% if form_controller.is_station_preselected(form_field) %}<i class="fa fa-fw fa-lock" aria-hidden="true"></i> {%endif%}{{ form_field.product_name }}</h5>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>-->
                        <div class="btn-group" data-toggle="buttons">
                             {% for radio_value, radio_label, radio_bool in form_controller.iter_station_choices(form_field) %}
@@ -174,7 +174,7 @@
 {% macro mts_party_ticket(form_field, event) %}
     <div class="card {{form_controller.party_card_style(form_field)}}" id="{{form_field.add.id}}-card">
         <div class="card-body">
-            <h5 class="card-title">{{ form_field.product_name }}</h5>
+            <h5 class="card-title">{% if form_controller.is_parties_included %}<i class="fa fa-fw fa-lock" aria-hidden="true"></i> {%endif%}{{ form_field.product_name }}</h5>
             <small><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.party_date }}</small><br>
             <small><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
             <p class="card-text"><small>{{ form_field.info }} </small></p>
