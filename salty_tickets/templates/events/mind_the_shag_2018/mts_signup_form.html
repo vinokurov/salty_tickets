@@ -3,6 +3,17 @@
 {% block products %}
         <div class="container-fluid">
             <div class="container my-4">
+                <div class="card bg-primary">
+                    <div class="card-body">
+                        <h3 class="car-title">Are you part of a group?</h3>
+                        {{ wtf.form_field(form.get_product_by_key('group_discount').add) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="container my-4">
                 <h3 >Weekend Tickets</h3>
                 <div class="card-deck my-2">
                 {{ mts_weekend_ticket(form.get_product_by_key('full_weekend_ticket'), event, icon='ticket') }}

@@ -64,6 +64,19 @@
 </script>
 {% endblock %}
 
+{% block styles %}
+{{ super() }}
+
+<style>
+    body{
+           min-width:1000px; /* suppose you want minimun width of 1000px */
+           width: auto !important;  /* Firefox will set width as auto */
+           width:1000px;             /* As IE ignores !important it will set width as 1000px; */
+        }
+</style>
+
+{% endblock %}
+
 {% block og_meta %}
 <meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
 {% endblock %}

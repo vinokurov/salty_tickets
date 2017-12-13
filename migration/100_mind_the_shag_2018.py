@@ -5,6 +5,9 @@ from salty_tickets import database
 from salty_tickets import models
 from salty_tickets import products
 
+models.Base.metadata.create_all(bind=database.engine)
+database.db_session.commit()
+
 event = models.Event(
     name='Mind The Shag 2018',
     start_date=datetime.datetime(2018, 4, 6),
@@ -234,7 +237,8 @@ event.products.append(
         info='Includes any 3 stations and all parties. You can book extra stations with a discount.',
         price=120,
         classes_to_chose=3,
-        includes='parties'
+        includes='parties',
+        keywords='group_discount',
     ).model
 )
 
@@ -267,7 +271,8 @@ event.products.append(
         info='Includes 2 stations for learning Collegiate Shag and all parties. You can book extra stations with a discount.',
         price=90,
         classes_to_chose=0,
-        includes='collegiate_fast_train,parties'
+        includes='collegiate_fast_train,parties',
+        keywords='group_discount',
     ).model
 )
 
@@ -289,7 +294,8 @@ event.products.append(
         info='Includes 2 stations for learning St.Louis Shag and all parties. You can book extra stations with a discount.',
         price=90,
         classes_to_chose=0,
-        includes='stl_fast_train,parties'
+        includes='stl_fast_train,parties',
+        keywords='group_discount',
     ).model
 )
 
@@ -301,6 +307,15 @@ event.products.append(
         price=55,
         classes_to_chose=0,
         includes='stl_fast_train'
+    ).model
+)
+
+event.products.append(
+    products.FestivalGroupDiscountProduct(
+        name='Group Discount',
+        info='Discount for groups of 3 and more couples from outside London.',
+        price=10,
+        includes='group_discount',
     ).model
 )
 

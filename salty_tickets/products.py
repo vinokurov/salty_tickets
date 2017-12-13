@@ -10,12 +10,13 @@ from salty_tickets.tokens import order_product_deserialize, order_product_token_
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, HiddenField, IntegerField, FloatField, RadioField
+from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
+    HiddenField, IntegerField, FloatField, RadioField, TextField
 from wtforms.validators import Optional, ValidationError
 
 from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
     ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
-    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem
+    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem, RegistrationGroup
 import json
 
 
@@ -852,6 +853,7 @@ class FestivalTicketProduct(BaseProduct):
             product_name = self.name
             info = self.info
             price = self.price
+            keywords = self.keywords
             product_id = product_model.id
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
@@ -910,6 +912,7 @@ class FestivalTrackProduct(FestivalTicketProduct):
         form.includes = self.includes
         return form
 
+
 class FestivalPartyProduct(FestivalTicketProduct):
     party_date = None
     party_time = None
@@ -920,6 +923,77 @@ class FestivalPartyProduct(FestivalTicketProduct):
         form.party_date = self.party_date
         return form
 
+
+class FestivalGroupDiscountProduct(BaseProduct):
+    includes = None
+    def get_form(self, product_model=None):
+        class FestivalGroupDiscountForm(NoCsrfForm):
+            product_name = self.name
+            info = self.info
+            product_id = product_model.id
+            keywords = self.keywords
+            product_type = self.__class__.__name__
+            add = StringField('Group Name')
+            location = StringField('Group Location')
+            location = TextField('Group Description')
+
+            def needs_partner(self):
+                return False
+
+        return FestivalGroupDiscountForm
+
+    def get_total_price(self, product_model, product_form, order_form=None):
+        if order_form:
+            ticket_form = self._get_selected_included_product_form(order_form)
+            if ticket_form:
+                return -float(self.price)
+        return 0
+
+    def is_selected(self, product_form):
+        return product_form.add.data and product_form.add.data.strip()
+
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_model, product_form, form)
+        order_product = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+
+        # register partner
+        ticket_form = self._get_selected_included_product_form(form)
+        if ticket_form and ticket_form.add.data == FESTIVAL_TICKET.COUPLE:
+            order_product2 = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+            return [order_product, order_product2]
+
+        return order_product
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name = order_product_model.registrations[0].name
+            # name2 = order_product_model.registrations[1].name
+            if name:
+                return '{} ({})'.format(self.name, name)
+            else:
+                return '{}'.format(self.name)
+
+    def _get_selected_included_product_form(self, form):
+        includes_keywords = self.includes.split(',')
+        for product_key in form.product_keys:
+            product_form = form.get_product_by_key(product_key)
+            if product_form.add.data:
+                if product_form.keywords and set(product_form.keywords.split(',')).intersection(includes_keywords):
+                    return product_form
+
+    @staticmethod
+    def convert_group_name(name):
+        return name.strip().lower()
+
+    def retrieve_group_details(self, name, event):
+        group = RegistrationGroup.query.filter_by(name=self.convert_group_name(name), event_id=event.id).one_or_none()
+        return group
+
+    def create_new_group(self, group_form, event):
+        pass
+        event.registration_groups.append()
 
 # def get_class_by_name(class_name):
 #     import sys
@@ -944,6 +1018,7 @@ product_mapping = {
     'StrictlyContest': StrictlyContest,
     'FestivalTrackProduct': FestivalTrackProduct,
     'FestivalPartyProduct': FestivalPartyProduct,
+    'FestivalGroupDiscountProduct': FestivalGroupDiscountProduct,
 }
 
 
