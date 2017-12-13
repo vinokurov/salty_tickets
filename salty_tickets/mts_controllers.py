@@ -52,6 +52,9 @@ class MtsSignupFormController:
             if choice[0] in (WORKSHOP_OPTIONS.LEADER, WORKSHOP_OPTIONS.FOLLOWER):
                 if not self.is_couples_only:
                     yield choice
+            elif choice[0] == WORKSHOP_OPTIONS.COUPLE:
+                if not self.is_singles_only:
+                    yield choice
             else:
                 yield choice
 
@@ -105,6 +108,11 @@ class MtsSignupFormController:
     def is_couples_only(self):
         weekend_ticket = self.weekend_ticket
         return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.COUPLE)
+
+    @property
+    def is_singles_only(self):
+        weekend_ticket = self.weekend_ticket
+        return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.SINGLE)
 
     @property
     def has_couples_tickets(self):
@@ -163,3 +171,4 @@ class MtsSignupFormController:
         lines = form_field.workshop_level.split(',')
         badges = ['<span class="badge badge-pill {}">{}</span>'.format(line_styles[line], line) for line in lines]
         return ' '.join(badges)
+
