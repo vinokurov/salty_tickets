@@ -163,10 +163,10 @@ class MtsSignupFormController:
 
     def line_badges(self, form_field):
         line_styles = {
-            'Jitterbug': 'badge-info',
-            'Collegiate': 'badge-danger',
-            'Collegiate Super': 'badge-danger',
-            'St.Louis': 'badge-success'
+            'Jitterbug': 'badge-success',
+            'Collegiate': 'badge-warning',
+            'Collegiate Super': 'badge-warning',
+            'St.Louis': 'badge-primary'
         }
         lines = form_field.workshop_level.split(',')
         badges = ['<span class="badge badge-pill {}">{}</span>'.format(line_styles[line], line) for line in lines]
