@@ -3,6 +3,7 @@ from salty_tickets.emails import send_acceptance_from_waiting_list, send_accepta
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
     Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING, \
     ORDER_STATUS_PAID, Payment
+from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import stripe_amount, update_payment_total
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize
@@ -15,8 +16,7 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
     for product_model in event.products:
         product = get_product_by_model(product_model)
         product_form = form.get_product_by_key(product_model.product_key)
-        price = product.get_total_price(product_model, product_form, form)
-        if price > 0:
+        if product.is_selected(product_form):
             order_product = product.get_order_product_model(product_model, product_form, form)
             if type(order_product) is list:
                 order_product[0].registrations.append(registration)
@@ -165,3 +165,71 @@ def process_partner_registrations(user_order, form):
                 db_session.add(group)
             db_session.commit()
 
+
+def mts_get_order_for_event(event, form, registration=None, partner_registration=None):
+    assert isinstance(event, Event)
+    user_order = Order()
+
+    free_classes_remaining = 0
+
+    mts_form_controller = MtsSignupFormController(form)
+    weekend_ticket_key = mts_form_controller.weekend_ticket_key
+    if weekend_ticket_key:
+        weekend_ticket_form = form.get_product_by_key(weekend_ticket_key)
+        if mts_form_controller.full_pass_selected:
+            free_classes_remaining = 3
+
+
+    for product_model in event.products:
+        product = get_product_by_model(product_model)
+        product_form = form.get_product_by_key(product_model.product_key)
+        if product.is_selected(product_form):
+            order_product = product.get_order_product_model(product_model, product_form, form)
+            if type(order_product) is list:
+
+                if weekend_ticket_key:
+                    product_keywords = product.keywords.split(',')
+                    if set(weekend_ticket_form.includes.split(',')).intersection(product_keywords):
+                        order_product[0].price = 0
+                        order_product[1].price = 0
+                    if isinstance(product, RegularPartnerWorkshop):
+                        if free_classes_remaining:
+                            order_product[0].price = 0
+                            order_product[1].price = 0
+                            free_classes_remaining -= 1
+                        elif mts_form_controller.is_special_extra_block_price:
+                            order_product[0].price = product.get_discount_price_by_key('extra_block')
+                            order_product[1].price = product.get_discount_price_by_key('extra_block')
+
+                order_product[0].registrations.append(registration)
+                order_product[1].registrations.append(partner_registration)
+                user_order.order_products.append(order_product[0])
+                user_order.order_products.append(order_product[1])
+            else:
+                if weekend_ticket_key:
+                    product_keywords = product.keywords.split(',')
+                    if set(weekend_ticket_form.includes.split(',')).intersection(product_keywords):
+                        order_product.price = 0
+                    if isinstance(product, RegularPartnerWorkshop):
+                        if free_classes_remaining:
+                            order_product.price = 0
+                            free_classes_remaining -= 1
+                        elif mts_form_controller.is_special_extra_block_price:
+                            order_product.price = product.get_discount_price_by_key('extra_block')
+
+                # registration_model = get_registration_from_form(form)
+                order_product.registrations.append(registration)
+
+                if product_form.needs_partner():
+                    # partner_registration_model = get_partner_registration_from_form(form)
+                    order_product.registrations.append(partner_registration)
+
+                user_order.order_products.append(order_product)
+
+    products_price = user_order.products_price
+    user_order.transaction_fee = transaction_fee(products_price)
+    user_order.total_price = user_order.products_price
+
+    add_payment_to_user_order(user_order)
+
+    return user_order

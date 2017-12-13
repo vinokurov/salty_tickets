@@ -3,10 +3,10 @@ from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET
 
 class MtsSignupFormController:
     STATION_DEFAULT_CARD_STYLE = 'bg-light'
-    STATION_ACCEPTED_CARD_STYLE = 'text-success bg-black border-success'
-    STATION_WAITING_CARD_STYLE = 'text-warning bg-secondary border-warning'
-    STATION_PRESELECTED_ACCEPTED_CARD_STYLE = 'text-success bg-dark border-success'
-    STATION_PRESELECTED_WAITING_CARD_STYLE = 'text-warning bg-dark border-warning'
+    STATION_ACCEPTED_CARD_STYLE = 'text-success bg-dark'
+    STATION_WAITING_CARD_STYLE = 'text-warning bg-dark'
+    STATION_PRESELECTED_ACCEPTED_CARD_STYLE = 'text-success bg-dark border-light'
+    STATION_PRESELECTED_WAITING_CARD_STYLE = 'text-warning bg-dark border-light'
 
     TICKET_DEFAULT_CARD_STYLE = 'bg-info text-light'
     TICKET_SELECTED_CARD_STYLE = 'bg-dark text-light'
@@ -17,7 +17,7 @@ class MtsSignupFormController:
     def station_card_style(self, form_control):
         selection_value = form_control.add.data
         if self.is_station_preselected(form_control):
-            weekend_selection = self._weekend_ticket.add.data
+            weekend_selection = self.weekend_ticket.add.data
             if weekend_selection == FESTIVAL_TICKET.COUPLE:
                 form_control.add.data = WORKSHOP_OPTIONS.COUPLE
             else:
@@ -41,7 +41,7 @@ class MtsSignupFormController:
 
     def is_station_preselected(self, form_control):
         if form_control.keywords:
-            weekend_ticket = self._weekend_ticket
+            weekend_ticket = self.weekend_ticket
             if weekend_ticket:
                 includes = weekend_ticket.includes.split(',')
                 return form_control.keywords in includes
@@ -64,7 +64,7 @@ class MtsSignupFormController:
 
     def party_card_style(self, form_control):
         if self.is_parties_included:
-            form_control.add.data = self._weekend_ticket.add.data
+            form_control.add.data = self.weekend_ticket.add.data
             return self.PARTY_PRESELECTED_CARD_STYLE
         else:
             selection_value = form_control.add.data
@@ -81,7 +81,7 @@ class MtsSignupFormController:
             return ''
 
     @property
-    def _weekend_ticket_key(self):
+    def weekend_ticket_key(self):
         weekend_tickets_keys = [
             'full_weekend_ticket',
             'full_weekend_ticket_no_parties',
@@ -97,13 +97,13 @@ class MtsSignupFormController:
                 return ticket_key
 
     @property
-    def _weekend_ticket(self):
-        if self._weekend_ticket_key:
-            return self.form.get_product_by_key(self._weekend_ticket_key)
+    def weekend_ticket(self):
+        if self.weekend_ticket_key:
+            return self.form.get_product_by_key(self.weekend_ticket_key)
 
     @property
     def is_couples_only(self):
-        weekend_ticket = self._weekend_ticket
+        weekend_ticket = self.weekend_ticket
         return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.COUPLE)
 
     @property
@@ -137,8 +137,21 @@ class MtsSignupFormController:
             'fast_train_to_st_louis_shag',
             'all_parties'
         ]
-        weekend_ticket_key = self._weekend_ticket_key
+        weekend_ticket_key = self.weekend_ticket_key
         return weekend_ticket_key and weekend_ticket_key in party_tickets_keys
+
+    @property
+    def is_special_extra_block_price(self):
+        special_extra_block_price_keys = [
+            'full_weekend_ticket',
+            'full_weekend_ticket_no_parties',
+            'fast_train_to_collegiate_shag',
+            'fast_train_to_collegiate_shag_no_parties',
+            'fast_train_to_st_louis_shag',
+            'fast_train_to_st_louis_shag_no_parties',
+        ]
+        weekend_ticket_key = self.weekend_ticket_key
+        return weekend_ticket_key and weekend_ticket_key in special_extra_block_price_keys
 
     def line_badges(self, form_field):
         line_styles = {

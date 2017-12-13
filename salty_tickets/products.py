@@ -96,9 +96,11 @@ class BaseProduct:
     def get_payment_item(self, order_product):
         payment_item = PaymentItem()
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
-            amount = self.get_waiting_list_price(order_product.product, order_product.price)
+            amount = min(order_product.price,
+                         self.get_waiting_list_price(order_product.product, order_product.price))
             payment_item.amount = amount
-            payment_item.description = 'Refundable deposit'
+            if amount:
+                payment_item.description = 'Refundable deposit'
 
         else:
             payment_item.amount = order_product.price
@@ -340,7 +342,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             return 0
 
     def is_selected(self, product_form):
-        return product_form.add.data != WORKSHOP_OPTIONS.NONE
+        return product_form.add.data in (WORKSHOP_OPTIONS.LEADER, WORKSHOP_OPTIONS.FOLLOWER, WORKSHOP_OPTIONS.COUPLE)
 
     def _get_buyer_role(self, product_form, form):
         if product_form.add.data == WORKSHOP_OPTIONS.COUPLE:
@@ -389,7 +391,11 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             name = order_product_model.registrations[0].name
             role = order_product_model.details_as_dict['dance_role']
             # name2 = order_product_model.registrations[1].name
-            return '{} ({} / {})'.format(self.name, name, role)
+            if name:
+                return '{} ({} / {})'.format(self.name, name, role)
+            else:
+                return '{} ({})'.format(self.name, role)
+
 
     @staticmethod
     def get_registration_stats(product_model):
@@ -858,15 +864,39 @@ class FestivalTicketProduct(BaseProduct):
         return FestivalTrackForm
 
     def get_total_price(self, product_model, product_form, order_form=None):
-        if product_form.add.data == FESTIVAL_TICKET.SINGLE:
+        if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
             return float(self.price)
-        elif product_form.add.data == FESTIVAL_TICKET.COUPLE:
-            return 2*float(self.price)
         else:
             return 0
 
     def is_selected(self, product_form):
-        return product_form.add.data != FESTIVAL_TICKET.NONE
+        return product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE)
+
+    def get_order_product_model(self, product_model, product_form, form):
+        price = self.get_total_price(product_model, product_form, form)
+        order_product = OrderProduct(product_model, price, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+
+        # register partner
+        if product_form.add.data == FESTIVAL_TICKET.COUPLE:
+            partner_name = form.partner_name.data
+            price2 = self.get_total_price(product_model, product_form, form)
+            order_product2 = OrderProduct(product_model, price2, status=ORDER_PRODUCT_STATUS_ACCEPTED)
+            return [order_product, order_product2]
+
+        return order_product
+
+    def get_name(self, order_product_model=None):
+        if not order_product_model:
+            return self.name
+        else:
+            name = order_product_model.registrations[0].name
+            # name2 = order_product_model.registrations[1].name
+            if name:
+                return '{} ({})'.format(self.name, name)
+            else:
+                return '{}'.format(self.name)
+
+
 
 class FestivalTrackProduct(FestivalTicketProduct):
     classes_to_chose = None
