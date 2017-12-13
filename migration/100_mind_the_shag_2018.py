@@ -179,7 +179,7 @@ event.products.append(
         info='This class will help you perfect and add flair to the tandem basic, with entrances, exits, and variations.',
         workshop_date='8-April-2018',
         workshop_time='13:30-15:30',
-        workshop_level='Collegiate',
+        workshop_level='Collegiate Super',
         workshop_teachers='Peter & Aila',
         **ARGS_BLOCK, **ARGS_STD2,
     ).model
