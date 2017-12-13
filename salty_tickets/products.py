@@ -856,8 +856,8 @@ class FestivalTicketProduct(BaseProduct):
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
             add = RadioField(label='Add', choices=[
-                (FESTIVAL_TICKET.SINGLE, 'Single'),
-                (FESTIVAL_TICKET.COUPLE, 'Couple'),
+                (FESTIVAL_TICKET.SINGLE, 'One Ticket'),
+                (FESTIVAL_TICKET.COUPLE, 'Two Tickets'),
                 (FESTIVAL_TICKET.NONE, 'None')
             ])
 
