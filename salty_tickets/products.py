@@ -308,7 +308,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
             info = self.info
             price = self.price
             discount_keys = self._get_discount_keys()
-            add = RadioField(label='Add', default=WORKSHOP_OPTIONS.NONE, choices=[
+            add = RadioField(label='Add', default=WORKSHOP_OPTIONS.NONE, validators=[Optional()], choices=[
                 (WORKSHOP_OPTIONS.LEADER, 'Leader'),
                 (WORKSHOP_OPTIONS.FOLLOWER, 'Follower'),
                 (WORKSHOP_OPTIONS.COUPLE, 'Couple'),
@@ -857,7 +857,7 @@ class FestivalTicketProduct(BaseProduct):
             product_id = product_model.id
             product_type = self.__class__.__name__
             amount = FloatField(label='Amount', validators=[Optional()])
-            add = RadioField(label='Add', choices=[
+            add = RadioField(label='Add', validators=[Optional()], choices=[
                 (FESTIVAL_TICKET.SINGLE, 'One Ticket'),
                 (FESTIVAL_TICKET.COUPLE, 'Two Tickets'),
                 (FESTIVAL_TICKET.NONE, 'None')
@@ -935,7 +935,7 @@ class FestivalGroupDiscountProduct(BaseProduct):
             product_type = self.__class__.__name__
             add = StringField('Group Name')
             location = StringField('Group Location')
-            location = TextField('Group Description')
+            group_description = TextField('Group Description')
 
             def needs_partner(self):
                 return False
@@ -986,10 +986,13 @@ class FestivalGroupDiscountProduct(BaseProduct):
 
     @staticmethod
     def convert_group_name(name):
-        return name.strip().lower()
+        if name:
+            return name.strip().lower()
 
-    def retrieve_group_details(self, name, event):
-        group = RegistrationGroup.query.filter_by(name=self.convert_group_name(name), event_id=event.id).one_or_none()
+    @staticmethod
+    def retrieve_group_details(name, event):
+        group = RegistrationGroup.query.filter_by(name=FestivalGroupDiscountProduct.convert_group_name(name),
+                                                  event_id=event.id).one_or_none()
         return group
 
     def create_new_group(self, group_form, event):
