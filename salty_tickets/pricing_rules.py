@@ -192,7 +192,7 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
                     if set(weekend_ticket_form.includes.split(',')).intersection(product_keywords):
                         order_product[0].price = 0
                         order_product[1].price = 0
-                    if isinstance(product, RegularPartnerWorkshop):
+                    elif isinstance(product, RegularPartnerWorkshop):
                         if free_classes_remaining:
                             order_product[0].price = 0
                             order_product[1].price = 0
@@ -210,7 +210,7 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
                     product_keywords = product.keywords.split(',')
                     if set(weekend_ticket_form.includes.split(',')).intersection(product_keywords):
                         order_product.price = 0
-                    if isinstance(product, RegularPartnerWorkshop):
+                    elif isinstance(product, RegularPartnerWorkshop):
                         if free_classes_remaining:
                             order_product.price = 0
                             free_classes_remaining -= 1

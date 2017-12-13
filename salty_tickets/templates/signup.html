@@ -36,7 +36,7 @@ jQuery.fn.extend({
     $('body').on('keyup change', '.form-control', function(e) {
         form_changed = true;
         form_changed_element = '#'+e.target.id;
-        setTimeout(update_total_price, 5000);
+        setTimeout(update_total_price, 1000);
     });
 
     $('body').on('focusout', '.form-control', update_total_price)

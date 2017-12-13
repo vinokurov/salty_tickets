@@ -140,8 +140,11 @@ class ProductDiscountPricesMixin:
             return min(prices)
 
     def _get_discount_keys(self):
-        discount_prices_dict = json.loads(self.discount_prices)
-        return list(discount_prices_dict.keys())
+        if self.discount_prices:
+            discount_prices_dict = json.loads(self.discount_prices)
+            return list(discount_prices_dict.keys())
+        else:
+            return []
 
     def _get_applicable_discount_keys(self, order_form):
         discount_keys = self._get_discount_keys()

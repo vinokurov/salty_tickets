@@ -52,6 +52,9 @@ class MtsSignupFormController:
             if choice[0] in (WORKSHOP_OPTIONS.LEADER, WORKSHOP_OPTIONS.FOLLOWER):
                 if not self.is_couples_only:
                     yield choice
+            elif choice[0] in (WORKSHOP_OPTIONS.COUPLE):
+                if not self.is_singles_only:
+                    yield choice
             else:
                 yield choice
 
@@ -107,6 +110,11 @@ class MtsSignupFormController:
         return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.COUPLE)
 
     @property
+    def is_singles_only(self):
+        weekend_ticket = self.weekend_ticket
+        return weekend_ticket and (weekend_ticket.add.data == FESTIVAL_TICKET.SINGLE)
+
+    @property
     def has_couples_tickets(self):
         for ticket_key in self.form.product_keys:
             if self.form.get_product_by_key(ticket_key).add.data == 'couple':
@@ -125,8 +133,8 @@ class MtsSignupFormController:
 
     @property
     def full_pass_selected(self):
-        return self.form.get_product_by_key('full_weekend_ticket').add.data or \
-               self.form.get_product_by_key('full_weekend_ticket_no_parties').add.data
+        return self.form.get_product_by_key('full_weekend_ticket').add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE) or \
+               self.form.get_product_by_key('full_weekend_ticket_no_parties').add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE)
 
 
     @property
