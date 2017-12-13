@@ -946,6 +946,7 @@ class FestivalGroupDiscountProduct(BaseProduct):
         if order_form:
             ticket_form = self._get_selected_included_product_form(order_form)
             if ticket_form:
+                print(ticket_form)
                 return -float(self.price)
         return 0
 
@@ -979,7 +980,7 @@ class FestivalGroupDiscountProduct(BaseProduct):
         includes_keywords = self.includes.split(',')
         for product_key in form.product_keys:
             product_form = form.get_product_by_key(product_key)
-            if product_form.add.data:
+            if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
                 if product_form.keywords and set(product_form.keywords.split(',')).intersection(includes_keywords):
                     return product_form
 
