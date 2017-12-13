@@ -6,10 +6,10 @@
 {% block scripts %}
 {# {{ super() }} #}
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>-->
-    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
 
 <script src="https://checkout.stripe.com/checkout.js"></script>
 
@@ -33,13 +33,15 @@ jQuery.fn.extend({
     var form_changed = false;
     var form_changed_element = 'form';
 
-    $('body').on('keyup change', '.form-control', function(e) {
+    //$('body').on('keyup change', '.form-control', function(e) {
+    $('body').on('change', '.form-control', function(e) {
         form_changed = true;
         form_changed_element = '#'+e.target.id;
-        setTimeout(update_total_price, 5000);
+        setTimeout(update_total_price, 1000);
     });
 
     $('body').on('focusout', '.form-control', update_total_price)
+    //$('body').on('click', '.form-control', update_total_price)
 
     function update_total_price(e) {
         if(form_changed) {
@@ -47,6 +49,7 @@ jQuery.fn.extend({
             payment_ready_change_status(false);
             console.log('focusout');
             var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
+            console.log($('form').serialize());
             $.ajax({
                 type: "POST",
                 url: url,
@@ -54,8 +57,19 @@ jQuery.fn.extend({
                 success: function (data) {
                     console.log(data);  // display the returned data in the console.
                     $('div#order_summary').html(data.order_summary_html);
-                    show_form_validation_errors(data.errors, data.validated_partner_tokens);
-                    $('button#checkout').disable(data.disable_checkout);
+                    //show_form_validation_errors(data.errors, data.validated_partner_tokens);
+                    $('button.button-checkout').disable(data.disable_checkout);
+                    console.log(data.order_summary_total)
+                    if(data.order_summary_total) {
+                        console.log('setting total', 'Total: '+data.order_summary_total)
+                        $('a#order_summary_total').text('Total: '+data.order_summary_total);
+                    } else {
+                        $('a#order_summary_total').text('Total: £0.00');
+                    }
+                    if(data.signup_form_html) {
+                        $('div#signup_form').html(data.signup_form_html);
+                        $('form').change()
+                    }
                 }
             });
         }
@@ -65,8 +79,11 @@ jQuery.fn.extend({
         $('.has-danger').each(function() {
             $(this).removeClass('has-danger');
         })
-        $('.form-control-danger').each(function() {
-            $(this).removeClass('form-control-danger');
+        $('.is-invalid').each(function() {
+            $(this).removeClass('is-invalid');
+        })
+        $('.invalid-feedback').each(function() {
+            $(this).removeClass('invalid-feedback');
         })
         $('.form-control-feedback').each(function() {
             $(this).html('');
@@ -79,7 +96,8 @@ jQuery.fn.extend({
 
             console.log(form_field_id, form_errors[form_field_id]);
             $('#'+form_field_id+'-form-group').addClass('has-danger');
-            $('#'+form_field_id).addClass('form-control-danger');
+            $('#'+form_field_id).addClass('is-invalid');
+            $('#'+form_field_id+'-feedback').addClass('invalid-feedback');
             $('#'+form_field_id+'-feedback').html(form_errors[form_field_id])
         }
 
@@ -92,20 +110,26 @@ jQuery.fn.extend({
         }
     }
 
-    $('body').on('click', 'button#checkout', function(e) {
+    $('body').on('click', 'button.button-checkout', function(e) {
         if(!payment_ready) {
-            var url = "{{ url_for('register_checkout', event_key=event.event_key) }}"; // send the form data here.
+            var url = "{{ url_for('register_checkout', event_key=event.event_key, validate='validate') }}"; // send the form data here.
             $.ajax({
                 type: "POST",
                 url: url,
                 data: $('form').serialize(), // serializes the form's elements.
                 success: function (data) {
 
-                    //console.log(data);  // display the returned data in the console.
-
-                    if(data.stripe.amount) {
-                        payment_ready_change_status(true);
-                        payment_stripe_data = data.stripe;
+                    console.log(data);  // display the returned data in the console.
+                    if(data.disable_checkout) {
+                        $('div#order_summary').html(data.order_summary_html);
+                        //show_form_validation_errors(data.errors, data.validated_partner_tokens);
+                        $('button.button-checkout').disable(data.disable_checkout);
+                    }else{
+                        console.log('ready to pay');
+                        if(data.stripe.amount) {
+                            payment_ready_change_status(true);
+                            payment_stripe_data = data.stripe;
+                        }
                     }
                 }
             });
@@ -145,10 +169,10 @@ jQuery.fn.extend({
     function payment_ready_change_status(status) {
         if(status) {
             payment_ready = true;
-            $('#checkout_text').html('Sign up and pay');
+            $('.checkout-text').html('Sign up and pay');
         } else {
             payment_ready = false;
-            $('#checkout_text').html('Check availability');
+            $('.checkout-text').html('Checkout');
         }
     }
 
@@ -172,11 +196,21 @@ jQuery.fn.extend({
 {# {{ super() }} #}
     <!-- Bootstrap -->
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/cosmo/bootstrap.min.css" rel="stylesheet" integrity="sha384-52tWTPZ1e5eK+C2aGPCgDjrEgVkKMO+0qDuRNj3tS2EugIrICHWqkGuLu442CP2S" crossorigin="anonymous">-->
+    <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/materia/bootstrap.min.css" rel="stylesheet" integrity="sha384-R+kYzDq5OFDdI+l7v1cirgERabnAjhsBDXv0qCEtj+6z2r8BO2glDZzj49QgdxEj" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/sandstone/bootstrap.min.css" rel="stylesheet" integrity="sha384-edd69ybiwhmqlbDyKzPlHgWOcJrJhTgKQx1B2gD2yZArS8Qn2oTOYg+9X2AZRNDr" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/sketchy/bootstrap.min.css" rel="stylesheet" integrity="sha384-9BaUahJwNez+jmowV4jSdSdZIlie6a+VnhBnuzVvBPdvUPC3dDLYIg31Tgw5UzLP" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/yeti/bootstrap.min.css" rel="stylesheet" integrity="sha384-02r837f/s1bBitm4EH65RIncWtMiZuhCgUp9H4txuXwrPXSwn+vQ5YF9KqryUe7z" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/lumen/bootstrap.min.css" rel="stylesheet" integrity="sha384-rGAkR2qts0FfeepPEwAKdA+KLiTct+OBJ7ukPPivL86aKZa39nuOS0Yj6Sy8ebLR" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/slate/bootstrap.min.css" rel="stylesheet" integrity="sha384-nu0Rfs+Ud66mJzSLRuWBCMvk17+i5WBRPdLmS2djwI7YXUHlBLBsc1dHdgPyLsFO" crossorigin="anonymous">-->
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/united/bootstrap.min.css" rel="stylesheet" integrity="sha384-lZV2BQHhlIeSX0KKlcV52T0RM5GEd+q4DbVOu45FyIjjgDGbbaHaVMkUMviDDeOU" crossorigin="anonymous">
 <style>
 .bg-grey {
     background-color: #f6f6f6;
 }
+
+.hide { display: none; }
 
 header {
     background-image:url(/static/events/{{event.event_key}}/event_cover.jpg);
@@ -188,8 +222,6 @@ header {
     background-size:cover;
     -o-background-size:cover;
     text-align:center;
-    color:#fff;
-    background-color: #333;
 }
 header .intro-text {
     padding-top: 100px;
@@ -211,7 +243,7 @@ header .intro-text {
       <!--<div class="jumbotron">-->
 
 {% block header_section %}
-<header>
+<header class="bg-dark">
     <div class="container">
       <div class="intro-text">
           <h3 class="display-5">10 July</h3>
@@ -221,65 +253,48 @@ header .intro-text {
     </div>
 </header>
 {% endblock %}
+<header class="sticky-top bg-dark py-1 mb-1">
+    <div class="container">
+        <div class="row">
+            <div class="col-3"><h3 class="display-5">
+                <a href="#order_summary_container" id="order_summary_total" class="text-white">Total: £0</a>
+            </h3></div>
+            <div class="col">
+                <button type="button" class="btn btn-dark btn-outline-light button-checkout" disabled>
+                    <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
+                    <span class="checkout-text">Sign up and pay</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
 
 {% block info_section %}
 {% endblock %}
 
-     {% if request.args.get('legacy') -%}
-       {{wtf.quick_form(form, novalidate=True)}}
-     {%- else -%}
-       <form class="form form-vertical" method="post" role="form">
-           <div id="form_fields">
+<div id="signup_form">
+{% block signup_form %}
+{% include "signup_form.html" %}
+{% endblock %}
+</div>
 
-               <div class="container-fluid">
-                   <div class="container">
-                       <h2> Your details</h2>
-              {{ form.hidden_tag() }}
-              {{ wtf.form_errors(form) }}
-
-              {{ form.stripe_token }}
-              {{ slt.name_field(form.name) }}
-              {{ slt.email_field(form.email) }}
-                       <h3> Your partner details</h3>
-                       <small>(*If you are buying tickets for yourself and for your partner)</small>
-              {{ slt.name_field(form.partner_name) }}
-              {{ slt.email_field(form.partner_email) }}
-
-              {{ wtf.form_field(form.comment) }}
-                       </div>
-               </div>
-
-                <div class="container-fluid">
-                    <div class="container my-4">
-                        <!--<h2> Select a Reward</h2>-->
-                        <!--<div class="card-columns">-->
-               {% for product_key in form.product_keys %}
-                    {{ slt.render_workshop_form_field(form.get_product_by_key(product_key), event) }}
-               {% endfor %}
-                        <!--</div>-->
-                    </div>
-
-               </div>
-
-               <div class="container-fluid">
+               <div class="container-fluid" id="order_summary_container">
                    <div class="container my-4">
                         <div class="card card-default">
-                            <div class="card-block">
-                                <h4 class="card-title">Summary</h4>
+                            <div class="card-body">
+                                <h4 class="card-title">Order Summary</h4>
                                 <div id="order_summary"></div>
                                 <div class="form-group form-vertical">
-                                    <button type="button" id="checkout" class="btn btn-lg btn-responsive btn-success form-control" disabled>
+                                    <button type="button" class="btn btn-lg btn-responsive btn-success form-control button-checkout" disabled>
                                         <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
-                                        <span id="checkout_text">Sign up and pay</span>
+                                        <span class="checkout-text">Sign up and pay</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
                    </div>
                </div>
-           </div>
-        </form>
-     {%- endif %}
+
 
 {% block terms_conditions %}
 <section class="container-fluid">

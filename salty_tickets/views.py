@@ -10,13 +10,16 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
+from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import process_payment
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations
+    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
+    mts_get_order_for_event, process_mts_group_registrations
 from salty_tickets.products import flip_role
 from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
 from sqlalchemy import desc
 from werkzeug.utils import redirect
+from htmlmin import minify
 
 __author__ = 'vnkrv'
 
@@ -62,13 +65,18 @@ def register_form(event_key):
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
-        user_order = get_order_for_event(event, form, registration, partner_registration)
+        if event_key == 'mind_the_shag_2018':
+            user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+        else:
+            user_order = get_order_for_event(event, form, registration, partner_registration)
         user_order.registration = registration
         event.orders.append(user_order)
         db_session.commit()
         success, response = process_payment(user_order.payments[0], form.stripe_token.data)
         if success:
             process_partner_registrations(user_order, form)
+            if event_key == 'mind_the_shag_2018':
+                process_mts_group_registrations(user_order, form)
             balance_results = balance_event_waiting_lists(event)
             email_result = send_registration_confirmation(user_order)
             # order_summary_controller = OrderSummaryController(user_order)
@@ -91,26 +99,41 @@ def register_form(event_key):
                     form[order_product.product.product_key].add.data = 1
             except BadSignature:
                 pass
-    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config)
+    form_controller = MtsSignupFormController(form)
+    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config, form_controller=form_controller)
 
 
 @app.route('/register/checkout/<string:event_key>', methods=['POST'])
-def register_checkout(event_key):
+@app.route('/register/checkout/<string:event_key>/<validate>', methods=['POST'])
+def register_checkout(event_key, validate='novalidate'):
     event = Event.query.filter_by(event_key=event_key).first()
     form = create_event_form(event)()
 
     return_dict = dict(errors={})
 
-    if form.validate_on_submit():
+    if validate == 'validate':
+        form_check = form.validate_on_submit
+    else:
+        form_check = form.is_submitted
+
+    if form_check():
+        if event_key == 'mind_the_shag_2018':
+            form_controller = MtsSignupFormController(form)
+            return_dict['signup_form_html'] = minify(render_template('events/mind_the_shag_2018/mts_signup_form.html',
+                                                         event=event, form=form, config=config, form_controller=form_controller), remove_comments=True, remove_empty_space=True)
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
-        user_order = get_order_for_event(event, form, registration, partner_registration)
+        if event_key == 'mind_the_shag_2018':
+            user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+        else:
+            user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
         order_summary_controller = OrderSummaryController(user_order)
-        return_dict['order_summary_html'] = render_template('order_summary.html',
-                                                            order_summary_controller=order_summary_controller)
+        return_dict['order_summary_html'] = minify(render_template('order_summary.html',
+                                                            order_summary_controller=order_summary_controller), remove_comments=True, remove_empty_space=True)
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
+        return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
         print(
             form.name.data,
             request.remote_addr,
@@ -389,3 +412,7 @@ def vote_data():
 @app.template_filter('price')
 def price_filter(amount):
     return '£{:.2f}'.format(amount)
+
+@app.template_filter('price_int')
+def price_int_filter(amount):
+    return '£{:.0f}'.format(amount)

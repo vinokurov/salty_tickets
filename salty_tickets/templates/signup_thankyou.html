@@ -153,8 +153,9 @@
                     <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_location'] }}</small><br>
                     {% endif %}
                     <small class="text-muted"> {{ order_product._order_product.product.info }}</small><br>
-                    <small>{{ message(order_product.partner_info) }}</small>
+                    {#<small>{{ message(order_product.partner_info) }}</small>#}
                 </p>
+                {#
                 <p class="card-text">
                     {% if order_product.can_add_partner %}
                     <label class="custom-control custom-checkbox">
@@ -170,6 +171,7 @@
                     </label>
                     {% endif %}
                 </p>
+                #}
 
                 {% if order_product.is_waiting %}<a class="btn btn-danger btn-responsive" href="{{order_product.cancel_url}}">Cancel & refund</a>{% endif %}
                 <!--{% if order_product.total_remaining > 0 %}<a class="btn btn-info btn-responsive" href="{{order_product.cancel_url}}">Pay remaining {{ order_product.total_remaining | price }}</a>{% endif %}-->
@@ -184,7 +186,7 @@
         </div>
         {% endfor %}
 
-        {% if order_summary_controller.invite_partner_url %}
+        {% if order_summary_controller.invite_partner_url and None %}
         <div class="card"  style="background-color: #F0FFFF; "><div class="card-block">
             <h5 class="card-title">Invite your partner</h5>
             <p class="card-text">Select items and forward the link to your partner:</p>
@@ -203,7 +205,7 @@
             <div>{{ message(m) }}</div>
         {% endfor %}
     {% else %}
-        {% if message_controller.message_type == 'token' %}
+        {% if message_controller.message_type == 'token' and None %}
             <div class="input-group">
               <span class="input-group-btn">
                 <button class="btn btn-secondary btn-sm btn-clipboard hidden-sx-down" type="button" data-clipboard-target="#{{ message_controller.text }}"><i class="fa fa-clipboard fa-fw" aria-hidden="true"></i></button>
