@@ -92,7 +92,7 @@ class MtsSignupFormController:
             'fast_train_to_collegiate_shag_no_parties',
             'fast_train_to_st_louis_shag',
             'fast_train_to_st_louis_shag_no_parties',
-            'all_parties'
+            'parties_only'
         ]
         for ticket_key in weekend_tickets_keys:
             ticket = self.form.get_product_by_key(ticket_key)
@@ -143,7 +143,7 @@ class MtsSignupFormController:
             'full_weekend_ticket',
             'fast_train_to_collegiate_shag',
             'fast_train_to_st_louis_shag',
-            'all_parties'
+            'parties_only'
         ]
         weekend_ticket_key = self.weekend_ticket_key
         return weekend_ticket_key and weekend_ticket_key in party_tickets_keys

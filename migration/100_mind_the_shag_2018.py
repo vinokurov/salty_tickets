@@ -231,7 +231,7 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=150,
         name='Full Weekend Ticket',
-        info='Includes 3 any stations and all parties. Also gives discount for additional stations',
+        info='Includes any 3 stations and all parties. You can book extra stations with a discount.',
         price=120,
         classes_to_chose=3,
         includes='parties'
@@ -242,8 +242,8 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=150,
         name='Full Weekend Ticket, no Parties',
-        info='Includes 3 any stations. Also gives discount for additional stations',
-        price=120,
+        info='Includes any 3 stations. You can book extra stations with a discount.',
+        price=85,
         classes_to_chose=3,
         includes=''
     ).model
@@ -252,8 +252,8 @@ event.products.append(
 event.products.append(
     products.FestivalTrackProduct(
         max_available=150,
-        name='All parties',
-        info='Includes all 3 parties. No classes included.',
+        name='Parties Only',
+        info='Includes all 3 parties, no stations. You can still book stations at full price.',
         price=45,
         classes_to_chose=0,
         includes='parties'
@@ -264,7 +264,7 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=45,
         name='Fast Train to Collegiate Shag',
-        info='Includes 2 stations for learning Collegiate Shag and all parties. Also gives discount for additional stations',
+        info='Includes 2 stations for learning Collegiate Shag and all parties. You can book extra stations with a discount.',
         price=90,
         classes_to_chose=0,
         includes='collegiate_fast_train,parties'
@@ -275,7 +275,7 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=45,
         name='Fast Train to Collegiate Shag, no Parties',
-        info='Includes 2 stations for learning Collegiate Shag. Also gives discount for additional stations',
+        info='Includes 2 stations for learning Collegiate Shag. You can book extra stations with a discount.',
         price=55,
         classes_to_chose=0,
         includes='collegiate_fast_train'
@@ -286,7 +286,7 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=35,
         name='Fast Train to St.Louis Shag',
-        info='Includes 2 stations for learning St.Louis Shag and all parties. Also gives discount for additional stations',
+        info='Includes 2 stations for learning St.Louis Shag and all parties. You can book extra stations with a discount.',
         price=90,
         classes_to_chose=0,
         includes='stl_fast_train,parties'
@@ -297,7 +297,7 @@ event.products.append(
     products.FestivalTrackProduct(
         max_available=35,
         name='Fast Train to St.Louis Shag, no Parties',
-        info='Includes 2 stations for learning St.Louis Shag. Also gives discount for additional stations',
+        info='Includes 2 stations for learning St.Louis Shag. You can book extra stations with a discount.',
         price=55,
         classes_to_chose=0,
         includes='stl_fast_train'
