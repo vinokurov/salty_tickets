@@ -1,4 +1,4 @@
-from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET
+from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
 
 
 class MtsSignupFormController:
@@ -171,3 +171,19 @@ class MtsSignupFormController:
         lines = form_field.workshop_level.split(',')
         badges = ['<span class="badge badge-pill {}">{}</span>'.format(line_styles[line], line) for line in lines]
         return ' '.join(badges)
+
+    @property
+    def group_form(self):
+        return self.form.get_product_by_key('group_discount')
+
+    def get_group(self, event):
+        if self.group_form.add.data:
+            return FestivalGroupDiscountProduct.retrieve_group_details(self.group_form.add.data, event)
+
+    def is_new_group(self, event):
+        return self.get_group is None
+
+    @property
+    def is_group_registration(self):
+        return self.group_form.add.data and self.group_form.add.data.strip()
+

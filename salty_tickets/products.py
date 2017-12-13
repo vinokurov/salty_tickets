@@ -995,10 +995,6 @@ class FestivalGroupDiscountProduct(BaseProduct):
                                                   event_id=event.id).one_or_none()
         return group
 
-    def create_new_group(self, group_form, event):
-        pass
-        event.registration_groups.append()
-
 # def get_class_by_name(class_name):
 #     import sys
 #     import inspect

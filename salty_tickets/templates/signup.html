@@ -33,13 +33,15 @@ jQuery.fn.extend({
     var form_changed = false;
     var form_changed_element = 'form';
 
-    $('body').on('keyup change', '.form-control', function(e) {
+    //$('body').on('keyup change', '.form-control', function(e) {
+    $('body').on('change', '.form-control', function(e) {
         form_changed = true;
         form_changed_element = '#'+e.target.id;
         setTimeout(update_total_price, 1000);
     });
 
     $('body').on('focusout', '.form-control', update_total_price)
+    //$('body').on('click', '.form-control', update_total_price)
 
     function update_total_price(e) {
         if(form_changed) {
@@ -55,8 +57,8 @@ jQuery.fn.extend({
                 success: function (data) {
                     console.log(data);  // display the returned data in the console.
                     $('div#order_summary').html(data.order_summary_html);
-                    show_form_validation_errors(data.errors, data.validated_partner_tokens);
-                    $('button#checkout').disable(data.disable_checkout);
+                    //show_form_validation_errors(data.errors, data.validated_partner_tokens);
+                    $('button.button-checkout').disable(data.disable_checkout);
                     console.log(data.order_summary_total)
                     if(data.order_summary_total) {
                         console.log('setting total', 'Total: '+data.order_summary_total)
@@ -108,7 +110,7 @@ jQuery.fn.extend({
         }
     }
 
-    $('body').on('click', 'button#checkout', function(e) {
+    $('body').on('click', 'button.button-checkout', function(e) {
         if(!payment_ready) {
             var url = "{{ url_for('register_checkout', event_key=event.event_key, validate='validate') }}"; // send the form data here.
             $.ajax({
@@ -120,8 +122,8 @@ jQuery.fn.extend({
                     console.log(data);  // display the returned data in the console.
                     if(data.disable_checkout) {
                         $('div#order_summary').html(data.order_summary_html);
-                        show_form_validation_errors(data.errors, data.validated_partner_tokens);
-                        $('button#checkout').disable(data.disable_checkout);
+                        //show_form_validation_errors(data.errors, data.validated_partner_tokens);
+                        $('button.button-checkout').disable(data.disable_checkout);
                     }else{
                         console.log('ready to pay');
                         if(data.stripe.amount) {
@@ -167,10 +169,10 @@ jQuery.fn.extend({
     function payment_ready_change_status(status) {
         if(status) {
             payment_ready = true;
-            $('#checkout_text').html('Sign up and pay');
+            $('.checkout-text').html('Sign up and pay');
         } else {
             payment_ready = false;
-            $('#checkout_text').html('Check availability');
+            $('.checkout-text').html('Checkout');
         }
     }
 
@@ -258,9 +260,9 @@ header .intro-text {
                 <a href="#order_summary_container" id="order_summary_total" class="text-white">Total: £0</a>
             </h3></div>
             <div class="col">
-                <button type="button" id="checkout" class="btn btn-dark btn-outline-light">
+                <button type="button" class="btn btn-dark btn-outline-light button-checkout">
                     <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
-                    <span id="checkout_text">Sign up and pay</span>
+                    <span class="checkout-text">Sign up and pay</span>
                 </button>
             </div>
         </div>
@@ -282,6 +284,12 @@ header .intro-text {
                             <div class="card-body">
                                 <h4 class="card-title">Order Summary</h4>
                                 <div id="order_summary"></div>
+                                <div class="form-group form-vertical">
+                                    <button type="button" class="btn btn-lg btn-responsive btn-success form-control button-checkout" disabled>
+                                        <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
+                                        <span class="checkout-text">Sign up and pay</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                    </div>

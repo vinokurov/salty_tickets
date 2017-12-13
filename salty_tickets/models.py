@@ -32,6 +32,7 @@ CANCELLATION_STATUS_PROCESSED = 'processed'
 CANCELLATION_STATUS_DECLINED = 'declined'
 
 SIGNUP_GROUP_PARTNERS = 'partners'
+SIGNUP_GROUP_FESTIVAL = 'festival group'
 
 PAYMENT_STATUS_NEW = 'new'
 PAYMENT_STATUS_PAID = 'paid'
@@ -285,7 +286,6 @@ class RegistrationGroup(Base):
     name = Column(String(255), nullable=False)
     location = Column(String(255))
     description = Column(Text)
-
 
     signup_group = relationship('SignupGroup', uselist=False)
 

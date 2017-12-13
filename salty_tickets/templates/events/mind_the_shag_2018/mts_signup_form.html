@@ -3,14 +3,34 @@
 {% block products %}
         <div class="container-fluid">
             <div class="container my-4">
-                <div class="card bg-primary">
+                <div class="card bg-primary text-light">
                     <div class="card-body">
                         <h3 class="car-title">Are you part of a group?</h3>
-                        {{ wtf.form_field(form.get_product_by_key('group_discount').add) }}
+                        {{ form_controller.group_form.add(class='form-control', placeholder="Your group name") }}
+                        {% if form_controller.is_new_group(event) %}
+                            Group not found. Please enter group details to register a new group.
+                        {{ form_controller.group_form.location(class='form-control', placeholder="Your group location (country, city)") }}
+                        {{ form_controller.group_form.group_description(class='form-control', placeholder="Your group description") }}
+
+                        {% else %}
+                            Group found: {{ form_controller.get_group(event).location }}!
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+
+        {% if form_controller.is_group_registration %}
+        <div class="container">
+            <div class="alert alert-dismissible {%if form_controller.selected_stations_count<3 %}alert-warning{%else%}alert-success{%endif%}">
+                <i class="fa fa-fw {%if form_controller.selected_stations_count<3 %}fa-exclamation-triangle{%else%}fa-check-circle{%endif%}" aria-hidden="true"></i>
+              <strong>You are signing up as part of the group "{{form_controller.group_form.add.data}}"!</strong>
+                <p>This gives you a £10 discount on the Full Weekend Ticket or any of the Fast Train Tickets (with parties).</p>
+                <p>The discount is applied straight away. However if your group doesn't get to meet the minimum requirements
+                    before the event starts, the discount amount will be charged back.</p>
+            </div>
+        </div>
+        {% endif %}
 
         <div class="container-fluid">
             <div class="container my-4">
@@ -52,7 +72,7 @@
         </div>
         {% endif %}
 
-        {% if form_controller.is_sinles_only %}
+        {% if form_controller.is_singles_only %}
         <div class="container">
             <div class="alert alert-dismissible alert-info">
                 <i class="fa fa-info-circle fa-fw" aria-hidden="true"></i>

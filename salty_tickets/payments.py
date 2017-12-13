@@ -47,7 +47,10 @@ def update_payment_total(payment):
 
 
 def stripe_amount(payment):
-    return int((payment.amount + payment.transaction_fee) * 100)
+    if payment.amount > 0:
+        return int((payment.amount + payment.transaction_fee) * 100)
+    else:
+        return 0
 
 
 def update_order(user_order):

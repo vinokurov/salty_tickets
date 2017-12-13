@@ -14,7 +14,7 @@ from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import process_payment
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
-    mts_get_order_for_event
+    mts_get_order_for_event, process_mts_group_registrations
 from salty_tickets.products import flip_role
 from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
 from sqlalchemy import desc
@@ -60,13 +60,18 @@ def register_form(event_key):
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
         partner_registration = get_partner_registration_from_form(form)
-        user_order = get_order_for_event(event, form, registration, partner_registration)
+        if event_key == 'mind_the_shag_2018':
+            user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+        else:
+            user_order = get_order_for_event(event, form, registration, partner_registration)
         user_order.registration = registration
         event.orders.append(user_order)
         db_session.commit()
         success, response = process_payment(user_order.payments[0], form.stripe_token.data)
         if success:
             process_partner_registrations(user_order, form)
+            if event_key == 'mind_the_shag_2018':
+                process_mts_group_registrations(user_order, form)
             balance_results = balance_event_waiting_lists(event)
             email_result = send_registration_confirmation(user_order)
             # order_summary_controller = OrderSummaryController(user_order)
