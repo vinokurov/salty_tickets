@@ -183,7 +183,7 @@
     <div class="card {{form_controller.ticket_card_style(form_field)}}" id="{{form_field.add.id}}-card">
         <div class="card-body">
             <h5 class="card-title">{% if icon %}<i class="fa fa-fw fa-{{icon}}" aria-hidden="true"></i> {%endif%}{{ form_field.product_name }}</h5>
-            <small><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
+            <span class="badge badge-light">{{ form_field.price | price_int }}</span><br>
             <p class="card-text"><small>{{ form_field.info }} </small></p>
                <div class="btn-group" data-toggle="buttons">
                     {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
@@ -207,7 +207,7 @@
         <div class="card-body">
             <h5 class="card-title">{% if form_controller.is_parties_included %}<i class="fa fa-fw fa-lock" aria-hidden="true"></i> {%endif%}{{ form_field.product_name }}</h5>
             <small><i class="fa fa-calendar fa-fw" aria-hidden="true"></i> {{ form_field.party_date }}</small><br>
-            <small><i class="fa fa-money fa-fw" aria-hidden="true"></i> {{ form_field.price | price_int }}</small><br>
+            <span class="badge badge-light">{{ form_field.price | price_int }}</span><br>
             <p class="card-text"><small>{{ form_field.info }} </small></p>
                <div class="btn-group" data-toggle="buttons">
                     {% for radio_value, radio_label, radio_bool in form_field.add.iter_choices() %}
