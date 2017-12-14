@@ -946,7 +946,6 @@ class FestivalGroupDiscountProduct(BaseProduct):
         if order_form:
             ticket_form = self._get_selected_included_product_form(order_form)
             if ticket_form:
-                print(ticket_form)
                 return -float(self.price)
         return 0
 
