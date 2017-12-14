@@ -12,7 +12,7 @@
                         {{ form_controller.group_form.location(class='form-control', placeholder="Your group location (country, city)") }}
                         {{ form_controller.group_form.group_description(class='form-control', placeholder="Your group description") }}
 
-                        {% else %}
+                        {% elif form_controller.group_form.add.data %}
                             Group found: {{ form_controller.get_group(event).location }}!
                         {% endif %}
                     </div>

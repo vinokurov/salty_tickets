@@ -490,7 +490,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
         }
         total_accepted = reg_stats[DANCE_ROLE_LEADER].accepted + reg_stats[DANCE_ROLE_FOLLOWER].accepted
 
-        max_ratio = 2
+        max_ratio = 5
         partner_reg_stats = cls.get_partner_registration_stats(product_model)
 
         partner_leads_waiting = cls.get_waiting_list_for_role(

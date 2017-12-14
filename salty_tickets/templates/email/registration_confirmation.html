@@ -105,7 +105,7 @@
                     <small class="text-muted"><i class="fa fa-map-marker fa-fw" aria-hidden="true"></i> {{ order_product._order_product.product.parameters_as_dict['contest_location'] }}</small><br>
                     {% endif %}
                     <small class="text-muted"> {{ order_product._order_product.product.info }}</small><br>
-                    <small>{{ message(order_product.partner_info) }}</small>
+                    {# <small>{{ message(order_product.partner_info) }}</small> #}
                 </p>
                 <h6 class="card-subtitle">Paid: {{ order_product.total_paid | price}}</h6>
                 <!--Price: {{ order_product.price }} <br>-->
@@ -117,6 +117,7 @@
         </div>
         {% endfor %}
 
+    {#
         {% if order_summary_controller.invite_partner_url %}
         <div class="card"  style="background-color: #F0FFFF; "><div class="card-block">
             <h5 class="card-title">Invite your partner</h5>
@@ -126,6 +127,7 @@
         <!--<p>Link to invite your partner for for the selected items: <span id="partner_link"></span></p>-->
         <!--<p><a href="{{ order_summary_controller.event.registration_url }}"> To the event page</a></p>-->
 
+    #}
         <div class="card"><div class="card-block">
             Please use this link to see and manage your order: <a href="{{order_summary_controller.order_status_url}}">{{ order_summary_controller.order_status_url }}</a>
         </div> </div>

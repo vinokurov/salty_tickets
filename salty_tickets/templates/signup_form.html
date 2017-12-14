@@ -19,6 +19,8 @@
 
                <div class="container-fluid">
                    <div class="container">
+                       <div class="card bg-primary text-light">
+                           <div class="card-body">
                        <h2> Your details</h2>
               {{ form.hidden_tag() }}
               {{ wtf.form_errors(form) }}
@@ -34,6 +36,8 @@
               {{ slt.email_field(form.partner_email) }}
         {% endif %}
               {{ wtf.form_field(form.comment) }}
+                               </div>
+                       </div>
                        </div>
                </div>
            </div>
