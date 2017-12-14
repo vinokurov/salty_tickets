@@ -490,7 +490,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
         }
         total_accepted = reg_stats[DANCE_ROLE_LEADER].accepted + reg_stats[DANCE_ROLE_FOLLOWER].accepted
 
-        max_ratio = 5
+        max_ratio = 10
         partner_reg_stats = cls.get_partner_registration_stats(product_model)
 
         partner_leads_waiting = cls.get_waiting_list_for_role(
@@ -545,7 +545,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
     def can_balance_waiting_list_one(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
         ratio = float(product_model.parameters_as_dict['ratio'])
-        max_ratio = 5
+        max_ratio = 10
         # both waiting lists empty => None
         if reg_stats[DANCE_ROLE_LEADER].waiting == 0 and reg_stats[DANCE_ROLE_FOLLOWER].waiting == 0:
             return False
