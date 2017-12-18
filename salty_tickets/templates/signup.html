@@ -178,13 +178,13 @@ jQuery.fn.extend({
 
     function lookup_location(query, elem_id) {
         console.log(query);
-        var url = 'http://nominatim.openstreetmap.org/search/' + encodeURI(query) +'?format=json';
+        var url = 'https://nominatim.openstreetmap.org/search/' + encodeURI(query) +'?format=json';
         console.log(url);
         $.getJSON( url, function( data ) {
             if(data.length > 0) {
                 var query_result = data[0]['display_name'];
                 console.log('data', query_result);
-                var url_rev = 'http://nominatim.openstreetmap.org/reverse?format=json&lat='+data[0]['lat']+'&lon='+data[0]['lon']+'&accept-language=en'
+                var url_rev = 'https://nominatim.openstreetmap.org/reverse?format=json&lat='+data[0]['lat']+'&lon='+data[0]['lon']+'&accept-language=en'
                 $.getJSON( url_rev, function( data_rev ) {
                     console.log(data_rev);
                     var data_address = data_rev['address'];
