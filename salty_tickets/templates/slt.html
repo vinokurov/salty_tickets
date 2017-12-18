@@ -116,6 +116,30 @@
 </div>
 {% endmacro %}
 
+{% macro token_field(field) %}
+<div  class="form-group" id="{{field.id}}-form-group">
+  <label class="sr-only" for="{{field.id}}">{{ field.label.text }}</label>
+  <div class="input-group">
+    <div class="input-group-addon">
+        <i class="fa fa-key fa-fw" aria-hidden="true"></i>
+    </div>
+    {{ field(class='form-control', placeholder=field.label.text) }}
+</div>
+</div>
+{% endmacro %}
+
+{% macro field_with_icon(field, icon) %}
+<div  class="form-group" id="{{field.id}}-form-group">
+  <label class="sr-only" for="{{field.id}}">{{ field.label.text }}</label>
+  <div class="input-group">
+    <div class="input-group-addon">
+        <i class="fa fa-{{icon}} fa-fw" aria-hidden="true"></i>
+    </div>
+    {{ field(class='form-control', placeholder=field.label.text) }}
+</div>
+</div>
+{% endmacro %}
+
 
 {% macro money_text_field(field) %}
 <div class="form-group">

@@ -1,4 +1,5 @@
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
+from salty_tickets.tokens import GroupToken
 
 
 class MtsSignupFormController:
@@ -177,8 +178,12 @@ class MtsSignupFormController:
         return self.form.get_product_by_key('group_discount')
 
     def get_group(self, event):
-        if self.group_form.add.data:
-            return FestivalGroupDiscountProduct.retrieve_group_details(self.group_form.add.data, event)
+        if self.group_form.group_token.data:
+            serialiser = GroupToken()
+            try:
+                return serialiser.deserialize(self.group_form.group_token.data.strip())
+            except Exception as e:
+                pass
 
     def is_new_group(self, event):
         return self.get_group is None
@@ -186,4 +191,9 @@ class MtsSignupFormController:
     @property
     def is_group_registration(self):
         return self.group_form.add.data and self.group_form.add.data.strip()
+
+    @staticmethod
+    def location_str(country, state, city):
+        return ', '.join([v for v in [country, state, city] if v])
+
 

@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from itsdangerous import URLSafeSerializer, BadSignature
-from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER
-from salty_tickets.models import OrderProduct, Order
+from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER, SALT_GROUP_TOKEN, \
+    SALT_PARTNER_TOKEN
+from salty_tickets.models import OrderProduct, Order, RegistrationGroup, Registration
 from hashids import Hashids
 
 
@@ -63,4 +64,51 @@ def order_deserialize(order_token):
     order_id = serializer.loads(order_token)
     user_order = Order.query.filter_by(id=order_id).one()
     return user_order
+
+
+
+class Token:
+    prefix = 'tok'
+    min_length = 5
+    salt = 'default'
+    def __init__(self):
+        pass
+
+    @property
+    def _serializer(self):
+        return Hashids(self.salt, self.min_length)
+
+    def serialize(self, obj):
+        return '{}_{}'.format(self.prefix, self._serializer.encode(obj.id))
+
+    def deserialize(self, token_str):
+        if not token_str.startswith(self.prefix+'_'):
+            raise BadSignature('Invalid token')
+        token_body = token_str.split('_')[1]
+        decode_res = self._serializer.decode(token_body)
+        if decode_res:
+            id = decode_res[0]
+            return self._retrieve_object(id)
+        else:
+            raise BadSignature('Invalid token')
+
+    def _retrieve_object(self, id):
+        raise NotImplementedError()
+
+
+class GroupToken(Token):
+    prefix = 'grp'
+    salt = SALT_GROUP_TOKEN
+    def _retrieve_object(self, id):
+        return RegistrationGroup.query.filter_by(id=id).one()
+
+
+class PartnerToken(Token):
+    prefix = 'ptn'
+    salt = SALT_PARTNER_TOKEN
+    def _retrieve_object(self, id):
+        return Registration.query.filter_by(id=id).one()
+
+
+
 

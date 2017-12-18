@@ -64,7 +64,9 @@ def register_form(event_key):
 
     if form.validate_on_submit():
         registration = get_registration_from_form(form)
+        registration.event_id = event.id
         partner_registration = get_partner_registration_from_form(form)
+        partner_registration.event_id = event.id
         if event_key == 'mind_the_shag_2018':
             user_order = mts_get_order_for_event(event, form, registration, partner_registration)
         else:
@@ -122,7 +124,9 @@ def register_checkout(event_key, validate='novalidate'):
             return_dict['signup_form_html'] = minify(render_template('events/mind_the_shag_2018/mts_signup_form.html',
                                                          event=event, form=form, config=config, form_controller=form_controller), remove_comments=True, remove_empty_space=True)
         registration = get_registration_from_form(form)
+        registration.event_id = event.id
         partner_registration = get_partner_registration_from_form(form)
+        partner_registration.event_id = event.id
         if event_key == 'mind_the_shag_2018':
             user_order = mts_get_order_for_event(event, form, registration, partner_registration)
         else:

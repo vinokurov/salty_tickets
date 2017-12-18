@@ -11,7 +11,6 @@ class SignupForm(FlaskForm):
     stripe_token = HiddenField()
     name = StringField(u'Your name', validators=[DataRequired()])
     email = StringField(u'Email', validators=[Email(), DataRequired()])
-    dance_role = SelectField('Your Dance Role in Couple', choices=[(DANCE_ROLE_LEADER, 'Leader'), (DANCE_ROLE_FOLLOWER, 'Follower')], default=DANCE_ROLE_LEADER)
     comment = TextAreaField('Comment')
     # submit = SubmitField(u'Signup')
 
@@ -33,9 +32,17 @@ def need_partner_check(form, field):
 
 
 class DanceSignupForm(FormWithProducts, SignupForm):
+    location_query = StringField('Location')
+    country = StringField('Country')
+    state = StringField('State')
+    city = StringField('City')
+    dance_role = SelectField('Your Dance Role in Couple', choices=[(DANCE_ROLE_LEADER, 'Leader'), (DANCE_ROLE_FOLLOWER, 'Follower')], default=DANCE_ROLE_LEADER)
     partner_name = StringField(u'Partner\'s name', validators=[need_partner_check])
     partner_email = StringField(u'Partner\'s email', validators=[need_partner_check])
-
+    partner_location_query = StringField('Partner\'s Location')
+    partner_country = StringField('Partner\'s Country')
+    partner_state = StringField('Partner\'s State')
+    partner_city = StringField('Partner\'s City')
 
 
 class CrowdfundingSignupForm(SignupForm, FormWithProducts):

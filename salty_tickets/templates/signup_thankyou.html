@@ -125,6 +125,25 @@
             </div>
         </div>
 
+        {% if order_summary_controller.group.has_group %}
+        <div class="card mb-4">
+            <div class="card-block">
+                <h3 class="card-title">Group Info</h3>
+                Name: {{ order_summary_controller.group._group.name }}<br>
+                Token: {{ order_summary_controller.group.token }} <br>
+                Members:
+                <ul class="list-group">
+                {% for reg in order_summary_controller.group._group.registrations %}
+                    <li class="list-group-item"><small>{{ reg.name }}</small></li>
+                {% endfor%}
+                </ul>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
         {% for order_product in order_summary_controller.order_products %}
         <div class="card mb-4{% if order_product.is_waiting %} card-outline-warning{% endif%}"{% if order_product.is_waiting %} style="background-color: #FFFFE0; "{% endif%}>
             <div class="card-block">

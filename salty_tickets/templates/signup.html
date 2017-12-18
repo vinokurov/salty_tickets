@@ -176,6 +176,67 @@ jQuery.fn.extend({
         }
     }
 
+    function lookup_location(query, elem_id) {
+        console.log(query);
+        var url = 'http://nominatim.openstreetmap.org/search/' + encodeURI(query) +'?format=json';
+        console.log(url);
+        $.getJSON( url, function( data ) {
+            if(data.length > 0) {
+                var query_result = data[0]['display_name'];
+                console.log('data', query_result);
+                var url_rev = 'http://nominatim.openstreetmap.org/reverse?format=json&lat='+data[0]['lat']+'&lon='+data[0]['lon']+'&accept-language=en'
+                $.getJSON( url_rev, function( data_rev ) {
+                    console.log(data_rev);
+                    var data_address = data_rev['address'];
+                    var result = {'country': '', 'state': '', 'city':''};
+                    result['country'] = data_address['country'];
+                    if ('state' in data_address) { result['state'] = data_address['state'];}
+
+                    if ('city' in data_address) { result['city'] = data_address['city'];}
+                    else if ('town' in data_address) { result['city'] = data_address['town'];}
+                    else if ('village' in data_address) { result['city'] = data_address['village'];}
+                    else if ('county' in data_address) { result['city'] = data_address['county'];}
+
+                    console.log(result);
+                    //$('#'+result_elem).html(location_string(result));
+                    update_location_fields(result, elem_id);
+                });
+            } else {
+                //$('#'+result_elem).html('Location not found... ');
+            }
+        });
+    }
+
+    function update_location_fields(location_lookup_results, elem_id) {
+        if ( elem_id == 'location_query' ) {
+            $('[name=country]').val(location_lookup_results.country);
+            $('[name=state]').val(location_lookup_results.state);
+            $('[name=city]').val(location_lookup_results.city);
+            form_changed = true;
+            update_total_price();
+        } else if (elem_id == 'partner_location_query' ) {
+            $('[name=partner_country]').val(location_lookup_results.country);
+            $('[name=partner_state]').val(location_lookup_results.state);
+            $('[name=partner_city]').val(location_lookup_results.city);
+            form_changed = true;
+            update_total_price();
+        }
+    }
+
+    function location_string(location_lookup_results) {
+        var values = Object.keys(location_lookup_results).map(function(key){
+            return location_lookup_results[key];
+        });
+        values = values.filter(function(n){ return n != '' });
+         return values.join(', ');
+    }
+
+    $('body').on('focusout', '.location-search', function(e) {
+        var input_id = e['target'].id;
+        var query = document.getElementById(input_id).value;
+        lookup_location(query, input_id);
+    });
+
 
 // http://stackoverflow.com/questions/3860351/relative-position-in-dom-of-elements-in-jquery
 // What this does is .add() the additional element (or selector)

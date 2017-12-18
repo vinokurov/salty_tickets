@@ -7,7 +7,7 @@ from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import stripe_amount, update_payment_total
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop, \
     FestivalGroupDiscountProduct
-from salty_tickets.tokens import order_product_deserialize
+from salty_tickets.tokens import order_product_deserialize, GroupToken
 
 
 def get_order_for_event(event, form, registration=None, partner_registration=None):
@@ -242,20 +242,28 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
 def process_mts_group_registrations(user_order, form):
     group_discount_model = user_order.event.products.filter_by(type='FestivalGroupDiscountProduct').first()
     discount_product = get_product_by_model(group_discount_model)
-    form_controller = MtsSignupFormController(form)
-    if form_controller.is_group_registration and discount_product.get_total_price:
+    group_form = form.get_product_by_key(group_discount_model.product_key)
+    if discount_product.is_selected(group_form) and \
+            discount_product.get_total_price(group_discount_model, group_form, form):
 
-        group = FestivalGroupDiscountProduct.retrieve_group_details(form_controller.group_form.add.data, user_order.event)
-        if not group:
+        if group_form.group_participation.data == 'new':
             group = RegistrationGroup(
-                name = form_controller.group_form.add.data,
-                location = form_controller.group_form.location.data,
-                description = form_controller.group_form.group_description.data,
+                name = group_form.group_name.data,
+                location = group_form.location.data,
+                description = group_form.group_description.data,
                 event_id=user_order.event.id
             )
-        sign_group = SignupGroup(type=SIGNUP_GROUP_FESTIVAL)
-        for order_product in user_order.order_products.join(Product, aliased=True).filter_by(type='FestivalTrackProduct').all():
-            sign_group.order_products.append(order_product)
-            group.signup_group = sign_group
-        db_session.add(group)
+            db_session.add(group)
+            db_session.commit()
+        else:
+            serialiser = GroupToken()
+            group = serialiser.deserialize(group_form.group_token.data.strip())
+        registrations = Registration.query.join(order_product_registrations_mapping, aliased=False).\
+            join(OrderProduct, aliased=False).filter_by(order_id=user_order.id).\
+            all()
+
+        for reg in registrations:
+            reg.registration_group = group
+
         db_session.commit()
+

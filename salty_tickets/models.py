@@ -110,15 +110,21 @@ class ProductParameter(Base):
 class Registration(Base):
     __tablename__ = 'registrations'
     id = Column(Integer, primary_key=True)
-    # event_id = Column(Integer, ForeignKey('events.id'))
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False)
     comment = Column(Text)
     registered_datetime = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
-    # orders = relationship("Order", lazy='dynamic')
-    # event = relationship("Event", uselist=False)
+
+    country = Column(String(255))
+    state = Column(String(255))
+    city = Column(String(255))
+
+    event_id = Column(Integer, ForeignKey('events.id'))
+    registration_group_id = Column(Integer, ForeignKey('registration_groups.id'))
+
     crowdfunding_registration_properties = relationship('CrowdfundingRegistrationProperties', uselist=False)
     order = relationship('Order', uselist=False)
+    registration_group = relationship('RegistrationGroup', uselist=False)
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -288,6 +294,7 @@ class RegistrationGroup(Base):
     description = Column(Text)
 
     signup_group = relationship('SignupGroup', uselist=False)
+    registrations = relationship('Registration', lazy='dynamic')
 
 class Vote(Base):
     __tablename__ = 'votes'

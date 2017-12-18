@@ -6,10 +6,10 @@ import math
 from itsdangerous import BadSignature
 from salty_tickets.database import db_session
 from salty_tickets.discounts import discount_users
-from salty_tickets.tokens import order_product_deserialize, order_product_token_expired
+from salty_tickets.tokens import order_product_deserialize, order_product_token_expired, GroupToken
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
-from wtforms import Form as NoCsrfForm
+from wtforms import Form as NoCsrfForm, TextAreaField
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
     HiddenField, IntegerField, FloatField, RadioField, TextField
 from wtforms.validators import Optional, ValidationError
@@ -933,9 +933,11 @@ class FestivalGroupDiscountProduct(BaseProduct):
             product_id = product_model.id
             keywords = self.keywords
             product_type = self.__class__.__name__
-            add = StringField('Group Name')
-            location = StringField('Group Location')
-            group_description = TextField('Group Description')
+            group_name = StringField('Group name')
+            location = StringField('Group location')
+            group_description = TextAreaField('Group description')
+            group_token = StringField('Group token')
+            group_participation = RadioField(choices=[('new', 'new'), ('existing', 'existing')], default='existing')
 
             def needs_partner(self):
                 return False
@@ -950,7 +952,17 @@ class FestivalGroupDiscountProduct(BaseProduct):
         return 0
 
     def is_selected(self, product_form):
-        return product_form.add.data and product_form.add.data.strip()
+        if product_form.group_participation.data == 'new':
+            return product_form.group_name.data and product_form.group_name.data.strip()
+        else:
+            if product_form.group_token.data:
+                serialiser = GroupToken()
+                try:
+                    group = serialiser.deserialize(product_form.group_token.data.strip())
+                    if group:
+                        return True
+                except:
+                    pass
 
     def get_order_product_model(self, product_model, product_form, form):
         price = self.get_total_price(product_model, product_form, form)
@@ -979,7 +991,7 @@ class FestivalGroupDiscountProduct(BaseProduct):
         includes_keywords = self.includes.split(',')
         for product_key in form.product_keys:
             product_form = form.get_product_by_key(product_key)
-            if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
+            if hasattr(product_form, 'add') and product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
                 if product_form.keywords and set(product_form.keywords.split(',')).intersection(includes_keywords):
                     return product_form
 

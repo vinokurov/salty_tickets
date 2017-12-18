@@ -4,7 +4,8 @@ from flask import url_for
 from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
     SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping
 from salty_tickets.products import get_product_by_model
-from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize
+from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize, \
+    GroupToken
 
 
 def price_format(func):
@@ -140,6 +141,26 @@ class OrderProductController:
             return None
 
 
+class GroupController:
+    def __init__(self, order):
+        print(order.registration.registration_group_id)
+        self._group = order.registration.registration_group
+
+    @property
+    def has_group(self):
+        return self._group is not None
+
+    @property
+    def token(self):
+        serialiser = GroupToken()
+        return serialiser.serialize(self._group)
+
+
+    # @property
+    # def group_members(self):
+    #     for
+
+
 class OrderSummaryController:
     def __init__(self, order, payment=None):
         self._order = order
@@ -229,6 +250,10 @@ class OrderSummaryController:
                 else:
                     return 'There are no available places in the workshop'
             return 'You are put on the waiting list due to the current imbalance in leads and followers'
+
+    @property
+    def group(self):
+        return GroupController(self._order)
 
 
 class PaymentItemController:

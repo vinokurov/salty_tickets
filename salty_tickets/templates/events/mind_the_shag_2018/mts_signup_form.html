@@ -5,16 +5,33 @@
             <div class="container my-4">
                 <div class="card bg-primary text-light">
                     <div class="card-body">
-                        <h3 class="car-title">Are you part of a group?</h3>
-                        {{ form_controller.group_form.add(class='form-control', placeholder="Your group name") }}
-                        {% if form_controller.is_new_group(event) %}
-                            Group not found. Please enter group details to register a new group.
-                        {{ form_controller.group_form.location(class='form-control', placeholder="Your group location (country, city)") }}
-                        {{ form_controller.group_form.group_description(class='form-control', placeholder="Your group description") }}
+                        <h3 class="card-title"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Are you part of a group from outside London?</h3>
+                        <div class="btn-group nav my-4" data-toggle="buttons">
+                                <button class="btn btn-outline-light {% if form_controller.group_form.group_participation.data=='existing' %}active{%endif%}" data-toggle="tab" href="#newgroup">
+                                    <input type="radio" name="{{form_controller.group_form.group_participation.id}}" value="existing"  {% if form_controller.group_form.group_participation.data=='existing' %}checked{%endif%}>Join Existing Group
+                                </button>
+                                <button class="btn btn-outline-light {% if form_controller.group_form.group_participation.data=='new' %}active{%endif%}" data-toggle="tab" href="#profile">
+                                    <input type="radio" name="{{form_controller.group_form.group_participation.id}}" value="new" {% if form_controller.group_form.group_participation.data=='new' %}checked{%endif%}>Create New Group
+                                </button>
+                        </div>
 
-                        {% elif form_controller.group_form.add.data %}
-                            Group found: {{ form_controller.get_group(event).location }}!
-                        {% endif %}
+                        <div class="tab-content mb-4" id="myTabContent">
+                          <div class="tab-pane fade {% if form_controller.group_form.group_participation.data=='existing' %}show active{%endif%}" id="newgroup" role="tabpanel" aria-labelledby="joingroup-tab">
+                              {{ slt.token_field(form_controller.group_form.group_token) }}
+                                {% if form_controller.group_form.group_token.data %}
+                                    {% if form_controller.get_group(event) %}
+                                        Group found: {{ form_controller.get_group(event).name }}!
+                                    {% else %}
+                                        Group not found...
+                                    {% endif %}
+                                {% endif %}
+                          </div>
+                          <div class="tab-pane fade {% if form_controller.group_form.group_participation.data=='new' %}show active{%endif%}" id="profile" role="tabpanel" aria-labelledby="newgroup-tab">
+                              {{ slt.field_with_icon(form_controller.group_form.group_name, 'users') }}
+                              {{ slt.field_with_icon(form_controller.group_form.location, 'map-marker') }}
+                              {{ wtf.form_field(form_controller.group_form.group_description) }}
+                      </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,13 +137,13 @@
                     </tr>
                     <tr>
                         <td class="w-25">{{ mts_station(form.get_product_by_key('christian_jenny_s_original_shag_moves'), event) }}</td>
-                        <td class="w-25">{{ mts_station(form.get_product_by_key('tandem_time'), event) }}</td>
                         <td class="w-25">{{ mts_station(form.get_product_by_key('rhythm_shag'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('tandem_time'), event) }}</td>
                     </tr>
                     <tr>
                         <td class="w-25"></td>
-                        <td class="w-25">{{ mts_station(form.get_product_by_key('phony_boy'), event) }}</td>
                         <td class="w-25">{{ mts_station(form.get_product_by_key('momentum_madness'), event) }}</td>
+                        <td class="w-25">{{ mts_station(form.get_product_by_key('phony_boy'), event) }}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -175,6 +192,9 @@
                         <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small><br>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span>-->
                        {{form_controller.line_badges(form_field) | safe}}
+                       {% if form_field.available_quantity <= 15 %}
+                        <br><span class="badge badge-danger"><i class="fa fa-fw fa-exclamation-circle" aria-hidden="true"></i> Just {{ form_field.available_quantity }} places left!</span>
+                       {% endif %}
                    </div>
                </div>
 {% endmacro %}
