@@ -4,7 +4,11 @@ from salty_tickets.models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
 
 
 def process_payment(payment, stripe_token, stripe_sk=None):
-    is_success, response = charge(payment, stripe_token, stripe_sk)
+    if payment.amount > 0:
+        is_success, response = charge(payment, stripe_token, stripe_sk)
+    else:
+        is_success, response = True, 'Don\'t need to pay'
+        payment.status = PAYMENT_STATUS_PAID
 
     if is_success:
         update_order(payment.order)

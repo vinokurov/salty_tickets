@@ -86,7 +86,10 @@ def get_registration_from_form(form):
     registration_model = Registration(
         name=form.name.data,
         email=form.email.data,
-        comment=form.comment.data
+        comment=form.comment.data,
+        country=form.country.data,
+        state=form.state.data,
+        city=form.city.data
     )
     return registration_model
 
@@ -96,7 +99,10 @@ def get_partner_registration_from_form(form):
     registration_model = Registration(
         name=form.partner_name.data,
         email=form.partner_email.data,
-        comment=form.comment.data
+        comment=form.comment.data,
+        country=form.partner_country.data,
+        state=form.partner_state.data,
+        city=form.partner_city.data
     )
     return registration_model
 

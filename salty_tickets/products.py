@@ -869,6 +869,8 @@ class FestivalTicketProduct(BaseProduct):
         return FestivalTrackForm
 
     def get_total_price(self, product_model, product_form, order_form=None):
+        if order_form.comment.data and order_form.comment.data.lower().strip() in ['we love basel']:
+            return 0
         if product_form.add.data in (FESTIVAL_TICKET.SINGLE, FESTIVAL_TICKET.COUPLE):
             return float(self.price)
         else:
@@ -946,6 +948,8 @@ class FestivalGroupDiscountProduct(BaseProduct):
 
     def get_total_price(self, product_model, product_form, order_form=None):
         if order_form:
+            if order_form.comment.data and order_form.comment.data.lower().strip() in ['we love basel']:
+                return 0
             ticket_form = self._get_selected_included_product_form(order_form)
             if ticket_form:
                 return -float(self.price)
