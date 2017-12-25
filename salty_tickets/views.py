@@ -89,20 +89,20 @@ def register_form(event_key):
             # print(response)
             return render_template('event_purchase_error.html', error_message=response)
 
-    tokens = request.args.get('tokens')
-    if tokens:
-        tokens = tokens.split(',')
-        for token in tokens:
-            try:
-                order_product = order_product_deserialize(token)
-                if order_product.order.event.id == event.id:
-                    form[order_product.product.product_key].partner_token.data = token
-                    form[order_product.product.product_key].dance_role.data = flip_role(order_product.details_as_dict['dance_role'])
-                    form[order_product.product.product_key].add.data = 1
-            except BadSignature:
-                pass
+    # tokens = request.args.get('tokens')
+    # if tokens:
+    #     tokens = tokens.split(',')
+    #     for token in tokens:
+    #         try:
+    #             order_product = order_product_deserialize(token)
+    #             if order_product.order.event.id == event.id:
+    #                 form[order_product.product.product_key].partner_token.data = token
+    #                 form[order_product.product.product_key].dance_role.data = flip_role(order_product.details_as_dict['dance_role'])
+    #                 form[order_product.product.product_key].add.data = 1
+    #         except BadSignature:
+    #             pass
     form_controller = MtsSignupFormController(form)
-    return render_template('events/{}/signup.html'.format(event_key), event=event, form=form, config=config, form_controller=form_controller)
+    return render_template('events/{}/signup_vue.html'.format(event_key), event=event, form=form, config=config, form_controller=form_controller)
 
 
 @app.route('/register/checkout/<string:event_key>', methods=['POST'])
@@ -138,6 +138,66 @@ def register_checkout(event_key, validate='novalidate'):
         return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
         return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
+        print(
+            form.name.data,
+            request.remote_addr,
+            [(payment_item.product.name, price_filter(payment_item.amount), payment_item.product.status) for payment_item in order_summary_controller.payment_items]
+
+        )
+    else:
+        form_errors_controller = FormErrorController(form)
+        return_dict['order_summary_html'] = render_template('form_errors.html',
+                                                            form_errors=form_errors_controller)
+        return_dict['errors'] = {v:k for v,k in form_errors_controller.errors}
+        return_dict['disable_checkout'] = True
+    return jsonify(return_dict)
+
+
+@app.route('/register/checkout_vue/<string:event_key>', methods=['POST'])
+@app.route('/register/checkout_vue/<string:event_key>/<validate>', methods=['POST'])
+def register_checkout_vue(event_key, validate='novalidate'):
+    event = Event.query.filter_by(event_key=event_key).first()
+    form = create_event_form(event)()
+
+    return_dict = dict(errors={})
+
+    if validate == 'validate':
+        form_check = form.validate_on_submit
+    else:
+        form_check = form.is_submitted
+
+    if form_check():
+        registration = get_registration_from_form(form)
+        registration.event_id = event.id
+        partner_registration = get_partner_registration_from_form(form)
+        partner_registration.event_id = event.id
+        if event_key == 'mind_the_shag_2018':
+            user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+        # else:
+        #     user_order = get_order_for_event(event, form, registration, partner_registration)
+        return_dict['stripe'] = get_stripe_properties(event, user_order, form)
+        order_summary_controller = OrderSummaryController(user_order)
+        return_dict['order_summary_html'] = minify(render_template('order_summary.html',
+                                                            order_summary_controller=order_summary_controller), remove_comments=True, remove_empty_space=True)
+        return_dict['validated_partner_tokens'] = get_validated_partner_tokens(form)
+        return_dict['disable_checkout'] = user_order.order_products.count() == 0
+        return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
+
+        if event_key == 'mind_the_shag_2018':
+            form_controller = MtsSignupFormController(form)
+            return_dict['state_data'] = form_controller.get_state_dict(event)
+
+            if return_dict['state_data']['group'].get('group_token_error'):
+                return_dict['errors']['Group token'] = return_dict['state_data']['group'].get('group_token_error')
+
+            if return_dict['state_data']['group'].get('group_new_error'):
+                return_dict['errors']['New group'] = return_dict['state_data']['group'].get('group_new_error')
+
+            if form_controller.not_enough_stations_selected:
+                return_dict['errors']['Full weekend pass'] = 'Not enough stations selected: %s of 3' % form_controller.selected_stations_count
+
+        if validate == 'validate' and not return_dict['errors']:
+            return_dict['checkout_success'] = True
         print(
             form.name.data,
             request.remote_addr,
