@@ -1,0 +1,1084 @@
+{% extends "signup.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% macro mts_weekend_ticket(product_key, icon) %}
+    {% set form_field = form.get_product_by_key(product_key) %}
+    <slt-mts-weekend-ticket
+            input-name="{{ form_field.add.id }}"
+            v-model="selection_weekend.{{product_key}}"
+            @change="val => { onWeekendSelect('{{product_key}}', val) }"
+            price="{{ form_field.price | price_int }}"
+            icon="{{icon}}"
+            title="{{ form_field.product_name }}">
+        {{ form_field.info }}
+    </slt-mts-weekend-ticket>
+{% endmacro %}
+{% macro mts_party_ticket(product_key, icon) %}
+    {% set form_field = form.get_product_by_key(product_key) %}
+    <slt-mts-party-ticket
+            input-name="{{ form_field.add.id }}"
+            v-model="selection_parties.{{product_key}}"
+            price="{{ form_field.price | price_int }}"
+            date="{{form_field.party_date}}"
+            :partner-mode="partnerMode"
+            :fixed="fixed.{{product_key}}"
+            title="{{ form_field.product_name }}">
+        {{ form_field.info }}
+    </slt-mts-party-ticket>
+{% endmacro %}
+{% macro mts_station(product_key) %}
+    {% set form_field = form.get_product_by_key(product_key) %}
+    <slt-mts-station
+            input-name="{{ form_field.add.id }}"
+            v-model="selection_stations.{{product_key}}"
+            time="{{form_field.workshop_time}}"
+            teachers="{{form_field.workshop_teachers}}"
+            lines="{{form_field.workshop_level}}"
+            :available="products.{{product_key}}.available"
+            :waiting-list-leader="products.{{product_key}}.waitingList.leader"
+            :waiting-list-follower="products.{{product_key}}.waitingList.follower"
+            :waiting-list-leader-with-partner="products.{{product_key}}.waitingList.leaderWithPartner"
+            :waiting-list-follower-with-partner="products.{{product_key}}.waitingList.followerWithPartner"
+            :partner-mode="partnerMode"
+            :fixed="fixed.{{product_key}}"
+            title="{{ form_field.product_name }}">
+        {{form_field.info}}
+    </slt-mts-station>
+{% endmacro %}
+
+{% block styles %}
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/cosmo/bootstrap.min.css" rel="stylesheet" integrity="sha384-52tWTPZ1e5eK+C2aGPCgDjrEgVkKMO+0qDuRNj3tS2EugIrICHWqkGuLu442CP2S" crossorigin="anonymous">-->
+    <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/materia/bootstrap.min.css" rel="stylesheet" integrity="sha384-R+kYzDq5OFDdI+l7v1cirgERabnAjhsBDXv0qCEtj+6z2r8BO2glDZzj49QgdxEj" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/sandstone/bootstrap.min.css" rel="stylesheet" integrity="sha384-edd69ybiwhmqlbDyKzPlHgWOcJrJhTgKQx1B2gD2yZArS8Qn2oTOYg+9X2AZRNDr" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/sketchy/bootstrap.min.css" rel="stylesheet" integrity="sha384-9BaUahJwNez+jmowV4jSdSdZIlie6a+VnhBnuzVvBPdvUPC3dDLYIg31Tgw5UzLP" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/yeti/bootstrap.min.css" rel="stylesheet" integrity="sha384-02r837f/s1bBitm4EH65RIncWtMiZuhCgUp9H4txuXwrPXSwn+vQ5YF9KqryUe7z" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/lumen/bootstrap.min.css" rel="stylesheet" integrity="sha384-rGAkR2qts0FfeepPEwAKdA+KLiTct+OBJ7ukPPivL86aKZa39nuOS0Yj6Sy8ebLR" crossorigin="anonymous">-->
+    <!--<link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/slate/bootstrap.min.css" rel="stylesheet" integrity="sha384-nu0Rfs+Ud66mJzSLRuWBCMvk17+i5WBRPdLmS2djwI7YXUHlBLBsc1dHdgPyLsFO" crossorigin="anonymous">-->
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0-beta.2/united/bootstrap.min.css" rel="stylesheet" integrity="sha384-lZV2BQHhlIeSX0KKlcV52T0RM5GEd+q4DbVOu45FyIjjgDGbbaHaVMkUMviDDeOU" crossorigin="anonymous">
+    <!--<link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap@next/dist/css/bootstrap.min.css"/>-->
+    <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
+    <link type="text/css" rel="stylesheet" href="//getbootstrap.com/assets/css/docs.min.css"/>
+<style>
+header {
+    background-image:url(/static/events/mind_the_shag_2018/event_cover.jpg);
+    background-repeat:no-repeat;
+    background-attachment:scroll;
+    background-position:center center;
+    -webkit-background-size:cover;
+    -moz-background-size:cover;
+    background-size:cover;
+    -o-background-size:cover;
+    text-align:center;
+}
+header .intro-text {
+    padding-top: 100px;
+    padding-bottom: 50px
+}
+
+@media (max-width: 400px) {
+  .btn-responsive {
+    white-space: normal;
+    font-size:75%;
+  }
+}
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+<div id="salty_app">
+
+    <header class="bg-dark text-light">
+        <div class="container">
+          <div class="intro-text">
+              <h3 class="display-5">6-8 April 2018</h3>
+              <h3 class="display-5">London</h3>
+              <h2 class="display-4"><a class="text-light" href="http://mindtheshag.co.uk">Mind the Shag</a></h2>
+          </div>
+        </div>
+    </header>
+    <header class="sticky-top bg-dark py-1 mb-1">
+        <div class="container">
+            <div class="row">
+                <div class="col-3"><h3 class="display-5">
+                    <a href="#order_summary_container" id="order_summary_total" class="text-white">Total: [[ checkout.total ]]</a>
+                </h3></div>
+                <div class="col">
+                    <button type="button"
+                            class="btn btn-dark btn-outline-light button-checkout"
+                            @click="updateData(doCheckout=true)"
+                            :disabled="disableCheckout">
+                        <i class="fa fa-shopping-cart fa-fw" aria-hidden="true"></i>
+                        <span class="checkout-text">Checkout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+     <form class="form form-vertical" method="post" role="form">
+        <div id="form_fields">
+            <!--<slt-group-form v-bind="group"></slt-group-form>-->
+            <slt-mts-group-form
+                    :token-invalid-feedback="group.group_token_error"
+                    :token-valid-feedback="group.group_token_found"
+                    :new-group-invalid-feedback="group.group_new_error"
+                    @change="updateData()"></slt-mts-group-form>
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <h3 >Weekend Tickets</h3>
+                    <div class="card-deck my-2">
+                    {{ mts_weekend_ticket('full_weekend_ticket', icon='ticket') }}
+                    {{ mts_weekend_ticket('full_weekend_ticket_no_parties', icon='ticket') }}
+                    </div>
+                    <div class="card-deck my-2">
+                    {{ mts_weekend_ticket('fast_train_to_collegiate_shag', icon='subway') }}
+                    {{ mts_weekend_ticket('fast_train_to_collegiate_shag_no_parties', icon='subway') }}
+                    </div>
+                    <div class="card-deck my-2">
+                    {{ mts_weekend_ticket('fast_train_to_st_louis_shag', icon='subway') }}
+                    {{ mts_weekend_ticket('fast_train_to_st_louis_shag_no_parties', icon='subway') }}
+                    </div>
+                    {{ mts_weekend_ticket('parties_only', icon='ticket') }}
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <div class="bd-callout bd-callout-warning">
+                        <h4><fa-icon name="info"></fa-icon> Waiting Lists</h4>
+
+                        <p>Please note that the button colors below indicate whether there is a waiting list at a station for a particular role.</p>
+                        <p><button class="btn btn-sm btn-outline-success"  type="button">Follower</button> - no waiting list</p>
+                        <p><button class="btn btn-sm btn-outline-warning"  type="button">Follower</button> - there is waiting list</p>
+                        <p>If you get on the waiting list, you can cancel the wait listed station and get refunded any time. However the accepted stations cannot be cancelled/refunded.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <h3 >Saturday Classes</h3>
+                    <table class="table bg-primary">
+                        <tbody>
+                        <tr>
+                            <td class="w-25"></td>
+                            <td class="w-25">{{ mts_station('st_louis_shag_essence') }}</td>
+                            <td class="w-25">{{ mts_station('flea_hops_tricks') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="w-25">{{ mts_station('shag_roots') }}</td>
+                            <td class="w-25">{{ mts_station('pocket_rocket_shag') }}</td>
+                            <td class="w-25">{{ mts_station('superman_circle_pit') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="w-25">{{ mts_station('rising_shag') }}</td>
+                            <td class="w-25">{{ mts_station('rockabilly_bopper_shag') }}</td>
+                            <td class="w-25"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <h3 >Sunday Classes</h3>
+                    <table class="table bg-primary">
+                        <tbody>
+                        <tr>
+                            <td class="w-25"></td>
+                            <td class="w-25"></td>
+                            <td class="w-25">{{ mts_station('swing_out_like_you_re_from_st_louis') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="w-25">{{ mts_station('christian_jenny_s_original_shag_moves') }}</td>
+                            <td class="w-25">{{ mts_station('rhythm_shag') }}</td>
+                            <td class="w-25">{{ mts_station('tandem_time') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="w-25"></td>
+                            <td class="w-25">{{ mts_station('momentum_madness') }}</td>
+                            <td class="w-25">{{ mts_station('phony_boy') }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <h3 >Parties</h3>
+                    <div class="card-deck mt-2">
+                    {{ mts_party_ticket('friday_party') }}
+                    {{ mts_party_ticket('saturday_party') }}
+                    {{ mts_party_ticket('sunday_party') }}
+                    </div>
+                </div>
+            </div>
+
+           <div class="container-fluid">
+               <div class="container">
+                   <div class="card bg-light text-black">
+                       <div class="card-body">
+                           <h2> Your details</h2>
+          {{ form.hidden_tag() }}
+          {{ form.stripe_token }}
+                           <b-input-group class="my-2">
+                                <b-input-group-addon><fa-icon name="user"></fa-icon></b-input-group-addon>
+                                <b-form-input id="{{form.name.id}}" class="form-control"
+                                              name="{{form.name.id}}" placeholder="Your name" @change="updateData()"></b-form-input>
+                           </b-input-group>
+                           <b-input-group class="my-2">
+                                <b-input-group-addon><fa-icon name="envelope"></fa-icon></b-input-group-addon>
+                                <b-form-input id="{{form.email.id}}" class="form-control"
+                                              name="{{form.email.id}}" placeholder="Your email"></b-form-input>
+                           </b-input-group>
+                           <slt-input-location name-city="city" name-state="state" name-country="country"></slt-input-location>
+
+                           <div v-if="requiresPartner">
+                               <div class="form-group">{{ form.dance_role.label.text }}{{ form.dance_role(class='form-control') }}</div>
+
+                               <h2> Your partner details</h2>
+                               <small>(*If you are buying tickets for yourself and for your partner)</small>
+                               <b-input-group class="my-2">
+                                    <b-input-group-addon><fa-icon name="user"></fa-icon></b-input-group-addon>
+                                    <b-form-input id="{{form.partner_name.id}}" class="form-control"
+                                                  name="{{form.partner_name.id}}" placeholder="Your partner name"></b-form-input>
+                               </b-input-group>
+                               <b-input-group class="my-2">
+                                    <b-input-group-addon><fa-icon name="envelope"></fa-icon></b-input-group-addon>
+                                    <b-form-input id="{{form.partner_email.id}}" class="form-control"
+                                                  name="{{form.partner_email.id}}" placeholder="Your partner email"></b-form-input>
+                               </b-input-group>
+                               <slt-input-location name-city="partner_city" name-state="partner_state" name-country="partner_country"></slt-input-location>
+                           </div>
+                            <hr>
+                           <textarea class="form-control" id="comment"
+                                          name="comment" placeholder="Any comments"></textarea>
+
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+
+        </div>
+     </form>
+
+    <div class="container-fluid" id="order_summary_container">
+       <div class="container my-4">
+            <div class="card card-default">
+                <div class="card-body">
+                    <h4 class="card-title">Order Summary</h4>
+                    <div id="order_summary" v-html="orderSummaryHtml"></div>
+                    <div class="form-group form-vertical">
+                        <button type="button"
+                                class="btn btn-lg btn-responsive btn-success form-control button-checkout"
+                                @click="updateData(doCheckout=true)"
+                                :disabled="disableCheckout">
+                            <i class="fa fa-shopping-cart fa-fw" aria-hidden="true"></i>
+                            <span class="checkout-text">Checkout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+       </div>
+    </div>
+
+    <b-modal  size="lg" ref="checkoutModal" hide-footer title="Checkout">
+      <div class="d-block">
+          <h3><fa-icon name="shopping-cart"></fa-icon> Order Summary</h3>
+          <div id="order_summary_modal" v-html="orderSummaryHtml"></div>
+          <button class="btn btn-success my-4" @click="pay()"><fa-icon name="credit-card"></fa-icon> Register and pay</button>
+      </div>
+    </b-modal>
+
+    <b-modal  size="lg" ref="errorsModal" hide-footer title="There are some errors!">
+      <div class="d-block text-danger">
+          <ul class="list-group">
+              <li class="list-group-item list-group-item-danger" v-for="(error_value, error_key) in errors"><b>[[error_key]]</b>: [[ error_value ]]</li>
+          </ul>
+      </div>
+    </b-modal>
+
+</div>
+
+{#
+<div class="container my-4">
+    <button class="btn btn-danger btn-lg" onclick="console.log($('form').serialize());">DEBUG FORM</button>
+</div>
+#}
+{% endblock %}
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+<script src="//unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+<script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://checkout.stripe.com/checkout.js"></script>
+
+{# ================================================================================================================== #}
+{# ================================================================================================================== #}
+{#                                  VUE COMPONENTS                                                                    #}
+{# ================================================================================================================== #}
+{# ================================================================================================================== #}
+
+
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: fa-icon                                                            #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+<script>
+
+Vue.component('fa-icon', {
+  template: '<i :class="classStr" aria-hidden="true"></i>',
+  props: ['name'],
+  computed: {
+    classStr: function() { return 'fa fa-fw fa-' + this.name; }
+  },
+  delimiters: ['[[',']]']
+})
+</script>
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-input-location                                                 #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-input-location-template">
+<b-form-group
+  :invalid-feedback="locationInvalidFeedback"
+  :valid-feedback="locationValidFeedback"
+  :state="state"
+  class="my-3"
+>
+    <b-input-group>
+        <b-input-group-addon><fa-icon name="map-marker"></fa-icon></b-input-group-addon>
+        <b-form-input placeholder="Location (country, state, city, etc.)" v-model="locationQuery"></b-form-input>
+    </b-input-group>
+    <input type="hidden" :name="nameCity" v-if="nameCity" :value="locationCity">
+    <input type="hidden" :name="nameState" v-if="nameState" :value="locationState">
+    <input type="hidden" :name="nameCountry" v-if="nameCountry" :value="locationState">
+    <input type="hidden" :name="nameLocation" v-if="nameLocation" :value="locationFull">
+</b-form-group>
+</script>
+
+<script>
+Vue.component('slt-input-location', {
+    template: '#slt-input-location-template',
+    props: ['nameCity', 'nameState', 'nameCountry', 'nameLocation', 'value', 'options', 'size'],
+    data: function() {
+        return {
+            locationQuery: null,
+            locationFull: null,
+            locationCity: null,
+            locationState: null,
+            locationCountry: null,
+            locationInvalidFeedback: null,
+            locationValidFeedback: null,
+            lastQuery: null,
+        }
+    },
+    methods: {
+        updateLocation: function() {
+            console.log('start location query: ', this.locationQuery);
+            if (this.locationQuery) {
+                if (this.locationQuery != this.lastQuery) {
+                    var url = 'https://nominatim.openstreetmap.org/search/' + encodeURI(this.locationQuery) +'?format=json&addressdetails=1&limit=1&accept-language=en';
+                    console.log(url);
+                    axios.get(url)
+                    .then(response => {
+                        this.lastQuery = this.locationQuery;
+                        if(response.data.length > 0) {
+                            this.locationFull = response.data[0]['display_name'];
+
+                            var data_address = response.data[0]['address'];
+                            this.locationCountry = data_address['country'];
+                            if ('state' in data_address) { this.locationState = data_address['state'];}
+
+                            if ('city' in data_address) { this.locationCity = data_address['city'];}
+                            else if ('town' in data_address) { this.locationCity = data_address['town'];}
+                            else if ('village' in data_address) { this.locationCity = data_address['village'];}
+                            else if ('county' in data_address) { this.locationCity = data_address['county'];}
+
+                            this.locationInvalidFeedback = null;
+                            this.locationValidFeedback = this.locationFull;
+                        } else {
+                            this.locationInvalidFeedback = 'Location not found...';
+                            this.locationValidFeedback = null;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        this.locationInvalidFeedback = 'Location service error...';
+                        this.locationValidFeedback = null;
+                    });
+                }
+            } else {
+                this.locationInvalidFeedback = null;
+                this.locationValidFeedback = null;
+
+                this.locationFull = null;
+                this.locationCity = null;
+                this.locationState = null;
+                this.locationCountry = null;
+
+                this.lastQuery = null;
+            }
+        }
+    },
+    watch: {
+        locationQuery: function() {
+            setTimeout(function() {this.updateLocation()}.bind(this), 2000)
+        }
+    },
+    computed: {
+        state: function () {
+            if (this.locationInvalidFeedback) {
+                return false;
+            } else if (this.locationFull) {
+                return true;
+            } else return null;
+        }
+    },
+    delimiters: ['[[',']]']
+});
+</script>
+
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-mts-group-form                                                 #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-mts-group-form-template">
+    <div class="container-fluid">
+        <div class="container my-4">
+          <b-card bg-variant="light" text-variant="black">
+            <h3 class="card-title">
+                <fa-icon name="users"></fa-icon>
+                Are you part of a group?
+            </h3>
+              <p class="card-text ma-4 mb-2">Members of groups having 3 and more couples coming from outside London get a £10 discount for the Full Weekend and Fast Train tickets</p>
+              <input type="hidden" name="group_discount-group_participation" :value="choice">
+            <b-tabs class="mb-4" pills v-model="tabIndex">
+              <b-tab title="Join Existing Group" title-link-class="btn-outline-dark">
+                  <b-form-group
+                      id="group_discount-group_token-fieldset"
+                      label-for="group_discount-group_token"
+                      :invalid-feedback="tokenInvalidFeedback"
+                      :valid-feedback="tokenValidFeedback"
+                      :state="tokenState"
+                      class="my-3"
+                  >
+                    <b-input-group>
+                        <b-input-group-addon><fa-icon name="key"></fa-icon></b-input-group-addon>
+                        <b-form-input id="group_discount-group_token" :state="tokenState" v-model.trim="groupToken"
+                                      name="group_discount-group_token" placeholder="Group code (grp_ABCdE)"></b-form-input>
+                    </b-input-group>
+                  </b-form-group>
+              </b-tab>
+              <b-tab title="Create New Group" title-link-class="btn-outline-dark">
+                  <b-form-group
+                      id="group_discount-group_name-fieldset"
+                      label-for="group_discount-group_name"
+                      :invalid-feedback="newGroupInvalidFeedback"
+                      valid-feedback="New group OK!"
+                      :state="newGroupState"
+                      class="my-3"
+                  >
+                    <b-input-group>
+                        <b-input-group-addon><fa-icon name="users"></fa-icon></b-input-group-addon>
+                        <b-form-input id="group_discount-group_name" :state="tokenState" v-model.trim="groupName"
+                                      name="group_discount-group_name" placeholder="Group name"></b-form-input>
+                    </b-input-group>
+                  </b-form-group>
+                  <slt-input-location name-location="group_discount-location"></slt-input-location>
+                  <textarea class="form-control" id="group_discount-group_description"
+                                          name="group_discount-group_description" placeholder="Group description"></textarea>
+              </b-tab>
+            </b-tabs>
+          </b-card>
+        </div>
+    </div>
+</script>
+<script>
+Vue.component('slt-mts-group-form', {
+  template: '#slt-mts-group-form-template',
+  props: ['tokenInvalidFeedback', 'tokenValidFeedback', 'newGroupInvalidFeedback'],
+  data: function () {
+      return {
+        tabIndex: 0,
+        groupName: null,
+        groupToken: null,
+      };
+  },
+  computed: {
+    choice: function() {
+        return ['existing', 'new'][this.tabIndex];
+    },
+    tokenState : function() {
+        if (this.tokenInvalidFeedback) {
+            return false;
+        } else if (this.tokenValidFeedback) {
+            return true;
+        } else {
+            return null;
+        }
+    },
+    newGroupState : function() {
+        if (this.newGroupInvalidFeedback) {
+            return false;
+        } else if (this.groupName) {
+            return true;
+        } else {
+            return null;
+        }
+    },
+  },
+  watch: {
+    groupName: function() {this.$emit('change', this.groupName)},
+    groupToken: function() {this.$emit('change', this.groupToken)},
+  },
+  delimiters: ['[[',']]']
+})
+</script>
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-radiobutton                                                    #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-radiobutton-template">
+  <div>
+    <b-button-group :size="size">
+      <b-button v-for="btn in options"
+                :pressed.sync="btn.state"
+                :variant="btn.variant"
+                :disabled="btn.disabled"
+                :key="btn.value"
+                @click="updateSelection(btn.value)"
+      >
+        [[ btn.caption ]]
+      </b-button>
+    </b-button-group>
+      <input type="hidden" :name="name" :value="value" v-if="value">
+  </div>
+</script>
+
+<script>
+Vue.component('slt-radiobutton', {
+    template: '#slt-radiobutton-template',
+    props: ['name', 'value', 'options', 'size', 'fixed'],
+    watch: {
+        value: function() {
+            for(i=0;i<this.options.length;i++) {
+                if ( this.options[i].value == this.value ) {
+                    this.options[i].state = true;
+                } else {
+                    this.options[i].state = false;
+                }
+            }
+        }
+    },
+    methods: {
+        updateSelection: function (val) {
+            if (this.value == val) {
+                if (!this.fixed) {
+                    this.value = null;
+                    this.$emit('input', null);
+                }
+            } else {
+                this.value = val;
+                this.$emit('input', String(this.value));
+            }
+        }
+    },
+    delimiters: ['[[',']]']
+});
+</script>
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-mts-weekend-ticket                                             #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-mts-weekend-ticket-template">
+<b-card :bg-variant="cardStyle[0]" :text-variant="cardStyle[1]">
+    <h5 class="card-title"><fa-icon :name="icon"></fa-icon> [[title]]
+        <span class="badge badge-light float-right">[[price]]</span></h5>
+    <p class="card-text"><small><slot></slot></small></p>
+    <slt-radiobutton :name="inputName" :options="buttonOptions" v-model="choice"></slt-radiobutton>
+</b-card>
+</script>
+
+<script>
+Vue.component('slt-mts-weekend-ticket', {
+  template: '#slt-mts-weekend-ticket-template',
+  props: {
+    price: {type: String},
+    icon: {default:'ticket', type: String},
+    inputName: {type:String},
+    title: {type:String},
+    choice: {type:String},
+  },
+  model: {
+    prop: 'choice',
+    event: 'input',
+  },
+  computed: {
+        cardStyle: function() {
+           if( this.choice ) {
+                return ['dark', 'light'];
+           } else {
+                return ['info', 'light'];
+           }
+        }
+  },
+  data: function() {
+    return {
+        buttonOptions: [
+            {variant: 'outline-light', caption: 'One Ticket', value: 'single', state: this.choice=='single', disabled: false },
+            {variant: 'outline-light', caption: 'Two Tickets', value: 'couple', state: this.choice=='couple', disabled: false },
+        ]
+    }
+  },
+  watch: {
+    choice: function() {
+        this.$emit('input', this.choice);
+        this.$emit('change', this.choice);
+    }
+  },
+  delimiters: ['[[',']]']
+})
+</script>
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-mts-party-ticket                                               #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-mts-party-ticket-template">
+<b-card :bg-variant="cardStyle[0]" :text-variant="cardStyle[1]">
+    <h5 class="card-title"><fa-icon name="lock" v-if="fixed"></fa-icon> [[title]]
+        <span class="badge badge-light float-right">[[price]]</span></h5>
+    <small><fa-icon name="calendar"></fa-icon> [[ date ]]</small><br>
+    <p class="card-text"><slot></slot></p>
+    <slt-radiobutton :name="inputName" :options="buttonOptions" :fixed="fixed" v-model="choice" size="sm"></slt-radiobutton>
+</b-card>
+</script>
+
+<script>
+Vue.component('slt-mts-party-ticket', {
+  template: '#slt-mts-party-ticket-template',
+  props: {
+    price: {type: String},
+    inputName: {type:String},
+    title: {type:String},
+    date: {type:String},
+    choice: {type:String},
+    partnerMode: {type:String, default:null},
+    fixed: {type:Boolean, default:false},
+  },
+  model: {
+    prop: 'choice',
+    event: 'input',
+  },
+  computed: {
+        cardStyle: function() {
+           if( this.choice ) {
+                return ['dark', 'light'];
+           } else {
+                return ['info', 'light'];
+           }
+        },
+        buttonOptions: function() {
+            if (this.partnerMode == 'single') {
+                if (this.choice ) this.choice = 'single';
+            } else if (this.partnerMode == 'couple') {
+                if (this.choice ) this.choice = 'couple';
+            }
+
+            buttons = [
+                {variant: 'outline-light', caption: 'One Ticket', value: 'single', state: this.choice=='single', disabled: false },
+                {variant: 'outline-light', caption: 'Two Tickets', value: 'couple', state: this.choice=='couple', disabled: false },
+            ]
+
+            // partner mode: single, couple or none
+            if (this.partnerMode == 'single') {
+                buttons[0].disabled = false;
+                buttons[1].disabled = true;
+            } else if (this.partnerMode == 'couple') {
+                buttons[0].disabled = true;
+                buttons[1].disabled = false;
+            } else {
+                buttons[0].disabled = false;
+                buttons[1].disabled = false;
+            }
+
+            return buttons;
+        }
+  },
+  watch: {
+    choice: function() {
+        this.$emit('input', this.choice);
+        this.$emit('change', this.choice);
+    }
+  },
+  delimiters: ['[[',']]']
+})
+</script>
+
+{# ------------------------------------------------------------------------------------------------------------------ #}
+{#                                  Vue Component: slt-mts-station                                                    #}
+{# ------------------------------------------------------------------------------------------------------------------ #}
+
+<script type="text/x-template" id="slt-mts-station-template">
+<b-card no-body :bg-variant="cardStyle[0]" :text-variant="cardStyle[1]">
+    <div class="card-body">
+        <span class="close" :id="inputName + '-info'"><fa-icon name="info-circle"></fa-icon></span>
+        <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
+        <h5 class="card-title"><fa-icon name="lock" v-if="fixed"></fa-icon> [[title]]</h5>
+        <slt-radiobutton :name="inputName" :options="buttonOptions" :fixed="fixed" v-model="choice" size="sm" v-if="!soldOut"></slt-radiobutton>
+    </div>
+    <div class="card-footer">
+        <small class="text-muted"><fa-icon name="clock-o"></fa-icon> [[ time ]]</small>
+        <small class="text-muted"><fa-icon name="id-badge"></fa-icon> [[ teachers ]]</small><br>
+        <b-badge pill v-for="line in lineBadges" :variant="line.variant">[[line.name]]</b-badge>
+        <br v-if="availableWarningText">
+        <b-badge :variant="availableWarningStyle" v-if="availableWarningText">
+          <fa-icon name="exclamation-circle"></fa-icon> [[availableWarningText]]
+        </b-badge>
+    </div>
+</b-card>
+</script>
+
+<script>
+Vue.component('slt-mts-station', {
+  template: '#slt-mts-station-template',
+  props: {
+    price: {type: String},
+    icon: {default:'ticket', type: String},
+    inputName: {type:String},
+    title: {type:String},
+    lines: {type:String},
+    available: {type:Number},
+    waitingListLeader: {type:Number, default:0},
+    waitingListFollower: {type:Number, default:0},
+    waitingListLeaderWithPartner: {type:Number, default:0},
+    waitingListFollowerWithPartner: {type:Number, default:0},
+    time: {type:String},
+    teachers: {type:String},
+    choice: {type:String},
+    partnerMode: {type:String, default:null},
+    fixed: {type:Boolean, default:false},
+  },
+  model: {
+    prop: 'choice',
+    event: 'input',
+  },
+  computed: {
+        cardStyle: function() {
+           if( this.soldOut ) {
+                return ['secondary', 'black'];
+           } else if( this.choice ) {
+                return ['dark', 'light'];
+           } else {
+                return ['light', 'black'];
+           }
+        },
+        lineBadges: function (){
+            linesArr = this.lines.split(',');
+            badges = [];
+            mapping = {
+                'Jitterbug': 'success',
+                'Collegiate': 'warning',
+                'Collegiate Super': 'warning',
+                'St.Louis': 'primary',
+            };
+            for(i=0;i<linesArr.length;i++) {
+                badges.push({name: linesArr[i], variant: mapping[linesArr[i]]});
+            }
+            return badges;
+        },
+        availableWarningStyle: function () {
+            if (this.available <= 0) {
+                return 'light';
+            } else {
+                return 'danger';
+            }
+        },
+        availableWarningText: function () {
+            if (this.available > 15) {
+                return '';
+            } else if (this.available <= 0) {
+                return 'SOLD OUT...';
+            } else if (this.available == 1) {
+                return 'LAST PLACE!!!';
+            } else {
+                return 'Just '+this.available+' places left!';
+            }
+        },
+        soldOut: function() {
+            return this.available <= 0;
+        },
+        buttonOptions: function() {
+            if (this.partnerMode == 'single') {
+                if (this.choice == 'couple') this.choice = 'leader';
+            } else if (this.partnerMode == 'couple') {
+                if (this.choice ) this.choice = 'couple';
+            }
+
+            buttons = [
+                {variant: 'outline-success', caption: 'Leader', value: 'leader', state: this.choice=='leader', disabled: false },
+                {variant: 'outline-success', caption: 'Follower', value: 'follower', state: this.choice=='follower', disabled: false },
+                {variant: 'outline-success', caption: 'Couple', value: 'couple', state: this.choice=='couple', disabled: false },
+            ]
+
+            if (this.soldOut) {
+                for (i=0;i<buttons.length;i++) {
+                    buttons[i].disabled = true;
+                }
+            }
+
+            if (this.waitingListLeader) {
+                buttons[0].variant = 'outline-warning';
+            }
+            if (this.waitingListFollower) {
+                buttons[1].variant = 'outline-warning';
+            }
+            if (this.waitingListLeaderWithPartner + this.waitingListFollowerWithPartner) {
+                buttons[2].variant = 'outline-warning';
+            }
+
+            // partner mode: single, couple or none
+            if (this.partnerMode == 'single') {
+                buttons[0].disabled = false;
+                buttons[1].disabled = false;
+                buttons[2].disabled = true;
+            } else if (this.partnerMode == 'couple') {
+                buttons[0].disabled = true;
+                buttons[1].disabled = true;
+                buttons[2].disabled = false;
+            } else {
+                buttons[0].disabled = false;
+                buttons[1].disabled = false;
+                buttons[2].disabled = false;
+            }
+
+            return buttons;
+        }
+  },
+  watch: {
+    choice: function() {
+        this.$emit('input', this.choice);
+        this.$emit('change', this.choice);
+    }
+  },
+  delimiters: ['[[',']]']
+})
+</script>
+
+
+{# ================================================================================================================== #}
+{# ================================================================================================================== #}
+{#                                         VUE APP                                                                    #}
+{# ================================================================================================================== #}
+{# ================================================================================================================== #}
+
+
+<script>
+
+
+var salty_app = new Vue({
+  el: '#salty_app',
+
+  data: {
+    errors: {},
+    checkout : {
+       total: '£0',
+    },
+    group: {
+        group_token_error: null,
+        group_token_found: null,
+        group_new_error: null,
+    },
+    selection_weekend: { {%for key in form_controller.weekend_ticket_keys %}
+        {{ key }}: null, {% endfor %}
+    },
+    selection_stations: { {%for key in form_controller.station_keys %}
+        {{ key }}: null, {% endfor %}
+    },
+    selection_parties: { {%for key in form_controller.party_ticket_keys %}
+        {{ key }}: null, {% endfor %}
+    },
+    orderSummaryHtml: '',
+    disableCheckout: true,
+    products: { {% for product_key in form.product_keys %}
+        {{ product_key }}: {
+            available: 999,
+            keywords: [],
+            includes: [],
+            waitingList: {
+                leader: null,
+                follower: null,
+                leaderWithPartner: null,
+                followerWithPartner: null,
+            },
+        }, {% endfor %}
+    },
+    fixed: {},
+    stripeData: {},
+    refreshed: true,
+  },
+
+  computed: {
+    requiresPartner: function() {
+        for (key in this.selection_weekend) {
+            if (this.selection_weekend[key] == 'couple') return true;
+        }
+        for (key in this.selection_stations) {
+            if (this.selection_stations[key] == 'couple') return true;
+        }
+        for (key in this.selection_parties) {
+            if (this.selection_parties[key] == 'couple') return true;
+        }
+        return false;
+    },
+    partnerMode: function() {
+        for (key in this.selection_weekend) {
+            if (this.selection_weekend[key]) return this.selection_weekend[key];
+        }
+        return null;
+    },
+  },
+
+  watch: {
+    selection_weekend: {
+        handler: function (val, oldVal) {
+            setTimeout(function() {this.updateData()}.bind(this), 500);
+        },
+        deep: true,
+    },
+    selection_stations: {
+        handler: function (val, oldVal) {
+            setTimeout(function() {this.updateData()}.bind(this), 500);
+        },
+        deep: true,
+    },
+    selection_parties: {
+        handler: function (val, oldVal) {
+            setTimeout(function() {this.updateData()}.bind(this), 500);
+        },
+        deep: true,
+    },
+  },
+
+  methods: {
+    onWeekendSelect: function(product_key, value) {
+        if (this.selection_weekend[product_key]) {
+            for (var key in this.selection_weekend) {
+                if(key != product_key && this.selection_weekend[key]) {
+                    this.selection_weekend[key] = null;
+                    this.updateWeekendIncludes(key, null);
+                }
+            }
+            this.updateWeekendIncludes(product_key, value);
+        }
+        //this.updateData();
+    },
+    updateWeekendIncludes: function(weekendProductKey, value) {
+        if(!value) this.fixed = {};
+
+        for(i=0; i<this.products[weekendProductKey].includes.length; i++) {
+            tag = this.products[weekendProductKey].includes[i];
+            console.log(tag);
+            for (productKey in this.products) {
+                if ( this.products[productKey].keywords.indexOf(tag) > -1 ) {
+                    console.log('Setting ', productKey, value);
+                    if (productKey in this.selection_stations) {
+                        if (value == 'single') {stationValue='leader'}
+                        else {stationValue = value}
+                        this.selection_stations[productKey] = stationValue;
+                        if(value) this.fixed[productKey] = true;
+                    } else if (productKey in this.selection_parties) {
+                        this.selection_parties[productKey] = value;
+                        if(value) this.fixed[productKey] = true;
+                    }
+                }
+            }
+        }
+    },
+    updateData: function(doCheckout=false) {
+        if (doCheckout) {
+            var url = "{{ url_for('register_checkout_vue', event_key=event.event_key, validate='validate') }}";;
+        } else {
+            var url = "{{ url_for('register_checkout_vue', event_key=event.event_key) }}"; // send the form data here.
+        }
+        console.log($('form').serialize());
+        this.refreshed = false;
+        setTimeout( function() {
+            axios.post(url, $('form').serialize())
+                    .then(function(response) {
+                        console.log(response.data);  // display the returned data in the console.
+                        //console.log(this.checkout);
+                        if (response.data.order_summary_total) this.checkout.total = response.data.order_summary_total;
+                        this.orderSummaryHtml = response.data.order_summary_html;
+                        this.disableCheckout = response.data.disable_checkout;
+                        this.stripeData = response.data.stripe;
+                        this.errors = response.data.errors;
+                        if (response.data.state_data) {
+                            if (response.data.state_data.group) this.group = response.data.state_data.group;
+                            this.products = response.data.state_data.products;
+                        }
+
+                        if(doCheckout) {
+                            if(response.data.checkout_success) { this.processCheckout(); }
+                            else { this.$refs.errorsModal.show(); }
+                        }
+                    }.bind(this).bind(doCheckout))
+                    .catch(function (error) {
+                        console.log(error);
+                    });
+            }.bind(this).bind(doCheckout), 2000);
+    },
+    processCheckout: function() {
+        this.$refs.checkoutModal.show();
+    },
+    pay: function() {
+            var handler = StripeCheckout.configure({
+              key: '{{ config.STRIPE_PK }}',
+              image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+              locale: 'auto',
+              token: function(token) {
+                // You can access the token ID with `token.id`.
+                // Get the token ID to your server-side code for use.
+                //console.log(token)
+                $('#{{ form.stripe_token.id }}').val(token.id);
+                $('form').submit()
+              }
+            });
+
+            handler.open({
+                name: 'Salty Jitterbugs Ltd.',
+                description: '{{ event.name | safe}}',
+                currency: 'gbp',
+                amount: this.stripeData.amount,
+                email: this.stripeData.email,
+                zipCode: true,
+                billingAddress: true,
+                allowRememberMe: false
+            })
+    }
+  },
+
+  created: function() { this.updateData() },
+
+  delimiters: ['[[',']]']
+})
+</script>
+
+{% endblock %}
