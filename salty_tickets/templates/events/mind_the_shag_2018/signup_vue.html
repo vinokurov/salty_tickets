@@ -61,9 +61,12 @@
     <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
     <link type="text/css" rel="stylesheet" href="//getbootstrap.com/assets/css/docs.min.css"/>
 <style>
-body {
-    min-width: 900px;
+body{
+   min-width:1000px; /* suppose you want minimum width of 1000px */
+   width: auto !important;  /* Firefox will set width as auto */
+   width:1000px;             /* As IE ignores !important it will set width as 1000px; */
 }
+
 header {
     background-image:url(/static/events/mind_the_shag_2018/event_cover.jpg);
     background-repeat:no-repeat;
