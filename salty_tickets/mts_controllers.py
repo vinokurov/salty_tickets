@@ -1,3 +1,4 @@
+from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
 from salty_tickets.tokens import GroupToken
 
@@ -198,5 +199,128 @@ class MtsSignupFormController:
     @staticmethod
     def location_str(country, state, city):
         return ', '.join([v for v in [country, state, city] if v])
+
+
+    def get_state_dict(self, event):
+        state_dict = dict(
+            checkout=dict(total=1),
+            group=dict(
+                group_token_error='',
+                group_token_found='',
+                group_new_error='',
+            ),
+            products=dict(),
+            total_stations=self.total_stations(event),
+        )
+
+        if self.group_form.group_participation.data == 'existing':
+            group = self.get_group(event)
+            if group:
+                state_dict['group']['group_token_found'] = 'Group found: %s!' % group.name
+            elif self.group_form.group_token.data:
+                state_dict['group']['group_token_error'] = 'Incorrect group token'
+        elif self.group_form.group_participation.data == 'new':
+            if self.group_form.group_name.data:
+                if RegistrationGroup.query.filter_by(name=self.group_form.group_name.data.strip()).count() > 0:
+                    state_dict['group']['group_new_error'] = 'Group already exists'
+
+        # add products
+        for product_key in self.form.product_keys:
+            product_form = self.form.get_product_by_key(product_key)
+            product_dict = dict(
+                available=999,
+                keywords=[],
+                includes=[],
+                waitingList=dict(
+                    leader=0,
+                    follower=0,
+                    leaderWithPartner=0,
+                    followerWithPartner=0,
+                )
+            )
+            if hasattr(product_form, 'available_quantity'):
+                product_dict['available'] = product_form.available_quantity
+            elif product_key.startswith('fast_train'):
+                product_dict['available'] = self.get_fast_train_available(product_key)
+            elif product_key.startswith('full_weekend'):
+                product_dict['available'] = self.get_full_weekend_available()
+
+            if hasattr(product_form, 'keywords'):
+                product_dict['keywords'] = product_form.keywords.split(',')
+
+            if hasattr(product_form, 'includes'):
+                product_dict['includes'] = product_form.includes.split(',')
+
+            if hasattr(product_form, 'waiting_lists'):
+                waiting_lists = product_form.waiting_lists
+                product_dict['waitingList']['leader'] = waiting_lists[0]['leader']
+                product_dict['waitingList']['follower'] = waiting_lists[0]['follower']
+                product_dict['waitingList']['leaderWithPartner'] = waiting_lists[1]['leader']
+                product_dict['waitingList']['followerWithPartner'] = waiting_lists[1]['follower']
+
+            state_dict['products'][product_key] = product_dict
+
+        return state_dict
+
+
+    @property
+    def weekend_ticket_keys(self):
+        keys = [pk for pk in self.form.product_keys if pk.startswith('full_weekend') or pk.startswith('fast_train') or pk.startswith('parties')]
+        return keys
+
+    @property
+    def party_ticket_keys(self):
+        keys = [pk for pk in self.form.product_keys if pk.endswith('_party')]
+        return keys
+
+    @property
+    def station_keys(self):
+        weekend_ticket_keys = self.weekend_ticket_keys
+        party_ticket_keys = self.party_ticket_keys
+        keys = [pk for pk in self.form.product_keys if pk not in weekend_ticket_keys and pk not in party_ticket_keys]
+        return keys
+
+    @property
+    def not_enough_stations_selected(self):
+        if self.full_pass_selected:
+            print(self.selected_stations_count)
+            return self.selected_stations_count < 3
+
+    def total_stations(self, event):
+        total_blocks = OrderProduct.query.join(Order, aliased=False).filter_by(status='paid').join(
+            Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
+        return total_blocks
+
+    def get_fast_train_available(self, weekend_ticket_key):
+        weekend_ticket_form = self.form.get_product_by_key(weekend_ticket_key)
+        includes = weekend_ticket_form.includes.split(',')
+        available_items = []
+        for product_key in self.form.product_keys:
+            product_form = self.form.get_product_by_key(product_key)
+            if set(product_form.keywords.split(',')).intersection(includes):
+                if hasattr(product_form, 'available_quantity'):
+                    available_items.append(product_form.available_quantity)
+        return min(available_items)
+
+    def get_full_weekend_available(self):
+        available_slots_dict = {}
+        for product_key in self.form.product_keys:
+            product_form = self.form.get_product_by_key(product_key)
+            if product_form.product_type == 'RegularPartnerWorkshop':
+                key = product_form.workshop_date + ' ' + product_form.workshop_time
+                available_slots_dict[key] = available_slots_dict.get(key, 0) + product_form.available_quantity
+
+        available_slots = sorted(available_slots_dict.values())
+
+        available = 0
+        while len(available_slots) >= 3:
+            available += available_slots[0]
+            available_slots[2] -= available_slots[0]
+            available_slots[1] -= available_slots[0]
+            available_slots[0] -= available_slots[0]
+            available_slots = [x for x in available_slots if x]
+
+        return available
+
 
 
