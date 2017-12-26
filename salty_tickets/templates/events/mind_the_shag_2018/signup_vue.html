@@ -6,6 +6,7 @@
             input-name="{{ form_field.add.id }}"
             v-model="selection_weekend.{{product_key}}"
             @change="val => { onWeekendSelect('{{product_key}}', val) }"
+            :available="products.{{product_key}}.available"
             price="{{ form_field.price | price_int }}"
             icon="{{icon}}"
             title="{{ form_field.product_name }}">
@@ -640,9 +641,15 @@ Vue.component('slt-radiobutton', {
 <script type="text/x-template" id="slt-mts-weekend-ticket-template">
 <b-card :bg-variant="cardStyle[0]" :text-variant="cardStyle[1]">
     <h5 class="card-title"><fa-icon :name="icon"></fa-icon> [[title]]
-        <span class="badge badge-light float-right">[[price]]</span></h5>
-    <p class="card-text"><small><slot></slot></small></p>
-    <slt-radiobutton :name="inputName" :options="buttonOptions" v-model="choice"></slt-radiobutton>
+        <span class="badge badge-light float-right">[[price]]</span>
+    </h5>
+    <p class="card-text">
+        <b-badge variant="light float-right" v-if="available<100">
+          <fa-icon name="ticket"></fa-icon> [[availableText]]
+        </b-badge>
+        <small><slot></slot></small>
+    </p>
+    <slt-radiobutton :name="inputName" :options="buttonOptions" v-model="choice" v-if="!soldOut"></slt-radiobutton>
 </b-card>
 </script>
 
@@ -655,19 +662,32 @@ Vue.component('slt-mts-weekend-ticket', {
     inputName: {type:String},
     title: {type:String},
     choice: {type:String},
+    available: {type:Number},
   },
   model: {
     prop: 'choice',
     event: 'input',
   },
   computed: {
+        soldOut: function () {
+            return this.available <= 0;
+        },
         cardStyle: function() {
+           if (this.soldOut) return ['secondary', 'light'];
+
            if( this.choice ) {
                 return ['dark', 'light'];
            } else {
                 return ['info', 'light'];
            }
-        }
+        },
+        availableText: function() {
+            if (this.available  > 0) {
+                return 'available: ' + this.available;
+            } else {
+                return 'SOLD OUT...';
+            }
+        },
   },
   data: function() {
     return {

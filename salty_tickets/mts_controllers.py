@@ -237,6 +237,10 @@ class MtsSignupFormController:
             )
             if hasattr(product_form, 'available_quantity'):
                 product_dict['available'] = product_form.available_quantity
+            elif product_key.startswith('fast_train'):
+                product_dict['available'] = self.get_fast_train_available(product_key)
+            elif product_key.startswith('full_weekend'):
+                product_dict['available'] = self.get_full_weekend_available()
 
             if hasattr(product_form, 'keywords'):
                 product_dict['keywords'] = product_form.keywords.split(',')
@@ -283,3 +287,37 @@ class MtsSignupFormController:
         total_blocks = OrderProduct.query.join(Order, aliased=False).filter_by(status='paid').join(
             Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
         return total_blocks
+
+    def get_fast_train_available(self, weekend_ticket_key):
+        weekend_ticket_form = self.form.get_product_by_key(weekend_ticket_key)
+        includes = weekend_ticket_form.includes.split(',')
+        available_items = []
+        for product_key in self.form.product_keys:
+            product_form = self.form.get_product_by_key(product_key)
+            if set(product_form.keywords.split(',')).intersection(includes):
+                if hasattr(product_form, 'available_quantity'):
+                    available_items.append(product_form.available_quantity)
+        return min(available_items)
+
+    def get_full_weekend_available(self):
+        available_slots_dict = {}
+        for product_key in self.form.product_keys:
+            product_form = self.form.get_product_by_key(product_key)
+            if product_form.product_type == 'RegularPartnerWorkshop':
+                key = product_form.workshop_date + ' ' + product_form.workshop_time
+                available_slots_dict[key] = available_slots_dict.get(key, 0) + product_form.available_quantity
+
+        available_slots = sorted(available_slots_dict.values())
+
+        available = 0
+        while len(available_slots) >= 3:
+            available += available_slots[0]
+            available_slots[2] -= available_slots[0]
+            available_slots[1] -= available_slots[0]
+            available_slots[0] -= available_slots[0]
+            available_slots = [x for x in available_slots if x]
+
+        return available
+
+
+
