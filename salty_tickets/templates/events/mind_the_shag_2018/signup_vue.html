@@ -105,7 +105,7 @@ header .intro-text {
               <h2 class="display-4"><a class="text-light" href="http://mindtheshag.co.uk">Mind the Shag</a></h2>
               <center><div class="card bg-dark border-light text-ligh text-centert" style="width: 45rem;">
                   <div class="card-body">
-                      Station tickets booked: <b class="h1">[[ totalStations ]]</b>
+                      Station tickets booked: <b class="h1">[[ totalStationsAnimated ]]</b>
                       out of total: <b class="h1">435</b>
                       current tariff: <b class="h1">Off Peak</b>
                   </div>
@@ -351,6 +351,7 @@ header .intro-text {
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <script src="https://checkout.stripe.com/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tween.js@16.3.4"></script>
 
 {# ================================================================================================================== #}
 {# ================================================================================================================== #}
@@ -961,6 +962,7 @@ var salty_app = new Vue({
     stripeData: {},
     refreshed: true,
     totalStations: 0,
+    totalStationsAnimated: 0,
   },
 
   computed: {
@@ -1002,6 +1004,24 @@ var salty_app = new Vue({
             setTimeout(function() {this.updateData()}.bind(this), 500);
         },
         deep: true,
+    },
+    totalStations: function(newValue, oldValue) {
+      var vm = this
+      function animate () {
+        if (TWEEN.update()) {
+          requestAnimationFrame(animate)
+        }
+      }
+
+      new TWEEN.Tween({ tweeningNumber: oldValue })
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ tweeningNumber: newValue }, 500)
+        .onUpdate(function () {
+          vm.totalStationsAnimated = this.tweeningNumber.toFixed(0)
+        })
+        .start()
+
+      animate()
     },
   },
 
