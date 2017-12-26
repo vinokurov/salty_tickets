@@ -5,7 +5,7 @@
     <slt-mts-weekend-ticket
             input-name="{{ form_field.add.id }}"
             v-model="selection_weekend.{{product_key}}"
-            @change="val => { onWeekendSelect('{{product_key}}', val) }"
+            @change="(newVal, oldVal) => { onWeekendSelect('{{product_key}}', newVal, oldVal) }"
             :available="products.{{product_key}}.available"
             price="{{ form_field.price | price_int }}"
             icon="{{icon}}"
@@ -698,9 +698,9 @@ Vue.component('slt-mts-weekend-ticket', {
     }
   },
   watch: {
-    choice: function() {
-        this.$emit('input', this.choice);
-        this.$emit('change', this.choice);
+    choice: function(newChoice, oldChoice) {
+        this.$emit('input', newChoice);
+        this.$emit('change', newChoice, oldChoice);
     }
   },
   delimiters: ['[[',']]']
@@ -1056,27 +1056,30 @@ var salty_app = new Vue({
                     this.updateWeekendIncludes(key, null);
                 }
             }
+            setTimeout(function() {this.updateWeekendIncludes(product_key, value)}.bind(this).bind(value), 100);
+        } else {
             this.updateWeekendIncludes(product_key, value);
         }
         //this.updateData();
     },
     updateWeekendIncludes: function(weekendProductKey, value) {
         if(!value) this.fixed = {};
-
         for(i=0; i<this.products[weekendProductKey].includes.length; i++) {
             tag = this.products[weekendProductKey].includes[i];
             //console.log(tag);
-            for (productKey in this.products) {
-                if ( this.products[productKey].keywords.indexOf(tag) > -1 ) {
-                    //console.log('Setting ', productKey, value);
-                    if (productKey in this.selection_stations) {
-                        if (value == 'single') {stationValue='leader'}
-                        else {stationValue = value}
-                        this.selection_stations[productKey] = stationValue;
-                        if(value) this.fixed[productKey] = true;
-                    } else if (productKey in this.selection_parties) {
-                        this.selection_parties[productKey] = value;
-                        if(value) this.fixed[productKey] = true;
+            if (tag) {
+                for (productKey in this.products) {
+                    if ( this.products[productKey].keywords.indexOf(tag) > -1 ) {
+                        //console.log('Setting ', productKey, value);
+                        if (productKey in this.selection_stations) {
+                            if (value == 'single') {stationValue='leader'}
+                            else {stationValue = value}
+                            this.selection_stations[productKey] = stationValue;
+                            if(value) this.fixed[productKey] = true;
+                        } else if (productKey in this.selection_parties) {
+                            this.selection_parties[productKey] = value;
+                            if(value) this.fixed[productKey] = true;
+                        }
                     }
                 }
             }
@@ -1114,7 +1117,7 @@ var salty_app = new Vue({
                     .catch(function (error) {
                         console.log(error);
                     });
-            }.bind(this).bind(doCheckout), 2000);
+            }.bind(this).bind(doCheckout), 500);
     },
     processCheckout: function() {
         this.$refs.checkoutModal.show();
