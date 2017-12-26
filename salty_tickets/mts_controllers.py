@@ -1,4 +1,4 @@
-from salty_tickets.models import RegistrationGroup
+from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
 from salty_tickets.tokens import GroupToken
 
@@ -207,6 +207,7 @@ class MtsSignupFormController:
                 group_new_error='',
             ),
             products=dict(),
+            total_stations=self.total_stations(event),
         )
 
         if self.group_form.group_participation.data == 'existing':
@@ -277,3 +278,8 @@ class MtsSignupFormController:
         if self.full_pass_selected:
             print(self.selected_stations_count)
             return self.selected_stations_count < 3
+
+    def total_stations(self, event):
+        total_blocks = OrderProduct.query.join(Order, aliased=False).filter_by(status='paid').join(
+            Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
+        return total_blocks
