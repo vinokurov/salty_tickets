@@ -61,6 +61,8 @@
     <link type="text/css" rel="stylesheet" href="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
     <link type="text/css" rel="stylesheet" href="//getbootstrap.com/assets/css/docs.min.css"/>
 <style>
+[v-cloak] { display:none; }
+
 body{
    min-width:1000px; /* suppose you want minimum width of 1000px */
    width: auto !important;  /* Firefox will set width as auto */
@@ -103,7 +105,7 @@ header .intro-text {
               <h3 class="display-5">6-8 April 2018</h3>
               <h3 class="display-5">London</h3>
               <h2 class="display-4"><a class="text-light" href="http://mindtheshag.co.uk">Mind the Shag</a></h2>
-              <center><div class="card bg-dark border-light text-ligh text-centert" style="width: 45rem;">
+              <center><div class="card bg-dark border-light text-ligh text-centert" style="width: 45rem;" v-cloak>
                   <div class="card-body">
                       Station tickets booked: <b class="h1">[[ totalStationsAnimated ]]</b>
                       out of total: <b class="h1">435</b>
@@ -117,7 +119,7 @@ header .intro-text {
         <div class="container">
             <div class="row">
                 <div class="col-3"><h3 class="display-5">
-                    <a href="#order_summary_container" id="order_summary_total" class="text-white">Total: [[ checkout.total ]]</a>
+                    <a href="#order_summary_container" id="order_summary_total" class="text-white" v-cloak>Total: [[ checkout.total ]]</a>
                 </h3></div>
                 <div class="col">
                     <button type="button"
