@@ -8,6 +8,7 @@ class MtsSignupFormController:
     STATION_WAITING_CARD_STYLE = 'text-warning bg-dark'
     STATION_PRESELECTED_ACCEPTED_CARD_STYLE = 'text-success bg-dark border-light'
     STATION_PRESELECTED_WAITING_CARD_STYLE = 'text-warning bg-dark border-light'
+    STATION_SOULD_OUT = 'bg-secondary text-light'
 
     TICKET_DEFAULT_CARD_STYLE = 'bg-info text-light'
     TICKET_SELECTED_CARD_STYLE = 'bg-dark text-light'
@@ -17,6 +18,8 @@ class MtsSignupFormController:
 
     def station_card_style(self, form_control):
         selection_value = form_control.add.data
+        if form_control.available_quantity <= 0:
+            return self.STATION_SOULD_OUT
         if self.is_station_preselected(form_control):
             weekend_selection = self.weekend_ticket.add.data
             if weekend_selection == FESTIVAL_TICKET.COUPLE:

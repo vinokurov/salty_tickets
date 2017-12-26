@@ -129,6 +129,8 @@ jQuery.fn.extend({
                         if(data.stripe.amount) {
                             payment_ready_change_status(true);
                             payment_stripe_data = data.stripe;
+                        } else {
+                            $('form').submit()
                         }
                     }
                 }

@@ -166,6 +166,7 @@
                    <div class="card-body">
                        <h5 class="card-title">{% if form_controller.is_station_preselected(form_field) %}<i class="fa fa-fw fa-lock" aria-hidden="true"></i> {%endif%}{{ form_field.product_name }}</h5>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span><br>-->
+                       {% if form_field.available_quantity > 0 %}
                        <div class="btn-group" data-toggle="buttons">
                             {% for radio_value, radio_label, radio_bool in form_controller.iter_station_choices(form_field) %}
                                 {% if radio_value == '' %}
@@ -186,13 +187,18 @@
                                 {% endif %}
                             {% endfor %}
                        </div>
+                       {% endif %}
                    </div>
                    <div class="card-footer">
                         <small class="text-muted"><i class="fa fa-clock-o fa-fw" aria-hidden="true"></i> {{ form_field.workshop_time }}</small>
                         <small class="text-muted"><i class="fa fa-id-badge fa-fw" aria-hidden="true"></i> {{ form_field.workshop_teachers }}</small><br>
                        <!--<span class="badge badge-pill badge-info">{{ form_field.workshop_level }}</span>-->
                        {{form_controller.line_badges(form_field) | safe}}
-                       {% if form_field.available_quantity <= 15 %}
+                       {% if form_field.available_quantity <= 0 %}
+                        <br><span class="badge badge-danger"><i class="fa fa-fw fa-exclamation-circle" aria-hidden="true"></i> SOLD OUT...</span>
+                       {% elif form_field.available_quantity == 1 %}
+                        <br><span class="badge badge-danger"><i class="fa fa-fw fa-exclamation-circle" aria-hidden="true"></i> Last place!!!</span>
+                       {% elif form_field.available_quantity <= 15 %}
                         <br><span class="badge badge-danger"><i class="fa fa-fw fa-exclamation-circle" aria-hidden="true"></i> Just {{ form_field.available_quantity }} places left!</span>
                        {% endif %}
                    </div>

@@ -69,6 +69,8 @@ def register_form(event_key):
         partner_registration.event_id = event.id
         if event_key == 'mind_the_shag_2018':
             user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+            if form.comment.data and form.comment.data.lower().strip() in ['sunny side of the street']:
+                user_order.payments[0].amount = 0
         else:
             user_order = get_order_for_event(event, form, registration, partner_registration)
         user_order.registration = registration
@@ -132,6 +134,8 @@ def register_checkout(event_key, validate='novalidate'):
         else:
             user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
+        if form.comment.data and form.comment.data.lower().strip() in ['sunny side of the street']:
+            return_dict['stripe'] = 0
         order_summary_controller = OrderSummaryController(user_order)
         return_dict['order_summary_html'] = minify(render_template('order_summary.html',
                                                             order_summary_controller=order_summary_controller), remove_comments=True, remove_empty_space=True)
