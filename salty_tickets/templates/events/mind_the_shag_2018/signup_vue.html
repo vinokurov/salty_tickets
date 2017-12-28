@@ -41,6 +41,7 @@
             :waiting-list-follower-with-partner="products.{{product_key}}.waitingList.followerWithPartner"
             :partner-mode="partnerMode"
             :fixed="fixed.{{product_key}}"
+            :is-fast-train="products.{{product_key}}.keywords[0].length > 0"
             title="{{ form_field.product_name }}">
         {{form_field.info}}
     </slt-mts-station>
@@ -109,7 +110,7 @@ header .intro-text {
               <center><div class="card bg-dark border-light text-ligh text-centert" style="width: 45rem;" v-cloak>
                   <div class="card-body">
                       Station tickets booked: <b class="h1">[[ totalStationsAnimated ]]</b>
-                      out of total: <b class="h1">435</b>
+                      remaining: <b class="h1">[[ remainingStationsAnimated ]]</b>
                       current tariff: <b class="h1">Off Peak</b>
                   </div>
               </div></center>
@@ -186,6 +187,43 @@ header .intro-text {
                         <p><button class="btn btn-sm btn-outline-success"  type="button">Follower</button> - no waiting list</p>
                         <p><button class="btn btn-sm btn-outline-warning"  type="button">Follower</button> - there is waiting list</p>
                         <p>If you get on the waiting list, you can cancel the wait listed station and get refunded any time. However the accepted stations cannot be cancelled/refunded.</p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <div class="bd-callout bd-callout-info">
+                        <h4><fa-icon name="map-pin"></fa-icon> Line Definitions</h4>
+                        <table class="table">
+                        <tbody>
+                        <tr>
+                            <td class="text-right"><b-badge pill variant="warning">Collegiate</b-badge></td>
+                            <td><small>These stations require a certain level of Shag dancing.
+                                You should be taking Shag classes regularly, have the rhythm in your muscle memory,
+                                know the standard moves and be able to dance confidently socially</small></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right"><b-badge pill variant="warning">Collegiate Super</b-badge></td>
+                            <td><small>Requires even more experience than "Collegiate"</small></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right"><b-badge pill variant="primary">St.Louis</b-badge></td>
+                            <td><small>Prior knowledge of St.Louis Shag is recommended</small></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right"><b-badge pill variant="success">Jitterbug</b-badge></td>
+                            <td><small>Stations of this line even if combined with any other line
+                                are available for experienced Swing dancers,
+                                who don't know Shag or want to review their basics</small></td>
+                        </tr>
+                        <tr>
+                            <td class="text-right"><fa-icon name="subway"></fa-icon></td>
+                            <td><small>These stations can be booked as part of a Fast Train ticket</small></td>
+                        </tr>
+                        </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -797,6 +835,7 @@ Vue.component('slt-mts-party-ticket', {
     <div class="card-footer">
         <small class="text-muted"><fa-icon name="clock-o"></fa-icon> [[ time ]]</small>
         <small class="text-muted"><fa-icon name="id-badge"></fa-icon> [[ teachers ]]</small><br>
+        <span v-if="isFastTrain"><fa-icon name="subway"></fa-icon> </span>
         <b-badge pill v-for="line in lineBadges" :variant="line.variant">[[line.name]]</b-badge>
         <br v-if="availableWarningText">
         <b-badge :variant="availableWarningStyle" v-if="availableWarningText">
@@ -820,6 +859,7 @@ Vue.component('slt-mts-station', {
     waitingListFollower: {type:Number, default:0},
     waitingListLeaderWithPartner: {type:Number, default:0},
     waitingListFollowerWithPartner: {type:Number, default:0},
+    isFastTrain: {type:Boolean, default:false},
     time: {type:String},
     teachers: {type:String},
     choice: {type:String},
@@ -985,6 +1025,8 @@ var salty_app = new Vue({
     refreshed: true,
     totalStations: 0,
     totalStationsAnimated: 0,
+    remainingStations: 435,
+    remainingStationsAnimated:435,
   },
 
   computed: {
@@ -1040,6 +1082,24 @@ var salty_app = new Vue({
         .to({ tweeningNumber: newValue }, 500)
         .onUpdate(function () {
           vm.totalStationsAnimated = this.tweeningNumber.toFixed(0)
+        })
+        .start()
+
+      animate()
+    },
+    remainingStations: function(newValue, oldValue) {
+      var vm = this
+      function animate () {
+        if (TWEEN.update()) {
+          requestAnimationFrame(animate)
+        }
+      }
+
+      new TWEEN.Tween({ tweeningNumber: oldValue })
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .to({ tweeningNumber: newValue }, 500)
+        .onUpdate(function () {
+          vm.remainingStationsAnimated = this.tweeningNumber.toFixed(0)
         })
         .start()
 
@@ -1107,6 +1167,7 @@ var salty_app = new Vue({
                             if (response.data.state_data.group) this.group = response.data.state_data.group;
                             this.products = response.data.state_data.products;
                             this.totalStations = response.data.state_data.total_stations;
+                            this.remainingStations = response.data.state_data.remaining_stations;
                         }
 
                         if(doCheckout) {
