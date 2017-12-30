@@ -1197,16 +1197,20 @@ var salty_app = new Vue({
               }
             });
 
-            handler.open({
-                name: 'Salty Jitterbugs Ltd.',
-                description: '{{ event.name | safe}}',
-                currency: 'gbp',
-                amount: this.stripeData.amount,
-                email: this.stripeData.email,
-                zipCode: true,
-                billingAddress: true,
-                allowRememberMe: false
-            })
+            if (this.stripeData.amount > 0) {
+                handler.open({
+                    name: 'Salty Jitterbugs Ltd.',
+                    description: '{{ event.name | safe}}',
+                    currency: 'gbp',
+                    amount: this.stripeData.amount,
+                    email: this.stripeData.email,
+                    zipCode: true,
+                    billingAddress: true,
+                    allowRememberMe: false
+                })
+            } else {
+                $('form').submit();
+            }
     }
   },
 
