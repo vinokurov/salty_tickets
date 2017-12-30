@@ -187,6 +187,11 @@ def register_checkout_vue(event_key, validate='novalidate'):
         return_dict['disable_checkout'] = user_order.order_products.count() == 0
         return_dict['order_summary_total'] = price_filter(order_summary_controller.total_to_pay)
 
+        # adding validate form errors to the response to get the CSRF error early
+        if not form.validate():
+            form_errors_controller = FormErrorController(form)
+            return_dict['errors'] = {v: k for v, k in form_errors_controller.errors}
+
         if event_key == 'mind_the_shag_2018':
             form_controller = MtsSignupFormController(form)
             return_dict['state_data'] = form_controller.get_state_dict(event)
