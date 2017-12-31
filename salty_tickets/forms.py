@@ -43,6 +43,7 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     partner_country = StringField('Partner\'s Country')
     partner_state = StringField('Partner\'s State')
     partner_city = StringField('Partner\'s City')
+    registration_token = StringField('Registration Code')
 
 
 class CrowdfundingSignupForm(SignupForm, FormWithProducts):

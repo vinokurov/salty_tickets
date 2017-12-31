@@ -16,7 +16,8 @@ from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
     mts_get_order_for_event, process_mts_group_registrations
 from salty_tickets.products import flip_role
-from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
+from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize, \
+    RegistrationToken
 from sqlalchemy import desc
 from werkzeug.utils import redirect
 from htmlmin import minify
@@ -171,12 +172,37 @@ def register_checkout_vue(event_key, validate='novalidate'):
         form_check = form.is_submitted
 
     if form_check():
-        registration = get_registration_from_form(form)
-        registration.event_id = event.id
-        partner_registration = get_partner_registration_from_form(form)
-        partner_registration.event_id = event.id
+        reg_dict = {
+            'token_valid': None,
+            'registration_name': None,
+            'registration_email': None,
+            'partner_registration_name': None,
+            'partner_registration_email': None
+        }
+        if form.registration_token.data:
+            try:
+                reg_token_helper = RegistrationToken()
+                registration = reg_token_helper.deserialize(form.registration_token.data)
+                reg_dict['token_valid'] = True
+                reg_dict['registration_name'] = registration.name
+                reg_dict['partner_registration_email'] = registration.email
+
+            except:
+                reg_dict['token_valid'] = False
+                registration = get_registration_from_form(form)
+                registration.event_id = event.id
+                partner_registration = get_partner_registration_from_form(form)
+                partner_registration.event_id = event.id
+
+        else:
+            registration = get_registration_from_form(form)
+            registration.event_id = event.id
+            partner_registration = get_partner_registration_from_form(form)
+            partner_registration.event_id = event.id
         if event_key == 'mind_the_shag_2018':
             user_order = mts_get_order_for_event(event, form, registration, partner_registration)
+
+        return_dict['existing_registration'] = reg_dict
         # else:
         #     user_order = get_order_for_event(event, form, registration, partner_registration)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)

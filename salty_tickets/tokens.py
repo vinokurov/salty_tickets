@@ -76,16 +76,22 @@ class Token:
 
     @property
     def _serializer(self):
-        return Hashids(self.salt, self.min_length)
+        raise NotImplementedError()
+
+    def _encode(self, obj):
+        raise NotImplementedError()
+
+    def _decode(self, encoded_data):
+        raise NotImplementedError()
 
     def serialize(self, obj):
-        return '{}_{}'.format(self.prefix, self._serializer.encode(obj.id))
+        return '{}_{}'.format(self.prefix, self._encode(obj.id))
 
     def deserialize(self, token_str):
         if not token_str.startswith(self.prefix+'_'):
             raise BadSignature('Invalid token')
         token_body = token_str.split('_')[1]
-        decode_res = self._serializer.decode(token_body)
+        decode_res = self._decode(token_body)
         if decode_res:
             id = decode_res[0]
             return self._retrieve_object(id)
@@ -96,19 +102,54 @@ class Token:
         raise NotImplementedError()
 
 
-class GroupToken(Token):
+class ItsdangerousMixin:
+    salt = 'default'
+
+    @property
+    def _serializer(self):
+        return URLSafeSerializer(SECRET_KEY, salt=self.salt)
+
+    def _encode(self, obj):
+       return self._serializer.dumps(obj.id)
+
+    def _decode(self, encoded_data):
+        return self._serializer.loads(encoded_data)
+
+
+class HashidsMixin:
+    min_length = 5
+    salt = 'default'
+
+    @property
+    def _serializer(self):
+        return Hashids(self.salt, self.min_length)
+
+    def _encode(self, obj):
+        return self._serializer.encode(obj.id)
+
+    def _decode(self, encoded_data):
+        return self._serializer.decode(encoded_data)
+
+
+class GroupToken(HashidsMixin, Token):
     prefix = 'grp'
     salt = SALT_GROUP_TOKEN
     def _retrieve_object(self, id):
         return RegistrationGroup.query.filter_by(id=id).one()
 
 
-class PartnerToken(Token):
+class PartnerToken(HashidsMixin, Token):
     prefix = 'ptn'
     salt = SALT_PARTNER_TOKEN
     def _retrieve_object(self, id):
         return Registration.query.filter_by(id=id).one()
 
+
+class RegistrationToken(ItsdangerousMixin, Token):
+    prefix = 'reg'
+    salt = SALT_PARTNER_TOKEN
+    def _retrieve_object(self, id):
+        return Registration.query.filter_by(id=id).one()
 
 
 
