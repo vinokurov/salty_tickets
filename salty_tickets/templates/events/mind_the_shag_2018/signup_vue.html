@@ -41,7 +41,7 @@
             :waiting-list-follower-with-partner="products.{{product_key}}.waitingList.followerWithPartner"
             :partner-mode="partnerMode"
             :fixed="fixed.{{product_key}}"
-            :is-fast-train="products.{{product_key}}.keywords[0].length > 0"
+            :is-fast-train="products.{{product_key}}.keywords.join().indexOf('fast_train') > -1"
             title="{{ form_field.product_name }}">
         {{form_field.info}}
     </slt-mts-station>
@@ -318,8 +318,8 @@ header .intro-text {
                    <div class="card bg-light text-black">
                        <div class="card-body">
                            <h2> Your details</h2>
-          {{ form.hidden_tag() }}
           {{ form.stripe_token }}
+          {{ form.csrf_token }}
                            <b-input-group class="my-2">
                                 <b-input-group-addon><fa-icon name="user"></fa-icon></b-input-group-addon>
                                 <b-form-input id="{{form.name.id}}" class="form-control"
@@ -1184,13 +1184,19 @@ var salty_app = new Vue({
         } else {
             var url = "{{ url_for('register_checkout_vue', event_key=event.event_key) }}"; // send the form data here.
         }
-        //console.log($('form').serialize());
         this.refreshed = false;
         setTimeout( function() {
-            axios.post(url, $('form').serialize())
+            post_data = $('form').serialize();
+            //console.log(post_data);
+            axios.post(url, post_data)
                     .then(function(response) {
                         //console.log(response.data);  // display the returned data in the console.
                         //console.log(this.checkout);
+                        for(var form_field_id in response.data.errors)
+                        {
+                            // force reload page if CSFR token is expired
+                            if(form_field_id=='csrf_token'){window.location.reload();}
+                        }
                         if (response.data.order_summary_total) this.checkout.total = response.data.order_summary_total;
                         this.orderSummaryHtml = response.data.order_summary_html;
                         this.disableCheckout = response.data.disable_checkout;
@@ -1231,20 +1237,24 @@ var salty_app = new Vue({
               }
             });
 
-            handler.open({
-                name: 'Salty Jitterbugs Ltd.',
-                description: '{{ event.name | safe}}',
-                currency: 'gbp',
-                amount: this.stripeData.amount,
-                email: this.stripeData.email,
-                zipCode: true,
-                billingAddress: true,
-                allowRememberMe: false
-            })
+            if (this.stripeData.amount > 0) {
+                handler.open({
+                    name: 'Salty Jitterbugs Ltd.',
+                    description: '{{ event.name | safe}}',
+                    currency: 'gbp',
+                    amount: this.stripeData.amount,
+                    email: this.stripeData.email,
+                    zipCode: true,
+                    billingAddress: true,
+                    allowRememberMe: false
+                })
+            } else {
+                $('form').submit();
+            }
     }
   },
-
   created: function() { this.updateData() },
+  //mounted: function() { this.$nextTick(function () { this.updateData() }.bind(this)) },
 
   delimiters: ['[[',']]']
 })
