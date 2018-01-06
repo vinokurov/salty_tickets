@@ -2,7 +2,7 @@ from datetime import datetime
 
 from itsdangerous import URLSafeSerializer, BadSignature
 from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER, SALT_GROUP_TOKEN, \
-    SALT_PARTNER_TOKEN
+    SALT_PARTNER_TOKEN, SALT_REGISTRATION_TOKEN
 from salty_tickets.models import OrderProduct, Order, RegistrationGroup, Registration
 from hashids import Hashids
 
@@ -93,7 +93,7 @@ class Token:
         token_body = token_str.split('_')[1]
         decode_res = self._decode(token_body)
         if decode_res:
-            id = decode_res[0]
+            id = decode_res
             return self._retrieve_object(id)
         else:
             raise BadSignature('Invalid token')
@@ -110,7 +110,7 @@ class ItsdangerousMixin:
         return URLSafeSerializer(SECRET_KEY, salt=self.salt)
 
     def _encode(self, obj):
-       return self._serializer.dumps(obj.id)
+       return self._serializer.dumps(obj)
 
     def _decode(self, encoded_data):
         return self._serializer.loads(encoded_data)
@@ -125,10 +125,12 @@ class HashidsMixin:
         return Hashids(self.salt, self.min_length)
 
     def _encode(self, obj):
-        return self._serializer.encode(obj.id)
+        return self._serializer.encode(obj)
 
     def _decode(self, encoded_data):
-        return self._serializer.decode(encoded_data)
+        res = self._serializer.decode(encoded_data)
+        if res:
+            return res[0]
 
 
 class GroupToken(HashidsMixin, Token):
@@ -147,7 +149,7 @@ class PartnerToken(HashidsMixin, Token):
 
 class RegistrationToken(ItsdangerousMixin, Token):
     prefix = 'reg'
-    salt = SALT_PARTNER_TOKEN
+    salt = SALT_REGISTRATION_TOKEN
     def _retrieve_object(self, id):
         return Registration.query.filter_by(id=id).one()
 

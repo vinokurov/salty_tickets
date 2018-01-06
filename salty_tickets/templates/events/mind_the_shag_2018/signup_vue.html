@@ -162,15 +162,18 @@ header .intro-text {
                                   label-for="registration_token"
                                   invalid-feedback="Registration code invalid"
                                   valid-feedback="Registration code valid"
-                                  :state="registration.regData.token_valid"
+                                  :state="existing_registration.token_valid"
                                   class="my-3"
                             >
                                     <b-input-group>
                                         <b-input-group-addon><fa-icon name="key"></fa-icon></b-input-group-addon>
-                                        <b-form-input id="registration_token" v-model.trim="registration.token"
+                                        <b-form-input id="registration_token" v-model.trim="registration_token"
                                                       name="{{form.registration_token.id}}" placeholder="My registration code (reg_ABCdE)"></b-form-input>
                                     </b-input-group>
                             </b-form-group>
+                            <div v-if="existing_registration.token_valid">
+                                <p class="card-text">[[existing_registration.registration_name]], [[existing_registration.registration_email]]</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1019,15 +1022,13 @@ var salty_app = new Vue({
         group_token_found: null,
         group_new_error: null,
     },
-    registration : {
-        token: null,
-        regData: {
-            token_valid: null,
-            registration_name: null,
-            registration_email: null,
-            partner_registration_name: null,
-            partner_registration_email: null,
-        },
+    registration_token: null,
+    existing_registration: {
+        token_valid: null,
+        registration_name: null,
+        registration_email: null,
+        partner_registration_name: null,
+        partner_registration_email: null,
     },
     selection_weekend: { {%for key in form_controller.weekend_ticket_keys %}
         {{ key }}: null, {% endfor %}
@@ -1187,10 +1188,11 @@ var salty_app = new Vue({
         this.refreshed = false;
         setTimeout( function() {
             post_data = $('form').serialize();
-            //console.log(post_data);
+            console.log(post_data);
+            console.log(this.existing_registration);
             axios.post(url, post_data)
                     .then(function(response) {
-                        //console.log(response.data);  // display the returned data in the console.
+                        console.log(response.data);  // display the returned data in the console.
                         //console.log(this.checkout);
                         for(var form_field_id in response.data.errors)
                         {
@@ -1202,12 +1204,13 @@ var salty_app = new Vue({
                         this.disableCheckout = response.data.disable_checkout;
                         this.stripeData = response.data.stripe;
                         this.errors = response.data.errors;
+                        this.existing_registration = response.data.existing_registration;
                         if (response.data.state_data) {
                             if (response.data.state_data.group) this.group = response.data.state_data.group;
                             this.products = response.data.state_data.products;
                             this.totalStations = response.data.state_data.total_stations;
                             this.remainingStations = response.data.state_data.remaining_stations;
-                            this.registration.regData = response.data.state_data.existing_registration;
+                            console.log(this.existing_registration);
                         }
 
                         if(doCheckout) {
@@ -1253,7 +1256,7 @@ var salty_app = new Vue({
             }
     }
   },
-  created: function() { this.updateData() },
+  created: function() { console.log(this.registration);this.updateData() },
   //mounted: function() { this.$nextTick(function () { this.updateData() }.bind(this)) },
 
   delimiters: ['[[',']]']

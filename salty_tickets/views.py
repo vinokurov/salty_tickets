@@ -185,7 +185,9 @@ def register_checkout_vue(event_key, validate='novalidate'):
                 registration = reg_token_helper.deserialize(form.registration_token.data)
                 reg_dict['token_valid'] = True
                 reg_dict['registration_name'] = registration.name
-                reg_dict['partner_registration_email'] = registration.email
+                reg_dict['registration_email'] = registration.email
+                partner_registration = get_partner_registration_from_form(form)
+                partner_registration.event_id = event.id
 
             except:
                 reg_dict['token_valid'] = False
