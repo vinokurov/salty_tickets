@@ -28,7 +28,7 @@
 {% block content %}
 <div class="container">
 <div class="container-fluid small-text">
-    <p>Dear, {{ order_product_controller._order_product.registrations[0].name }}</p>
+    <p>Dear, {{ order_product_controller._order_product.registration.name }}</p>
     <p>With great sadness we confirm that your cancellation request for
         {{order_product_controller._order_product.order.event.name}} - {{order_product_controller._order_product.product.name}}
         has been submitted.</p>

@@ -1,7 +1,7 @@
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
-    Product, Registration, OrderProduct, order_product_registrations_mapping, ORDER_PRODUCT_STATUS_WAITING, \
+    Product, Registration, OrderProduct, ORDER_PRODUCT_STATUS_WAITING, \
     ORDER_STATUS_PAID, Payment, RegistrationGroup, SIGNUP_GROUP_FESTIVAL
 from salty_tickets.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import stripe_amount, update_payment_total
@@ -20,17 +20,17 @@ def get_order_for_event(event, form, registration=None, partner_registration=Non
         if product.is_selected(product_form):
             order_product = product.get_order_product_model(product_model, product_form, form)
             if type(order_product) is list:
-                order_product[0].registrations.append(registration)
-                order_product[1].registrations.append(partner_registration)
+                order_product[0].registration = registration
+                order_product[1].registration = partner_registration
                 user_order.order_products.append(order_product[0])
                 user_order.order_products.append(order_product[1])
             else:
                 # registration_model = get_registration_from_form(form)
-                order_product.registrations.append(registration)
+                order_product.registration = registration
 
                 if product_form.needs_partner():
                     # partner_registration_model = get_partner_registration_from_form(form)
-                    order_product.registrations.append(partner_registration)
+                    order_product.registration = partner_registration
 
                 user_order.order_products.append(order_product)
 
@@ -72,11 +72,11 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
                 if product_form.add.data not in ['0', 'None']:
                     for n in range(int(product_form.add.data)):
                         order_product = product.get_order_product_model(product_model, product_form, form)
-                        order_product.registrations.append(registration)
+                        order_product.registration = registration
                         user_order.order_products.append(order_product)
             else:
                 order_product = product.get_order_product_model(product_model, product_form, form)
-                order_product.registrations.append(registration)
+                order_product.registration = registration
                 user_order.order_products.append(order_product)
 
     products_price = user_order.products_price
@@ -205,8 +205,8 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
                             order_product[0].price = product.get_discount_price_by_key('extra_block')
                             order_product[1].price = product.get_discount_price_by_key('extra_block')
 
-                order_product[0].registrations.append(registration)
-                order_product[1].registrations.append(partner_registration)
+                order_product[0].registration = registration
+                order_product[1].registration = partner_registration
                 user_order.order_products.append(order_product[0])
                 user_order.order_products.append(order_product[1])
             else:
@@ -222,11 +222,11 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
                             order_product.price = product.get_discount_price_by_key('extra_block')
 
                 # registration_model = get_registration_from_form(form)
-                order_product.registrations.append(registration)
+                order_product.registration =registration
 
                 if product_form.needs_partner():
                     # partner_registration_model = get_partner_registration_from_form(form)
-                    order_product.registrations.append(partner_registration)
+                    order_product.registration = partner_registration
 
                 user_order.order_products.append(order_product)
 
@@ -258,9 +258,7 @@ def process_mts_group_registrations(user_order, form):
         else:
             serialiser = GroupToken()
             group = serialiser.deserialize(group_form.group_token.data.strip())
-        registrations = Registration.query.join(order_product_registrations_mapping, aliased=False).\
-            join(OrderProduct, aliased=False).filter_by(order_id=user_order.id).\
-            all()
+        registrations = Registration.query.join(OrderProduct, aliased=False).filter_by(order_id=user_order.id).all()
 
         for reg in registrations:
             reg.registration_group = group

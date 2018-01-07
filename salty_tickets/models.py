@@ -125,6 +125,7 @@ class Registration(Base):
     crowdfunding_registration_properties = relationship('CrowdfundingRegistrationProperties', uselist=False)
     order = relationship('Order', uselist=False)
     registration_group = relationship('RegistrationGroup', uselist=False)
+    order_products = relationship('OrderProduct', lazy='dynamic')
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -162,12 +163,14 @@ class OrderProduct(Base):
     product_id = Column(Integer, ForeignKey('products.id'))
     price = Column(Float, nullable=False)
     status = Column(String(32))
+    registration_id = Column(Integer, ForeignKey('registrations.id'))
 
     details = relationship("OrderProductDetail", lazy='dynamic')
     order = relationship('Order', uselist=False)
     product = relationship('Product', uselist=False)
+    registration = relationship('Registration', uselist=False)
 
-    registrations = relationship('Registration', secondary='order_product_registrations_mapping')
+    # registrations = relationship('Registration', secondary='order_product_registrations_mapping')
     payment_items = relationship('PaymentItem', lazy='dynamic')
 
     def __init__(self, product, price, details_dict=None, **kwargs):
@@ -205,10 +208,10 @@ class OrderProductDetail(Base):
         self.field_value = field_value
         super(OrderProductDetail, self).__init__(**kwargs)
 
-order_product_registrations_mapping = Table('order_product_registrations_mapping', Base.metadata,
-    Column('order_product_id', Integer, ForeignKey('order_products.id')),
-    Column('registration_id', Integer, ForeignKey('registrations.id'))
-    )
+# order_product_registrations_mapping = Table('order_product_registrations_mapping', Base.metadata,
+#     Column('order_product_id', Integer, ForeignKey('order_products.id')),
+#     Column('registration_id', Integer, ForeignKey('registrations.id'))
+#     )
 
 
 class CrowdfundingRegistrationProperties(Base):

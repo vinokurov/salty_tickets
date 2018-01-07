@@ -55,7 +55,7 @@ def send_acceptance_from_waiting_list(order_product):
 
     subj = '{} - {} - You are in!'.format(order_product.order.event.name, order_product.product.name)
 
-    send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, body_html)
+    send_email(EMAIL_FROM, order_product.registration.email, subj, body_text, body_html)
 
 
 def send_acceptance_from_waiting_partner(order_product):
@@ -68,7 +68,7 @@ def send_acceptance_from_waiting_partner(order_product):
 
     subj = '{} - {} - You are in!'.format(order_product.order.event.name, order_product.product.name)
 
-    send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, body_html)
+    send_email(EMAIL_FROM, order_product.registration.email, subj, body_text, body_html)
 
 
 def send_cancellation_request_confirmation(order_product):
@@ -81,4 +81,4 @@ def send_cancellation_request_confirmation(order_product):
 
     subj = '{} - {} - cancellation requested!'.format(order_product.order.event.name, order_product.product.name)
 
-    send_email(EMAIL_FROM, order_product.registrations[0].email, subj, body_text, body_html)
+    send_email(EMAIL_FROM, order_product.registration.email, subj, body_text, body_html)

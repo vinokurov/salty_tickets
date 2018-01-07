@@ -257,7 +257,7 @@ def get_validated_partner_tokens(form):
         if hasattr(product_form, 'partner_token'):
             if product_form.partner_token.data:
                 order_product = order_product_deserialize(product_form.partner_token.data)
-                tokens_data[product_form.partner_token.id] = 'Your partner: {}'.format(order_product.registrations[0].name)
+                tokens_data[product_form.partner_token.id] = 'Your partner: {}'.format(order_product.registration.name)
     return tokens_data
 
 

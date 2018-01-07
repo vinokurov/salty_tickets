@@ -240,7 +240,7 @@ class StrictlyContest(ContestProductMixin, BaseProduct):
         if not order_product_model:
             return self.name
         else:
-            name1 = order_product_model.registrations[0].name
+            name1 = order_product_model.registration.name
             name2 = order_product_model.details_as_dict['partner_name']
             return '{} ({} + {})'.format(self.name, name1, name2)
 
@@ -392,7 +392,7 @@ class RegularPartnerWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, B
         if not order_product_model:
             return self.name
         else:
-            name = order_product_model.registrations[0].name
+            name = order_product_model.registration.name
             role = order_product_model.details_as_dict['dance_role']
             # name2 = order_product_model.registrations[1].name
             if name:
@@ -686,7 +686,7 @@ class CouplesOnlyWorkshop(ProductDiscountPricesMixin, WorkshopProductMixin, Base
         if not order_product_model:
             return self.name
         else:
-            name = order_product_model.registrations[0].name
+            name = order_product_model.registration.name
             role = order_product_model.details_as_dict['dance_role']
             # name2 = order_product_model.registrations[1].name
             return '{} ({} / {})'.format(self.name, name, role)
@@ -896,7 +896,7 @@ class FestivalTicketProduct(BaseProduct):
         if not order_product_model:
             return self.name
         else:
-            name = order_product_model.registrations[0].name
+            name = order_product_model.registration.name
             # name2 = order_product_model.registrations[1].name
             if name:
                 return '{} ({})'.format(self.name, name)
@@ -984,7 +984,7 @@ class FestivalGroupDiscountProduct(BaseProduct):
         if not order_product_model:
             return self.name
         else:
-            name = order_product_model.registrations[0].name
+            name = order_product_model.registration.name
             # name2 = order_product_model.registrations[1].name
             if name:
                 return '{} ({})'.format(self.name, name)

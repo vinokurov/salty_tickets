@@ -1,4 +1,4 @@
-Dear, {{ order_product_controller._order_product.registrations[0].name }}
+Dear, {{ order_product_controller._order_product.registration.name }}
 
 With great sadness we confirm that your cancellation request for {{order_product_controller._order_product.order.event.name}} - {{order_product_controller._order_product.product.name}} has been submitted.
 

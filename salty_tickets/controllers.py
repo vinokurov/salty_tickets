@@ -120,7 +120,7 @@ class OrderProductController:
     def partner_info(self):
         partner_order_product = self.partner_order_product
         if partner_order_product:
-            return MessageController('Partner confirmed: {}'.format(partner_order_product._order_product.registrations[0].name.title()),
+            return MessageController('Partner confirmed: {}'.format(partner_order_product._order_product.registration.name.title()),
                                      status='success', icon='check')
         elif self._order_product.product.type in ('CouplesOnlyWorkshop', 'RegularPartnerWorkshop'):
             token_expiry = self._token_expiry
