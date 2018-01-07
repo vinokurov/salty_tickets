@@ -81,6 +81,14 @@ def create_crowdfunding_form(event):
     setattr(EventForm, 'product_keys', product_keys)
     return EventForm
 
+def get_crowdfunding_registration_from_form(form):
+    assert isinstance(form, SignupForm)
+    registration_model = Registration(
+        name=form.name.data,
+        email=form.email.data,
+        comment=form.comment.data,
+    )
+    return registration_model
 
 def get_registration_from_form(form):
     assert isinstance(form, SignupForm)

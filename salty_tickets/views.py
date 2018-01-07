@@ -7,7 +7,8 @@ from salty_tickets.controllers import OrderSummaryController, OrderProductContro
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
-    get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm
+    get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm, \
+    get_crowdfunding_registration_from_form
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
 from salty_tickets.mts_controllers import MtsSignupFormController
@@ -295,7 +296,7 @@ def crowdfunding_form(event_key):
     total_stats = get_total_raised(event)
 
     if form.validate_on_submit():
-        registration = get_registration_from_form(form)
+        registration = get_crowdfunding_registration_from_form(form)
         registration.crowdfunding_registration_properties = \
                 CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
         # partner_registration = get_partner_registration_from_form(form)
@@ -331,7 +332,7 @@ def crowdfunding_checkout(event_key):
     return_dict = dict(errors={})
 
     if form.validate_on_submit():
-        registration = get_registration_from_form(form)
+        registration = get_crowdfunding_registration_from_form(form)
         user_order = get_order_for_crowdfunding_event(event, form, registration, None)
         return_dict['stripe'] = get_stripe_properties(event, user_order, form)
         order_summary_controller = OrderSummaryController(user_order)
