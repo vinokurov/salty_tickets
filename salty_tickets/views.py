@@ -182,24 +182,25 @@ def register_checkout_vue(event_key, validate='novalidate'):
             'order_products': [],
         }
         if form.registration_token.data:
-            try:
-                reg_token_helper = RegistrationToken()
-                registration = reg_token_helper.deserialize(form.registration_token.data)
-                reg_dict['token_valid'] = True
-                reg_dict['registration_name'] = registration.name
-                reg_dict['registration_email'] = registration.email
-                # reg_dict['order_products'] =
-                partner_registration = MtsSignupFormController.get_regular_partner_registration(registration)
-                if partner_registration:
-                    reg_dict['partner_registration_name'] = partner_registration.name
-                    reg_dict['partner_registration_email'] = partner_registration.email
-
-            except:
-                reg_dict['token_valid'] = False
-                registration = get_registration_from_form(form)
-                registration.event_id = event.id
-                partner_registration = get_partner_registration_from_form(form)
-                partner_registration.event_id = event.id
+            raise NotImplementedError
+            # try:
+            #     reg_token_helper = RegistrationToken()
+            #     registration = reg_token_helper.deserialize(form.registration_token.data)
+            #     reg_dict['token_valid'] = True
+            #     reg_dict['registration_name'] = registration.name
+            #     reg_dict['registration_email'] = registration.email
+            #     # reg_dict['order_products'] =
+            #     partner_registration = MtsSignupFormController.get_regular_partner_registration(registration)
+            #     if partner_registration:
+            #         reg_dict['partner_registration_name'] = partner_registration.name
+            #         reg_dict['partner_registration_email'] = partner_registration.email
+            #
+            # except:
+            #     reg_dict['token_valid'] = False
+            #     registration = get_registration_from_form(form)
+            #     registration.event_id = event.id
+            #     partner_registration = get_partner_registration_from_form(form)
+            #     partner_registration.event_id = event.id
 
         else:
             registration = get_registration_from_form(form)

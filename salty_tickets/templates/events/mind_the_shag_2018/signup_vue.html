@@ -152,7 +152,7 @@ header .intro-text {
 
      <form class="form form-vertical" method="post" role="form">
         <div id="form_fields">
-
+{#
             <div class="container-fluid">
                 <div class="container my-4">
                     <div class="card bg-light">
@@ -179,6 +179,7 @@ header .intro-text {
                     </div>
                 </div>
             </div>
+#}
             <!--<slt-group-form v-bind="group"></slt-group-form>-->
             <slt-mts-group-form
                     :token-invalid-feedback="group.group_token_error"
@@ -1023,14 +1024,14 @@ var salty_app = new Vue({
         group_token_found: null,
         group_new_error: null,
     },
-    registration_token: null,
-    existing_registration: {
-        token_valid: null,
-        registration_name: null,
-        registration_email: null,
-        partner_registration_name: null,
-        partner_registration_email: null,
-    },
+    //registration_token: null,
+    //existing_registration: {
+    //    token_valid: null,
+    //    registration_name: null,
+    //    registration_email: null,
+    //    partner_registration_name: null,
+    //    partner_registration_email: null,
+    //},
     selection_weekend: { {%for key in form_controller.weekend_ticket_keys %}
         {{ key }}: null, {% endfor %}
     },
@@ -1190,7 +1191,7 @@ var salty_app = new Vue({
         setTimeout( function() {
             post_data = $('form').serialize();
             console.log(post_data);
-            console.log(this.existing_registration);
+            //console.log(this.existing_registration);
             axios.post(url, post_data)
                     .then(function(response) {
                         console.log(response.data);  // display the returned data in the console.
@@ -1205,13 +1206,13 @@ var salty_app = new Vue({
                         this.disableCheckout = response.data.disable_checkout;
                         this.stripeData = response.data.stripe;
                         this.errors = response.data.errors;
-                        this.existing_registration = response.data.existing_registration;
+                        //this.existing_registration = response.data.existing_registration;
                         if (response.data.state_data) {
                             if (response.data.state_data.group) this.group = response.data.state_data.group;
                             this.products = response.data.state_data.products;
                             this.totalStations = response.data.state_data.total_stations;
                             this.remainingStations = response.data.state_data.remaining_stations;
-                            console.log(this.existing_registration);
+                            //console.log(this.existing_registration);
                         }
 
                         if(doCheckout) {
