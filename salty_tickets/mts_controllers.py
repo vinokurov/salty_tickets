@@ -1,4 +1,4 @@
-from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product
+from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product, Registration
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
 from salty_tickets.tokens import GroupToken
 
@@ -328,5 +328,24 @@ class MtsSignupFormController:
 
         return available
 
+    @staticmethod
+    def get_regular_partner_registration(registration):
+        """Retrieves a registration object of a partner if all purchases were made with him/her and all products are the same"""
+        partner_registration = None
+        for order in registration.orders:
+            if len(order.order_product_registrations)<2:
+                return None
+            order_partner_registration = [r for r in order.order_product_registrations if r != registration][0]
+            if not partner_registration:
+                partner_registration = order_partner_registration
+            elif partner_registration != order_partner_registration:
+                return None
 
+        if partner_registration:
+            my_products = registration.order_products.\
+                join(Product, aliased=False).filter(Product.type != 'FestivalGroupDiscountProduct').all()
+            partner_products = partner_registration.order_products. \
+                join(Product, aliased=False).filter(Product.type != 'FestivalGroupDiscountProduct').all()
 
+            if sorted([p.product.id for p in my_products]) == sorted([p.product.id for p in partner_products]):
+                return partner_registration

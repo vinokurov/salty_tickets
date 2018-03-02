@@ -90,7 +90,7 @@ class Token:
     def deserialize(self, token_str):
         if not token_str.startswith(self.prefix+'_'):
             raise BadSignature('Invalid token')
-        token_body = token_str.split('_')[1]
+        token_body = token_str.split(self.prefix+'_')[1]
         decode_res = self._decode(token_body)
         if decode_res:
             id = decode_res

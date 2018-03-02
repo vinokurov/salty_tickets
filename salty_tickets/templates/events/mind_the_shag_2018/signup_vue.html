@@ -173,6 +173,7 @@ header .intro-text {
                             </b-form-group>
                             <div v-if="existing_registration.token_valid">
                                 <p class="card-text">[[existing_registration.registration_name]], [[existing_registration.registration_email]]</p>
+                                <p class="card-text" v-if="existing_registration.partner_registration_name">[[existing_registration.partner_registration_name]], [[existing_registration.partner_registration_email]]</p>
                             </div>
                         </div>
                     </div>

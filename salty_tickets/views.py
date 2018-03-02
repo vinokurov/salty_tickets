@@ -178,7 +178,8 @@ def register_checkout_vue(event_key, validate='novalidate'):
             'registration_name': None,
             'registration_email': None,
             'partner_registration_name': None,
-            'partner_registration_email': None
+            'partner_registration_email': None,
+            'order_products': [],
         }
         if form.registration_token.data:
             try:
@@ -187,8 +188,11 @@ def register_checkout_vue(event_key, validate='novalidate'):
                 reg_dict['token_valid'] = True
                 reg_dict['registration_name'] = registration.name
                 reg_dict['registration_email'] = registration.email
-                partner_registration = get_partner_registration_from_form(form)
-                partner_registration.event_id = event.id
+                # reg_dict['order_products'] =
+                partner_registration = MtsSignupFormController.get_regular_partner_registration(registration)
+                if partner_registration:
+                    reg_dict['partner_registration_name'] = partner_registration.name
+                    reg_dict['partner_registration_email'] = partner_registration.email
 
             except:
                 reg_dict['token_valid'] = False
@@ -202,6 +206,11 @@ def register_checkout_vue(event_key, validate='novalidate'):
             registration.event_id = event.id
             partner_registration = get_partner_registration_from_form(form)
             partner_registration.event_id = event.id
+
+        if not partner_registration:
+            partner_registration = get_partner_registration_from_form(form)
+            partner_registration.event_id = event.id
+
         if event_key == 'mind_the_shag_2018':
             user_order = mts_get_order_for_event(event, form, registration, partner_registration)
 

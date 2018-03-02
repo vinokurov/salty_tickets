@@ -126,6 +126,7 @@ class Registration(Base):
     order = relationship('Order', uselist=False)
     registration_group = relationship('RegistrationGroup', uselist=False)
     order_products = relationship('OrderProduct', lazy='dynamic')
+    orders = relationship('Order', secondary='order_products')
 
     def __repr__(self):
         return '<User %r>' % self.name
@@ -148,6 +149,7 @@ class Order(Base):
     event = relationship("Event", uselist=False)
     order_products = relationship('OrderProduct', lazy='dynamic')
     payments = relationship('Payment', lazy='dynamic')
+    order_product_registrations = relationship('Registration', secondary='order_products')
 
     # @aggregated('order_products', Column(Float))
     @property
