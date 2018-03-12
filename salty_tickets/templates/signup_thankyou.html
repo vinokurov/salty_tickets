@@ -125,6 +125,14 @@
             </div>
         </div>
 
+        {% if order_summary_controller.total_remaining_amount %}
+        <div class="card mb-4">
+            <div class="card-block">
+                <h3 class="card-title"></h3>
+            </div>
+        </div>
+        {% endif %}
+
         {% if order_summary_controller.group.has_group %}
         <div class="card mb-4">
             <div class="card-block">
