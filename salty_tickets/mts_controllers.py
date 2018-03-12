@@ -295,7 +295,7 @@ class MtsSignupFormController:
     def remaining_stations(self, event):
         total_accepted = OrderProduct.query.filter_by(status='accepted').join(Order, aliased=False).filter_by(status='paid').join(
             Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
-        return 435-total_accepted
+        return 495-total_accepted
 
     def get_fast_train_available(self, weekend_ticket_key):
         weekend_ticket_form = self.form.get_product_by_key(weekend_ticket_key)
@@ -320,10 +320,10 @@ class MtsSignupFormController:
 
         available = 0
         while len(available_slots) >= 3:
-            available += available_slots[0]
-            available_slots[2] -= available_slots[0]
-            available_slots[1] -= available_slots[0]
-            available_slots[0] -= available_slots[0]
+            available += available_slots[-3]
+            available_slots[-1] -= available_slots[-3]
+            available_slots[-2] -= available_slots[-3]
+            available_slots[-3] -= available_slots[-3]
             available_slots = [x for x in available_slots if x]
 
         return available

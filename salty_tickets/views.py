@@ -26,7 +26,8 @@ __author__ = 'vnkrv'
 
 @app.route('/mts')
 def mts():
-    return render_template('events/mind_the_shag_2018/index.html')
+    #return render_template('events/mind_the_shag_2018/index.html')
+    return redirect('http://mindtheshag.co.uk')
 
 
 @app.route('/')
