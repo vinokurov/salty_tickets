@@ -237,6 +237,12 @@ header .intro-text {
                             <td><small>Requires even more experience than "Collegiate"</small></td>
                         </tr>
                         <tr>
+                            <td class="text-right"><b-badge pill variant="warning">Collegiate Light</b-badge></td>
+                            <td><small>These stations can be attended by the dancers who are new to Collegiate Shag,
+                            yet intermediate or advanced level in other kinds of Swing dancing.
+                            Can alsom be good for those who want to review their Shag fundamentals.</small></td>
+                        </tr>
+                        <tr>
                             <td class="text-right"><b-badge pill variant="primary">St.Louis</b-badge></td>
                             <td><small>Prior knowledge of St.Louis Shag is recommended</small></td>
                         </tr>
@@ -275,7 +281,7 @@ header .intro-text {
                         <tr>
                             <td class="w-25">{{ mts_station('rising_shag') }}</td>
                             <td class="w-25">{{ mts_station('rockabilly_bopper_shag') }}</td>
-                            <td class="w-25"></td>
+                            <td class="w-25">{{ mts_station('kick_it') }}</td>
                         </tr>
                         </tbody>
                     </table>
@@ -289,7 +295,7 @@ header .intro-text {
                         <tbody>
                         <tr>
                             <td class="w-25"></td>
-                            <td class="w-25"></td>
+                            <td class="w-25">{{ mts_station('musicality_in_shag') }}</td>
                             <td class="w-25">{{ mts_station('swing_out_like_you_re_from_st_louis') }}</td>
                         </tr>
                         <tr>
@@ -415,7 +421,7 @@ header .intro-text {
 {% block scripts %}
 
 <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/js-polyfills/0.1.41/polyfill.min.js"></script>
+<script src="https://cdn.polyfill.io/v2/polyfill.min.js"></script>
 <script src="/static/bootstrap-vue.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -915,6 +921,7 @@ Vue.component('slt-mts-station', {
                 'Jitterbug': 'success',
                 'Collegiate': 'warning',
                 'Collegiate Super': 'warning',
+                'Collegiate Light': 'warning',
                 'St.Louis': 'primary',
             };
             for(i=0;i<linesArr.length;i++) {
@@ -1061,8 +1068,8 @@ var salty_app = new Vue({
     refreshed: true,
     totalStations: 0,
     totalStationsAnimated: 0,
-    remainingStations: 435,
-    remainingStationsAnimated:435,
+    remainingStations: 495,
+    remainingStationsAnimated:495,
   },
 
   computed: {
