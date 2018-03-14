@@ -314,7 +314,7 @@ class MtsSignupFormController:
             product_form = self.form.get_product_by_key(product_key)
             if product_form.product_type == 'RegularPartnerWorkshop':
                 key = product_form.workshop_date + ' ' + product_form.workshop_time
-                available_slots_dict[key] = available_slots_dict.get(key, 0) + product_form.available_quantity
+                available_slots_dict[key] = available_slots_dict.get(key, 0) + max(0, product_form.available_quantity)
 
         available_slots = sorted(available_slots_dict.values())
 
