@@ -1,6 +1,6 @@
 from salty_tickets import config
 from salty_tickets.database import db_session
-from salty_tickets.models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
+from salty_tickets.models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID, Payment, PaymentItem
 
 
 def process_payment(payment, stripe_token, stripe_sk=None):
@@ -64,3 +64,20 @@ def update_order(user_order):
     has_paid = any([p.status == PAYMENT_STATUS_PAID for p in user_order.payments])
     if has_paid:
         user_order.status = ORDER_STATUS_PAID
+
+
+def transaction_fee(price):
+    if price > 0:
+        return price * 0.015 + 0.2
+    else:
+        return 0
+
+
+def get_remaining_payment(amount):
+    fee = transaction_fee(amount)
+    payment = Payment(
+        amount=amount,
+        transaction_fee=fee,
+    )
+    payment.payment_items.append(PaymentItem(amount=amount, description='Remaining payment'))
+    return payment

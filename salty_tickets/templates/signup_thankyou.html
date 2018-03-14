@@ -37,7 +37,12 @@
         document.execCommand("copy");
     }
 
-
+    $('body').on('click', 'button.button-checkout', function(e) {
+        amount = {{ order_summary_controller.remaining_payment.total_to_pay | price_stripe}};
+        pay_remaining(amount)
+        e.preventDefault(); // block the traditional submission of the form.
+        document.activeElement.blur();
+    })
 
 
     function pay_remaining(amount, order_product) {
@@ -49,8 +54,9 @@
             // You can access the token ID with `token.id`.
             // Get the token ID to your server-side code for use.
             //console.log(token)
-            // //$('#\{\{ form.stripe_token.id }}').val(token.id);
-            // //$('form').submit()
+                $('#stripe_token').val(token.id);
+                $('#amount').val(amount);
+                $('#remaining_payment_form').submit()
           }
         });
 
@@ -126,9 +132,18 @@
         </div>
 
         {% if order_summary_controller.total_remaining_amount %}
-        <div class="card mb-4">
+        <div class="card mb-4 bg-warning">
             <div class="card-block">
-                <h3 class="card-title"></h3>
+                <h3 class="card-title">Remaining Payment: {{ order_summary_controller.total_remaining_amount | price }}</h3>
+                <small class="text-muted">+ transaction fee: {{ order_summary_controller.remaining_payment.transaction_fee | price }}</small><br><br>
+                <button type="button" class="btn btn-lg btn-success btn-responsive button-checkout">
+                    <i class="fa fa-credit-card fa-fw" aria-hidden="true"></i>
+                    Pay with a card
+                </button>
+                <form id="remaining_payment_form" method="post" action="{{url_for('event_order_remaining_payment_checkout', order_token=order_summary_controller.token)}}">
+                    {{ order_summary_controller.remaining_payment_form.hidden_tag() }}
+                </form>
+
             </div>
         </div>
         {% endif %}
@@ -145,12 +160,63 @@
                     <li class="list-group-item"><small>{{ reg.name }}</small></li>
                 {% endfor%}
                 </ul>
-
             </div>
-
         </div>
-
         {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-block">
+                <h3 class="card-title">Payments</h3>
+                <small>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Price</th>
+                            <th>Paid</th>
+                        </tr>
+                    </thead>
+                {% for order_product in order_summary_controller.order_products %}
+                    {% if order_product.has_payment_items %}
+                        {% for payment_item in order_product.payment_items %}
+                            <tr>
+                                <td>{{ payment_item.full_description }}</td>
+                                <td>{{ payment_item._payment_item.order_product.status.title() }}</td>
+                                <td>{{ payment_item._payment_item.order_product.price | price_int }}</td>
+                                <td>{{ payment_item.amount | price_int }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                            <tr>
+                                <td>{{ order_product.name }}</td>
+                                <td>{{ order_product.status }}</td>
+                                <td>{{ order_product.price | price_int }}</td>
+                                <td>{{ 0 | price_int }}</td>
+                            </tr>
+                    {% endif %}
+                {% endfor %}
+                {% for payment_item in order_summary_controller.all_payment_items %}
+                    {% if not payment_item._payment_item.order_product %}
+                    <tr>
+                        <td>{{ payment_item.full_description }}</td>
+                        <td></td>
+                        <td></td>
+                        <td>{{ payment_item.amount | price_int }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                    <thead>
+                        <tr>
+                            <th>Total</th>
+                            <th></th>
+                            <th>{{ order_summary_controller.total_price | price_int }}</th>
+                            <th>{{ order_summary_controller.total_paid | price_int }}</th>
+                        </tr>
+                    </thead>
+                </table></small>
+            </div>
+        </div>
 
         {% for order_product in order_summary_controller.order_products %}
         <div class="card mb-4{% if order_product.is_waiting %} card-outline-warning{% endif%}"{% if order_product.is_waiting %} style="background-color: #FFFFE0; "{% endif%}>

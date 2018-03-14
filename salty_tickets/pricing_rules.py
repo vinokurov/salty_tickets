@@ -4,7 +4,7 @@ from salty_tickets.models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNER
     Product, Registration, OrderProduct, ORDER_PRODUCT_STATUS_WAITING, \
     ORDER_STATUS_PAID, Payment, RegistrationGroup, SIGNUP_GROUP_FESTIVAL
 from salty_tickets.mts_controllers import MtsSignupFormController
-from salty_tickets.payments import stripe_amount, update_payment_total
+from salty_tickets.payments import stripe_amount, update_payment_total, transaction_fee
 from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop, \
     FestivalGroupDiscountProduct
 from salty_tickets.tokens import order_product_deserialize, GroupToken
@@ -86,13 +86,6 @@ def get_order_for_crowdfunding_event(event, form, registration=None, partner_reg
     add_payment_to_user_order(user_order)
 
     return user_order
-
-
-def transaction_fee(price):
-    if price > 0:
-        return price * 0.015 + 0.2
-    else:
-        return 0
 
 
 def get_total_raised(event):

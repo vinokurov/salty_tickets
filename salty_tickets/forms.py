@@ -122,6 +122,11 @@ class OrderProductCancelForm(FlaskForm):
     submit = SubmitField('Cancel my participation')
 
 
+class RemainingPaymentForm(FlaskForm):
+    stripe_token = HiddenField()
+    amount = HiddenField()
+
+
 class VoteForm(FlaskForm):
     client_fingerprint = StringField(255)
     options = RadioField(choices=[('left', 'left'), ('right', 'right')])
@@ -131,3 +136,4 @@ class VoteAdminForm(FlaskForm):
     name = StringField('Name')
     start_voting = SubmitField('Start Voting')
     stop_voting = SubmitField('Stop Voting')
+

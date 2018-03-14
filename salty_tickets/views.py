@@ -5,10 +5,11 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
 from salty_tickets.database import db_session
-from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation
+from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation, \
+    send_remaining_payment_confirmation
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm, \
-    get_crowdfunding_registration_from_form
+    get_crowdfunding_registration_from_form, RemainingPaymentForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
 from salty_tickets.mts_controllers import MtsSignupFormController
@@ -406,6 +407,36 @@ def signup_thankyou(order_token):
     return render_event_order_summary(order_token, title="Thank you for Registration!")
 
 
+@app.route('/register/payment/thankyou/<string:order_token>')
+def payment_thankyou(order_token):
+    return render_event_order_summary(order_token, title="Thank you for finalising your payment!")
+
+
+@app.route('/register/order/<string:order_token>/remaining_payment/checkout', methods=['POST'])
+def event_order_remaining_payment_checkout(order_token):
+    form = RemainingPaymentForm()
+    try:
+        user_order = order_deserialize(order_token)
+    except BadSignature:
+        return 'Incorrect order token'
+
+    if form.validate_on_submit():
+        order_summary_controller = OrderSummaryController(user_order)
+        remaining_payment = order_summary_controller.remaining_payment._payment
+        user_order.payments.append(remaining_payment)
+        db_session.commit()
+        stripe_token = form.stripe_token.data
+        success, response = process_payment(remaining_payment, stripe_token, config.STRIPE_SK)
+        if success:
+            db_session.commit()
+            email_result = send_remaining_payment_confirmation(remaining_payment)
+            return redirect(url_for('payment_thankyou', order_token=order_serialize(user_order)))
+        else:
+            # print(response)
+            return render_template('event_purchase_error.html', error_message=response)
+
+
+
 def render_event_order_summary(order_token, title=None):
     try:
         user_order = order_deserialize(order_token)
@@ -413,7 +444,7 @@ def render_event_order_summary(order_token, title=None):
         return 'Incorrect order token'
 
     order_summary_controller = OrderSummaryController(user_order)
-    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, title=title)
+    return render_template('signup_thankyou.html', order_summary_controller=order_summary_controller, title=title, config=config)
 
 
 VOTER_UUID_COOKIE_NAME = 'voter'
@@ -526,6 +557,12 @@ def vote_data():
 def price_filter(amount):
     return '£{:.2f}'.format(amount)
 
+
 @app.template_filter('price_int')
 def price_int_filter(amount):
     return '£{:.0f}'.format(amount)
+
+
+@app.template_filter('price_stripe')
+def price_stripe_filter(amount):
+    return '{:.0f}'.format(amount*100)

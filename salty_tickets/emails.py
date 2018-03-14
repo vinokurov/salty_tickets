@@ -5,7 +5,7 @@ from flask import render_template
 from salty_tickets import config
 from premailer import transform, Premailer
 from salty_tickets.config import EMAIL_FROM
-from salty_tickets.controllers import OrderSummaryController, OrderProductController
+from salty_tickets.controllers import OrderSummaryController, OrderProductController, PaymentController
 
 
 def send_email(email_from, email_to, subj, body_text, body_html):
@@ -82,3 +82,23 @@ def send_cancellation_request_confirmation(order_product):
     subj = '{} - {} - cancellation requested!'.format(order_product.order.event.name, order_product.product.name)
 
     send_email(EMAIL_FROM, order_product.registration.email, subj, body_text, body_html)
+
+
+def send_remaining_payment_confirmation(remaining_payment):
+    user_order = remaining_payment.order
+    order_summary_controller = OrderSummaryController(user_order, remaining_payment)
+
+    body_html = render_template(
+        'email/remaining_payment_received.html',
+        order_summary_controller=order_summary_controller,
+    )
+    body_html = prepare_email_html(body_html)
+
+    body_text = render_template(
+        'email/remaining_payment_received.txt',
+        order_summary_controller=order_summary_controller
+    )
+
+    subj = '{} - Payment received'.format(user_order.event.name)
+
+    return send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, body_html)

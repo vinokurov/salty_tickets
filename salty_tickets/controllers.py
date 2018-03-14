@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 
 from flask import url_for
+from salty_tickets.forms import RemainingPaymentForm
 from salty_tickets.models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
-    SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping
+    SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping, PAYMENT_STATUS_PAID
+from salty_tickets.payments import get_remaining_payment
 from salty_tickets.products import get_product_by_model
 from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize, \
     GroupToken
@@ -24,6 +26,10 @@ class PaymentController:
     def __init__(self, payment):
         self._payment = payment
 
+    @property
+    def total_amount(self):
+        return self._payment.amount + self._payment.transaction_fee
+
 
 
 
@@ -44,6 +50,15 @@ class OrderProductController:
             return product.get_name(self._order_product)
         else:
             return self._order_product.product.name
+
+    @property
+    def payment_items(self):
+        for payment_item in self._order_product.payment_items:
+            yield PaymentItemController(payment_item)
+
+    @property
+    def has_payment_items(self):
+        return self._order_product.payment_items.count() > 0
 
     @property
     def price(self):
@@ -165,7 +180,7 @@ class OrderSummaryController:
     def __init__(self, order, payment=None):
         self._order = order
 
-        if not payment:
+        if payment is None:
             payment = self._order.payments[0]
         self._payment = payment
 
@@ -180,7 +195,7 @@ class OrderSummaryController:
 
     @property
     def total_paid(self):
-        total_paid = sum([p.amount for p in self._order.payments])
+        total_paid = sum([p.amount for p in self._order.payments if p.status == PAYMENT_STATUS_PAID])
         return total_paid
 
     @property
@@ -189,12 +204,21 @@ class OrderSummaryController:
 
     @property
     def total_transaction_fee(self):
-        total_paid = sum([p.transaction_fee for p in self._order.payments])
+        total_paid = sum([p.transaction_fee for p in self._order.payments if p.status == PAYMENT_STATUS_PAID])
         return total_paid
 
     @property
     def total_remaining_amount(self):
         return self.total_price - self.total_paid
+
+    @property
+    def remaining_payment_form(self):
+        return RemainingPaymentForm()
+
+    @property
+    def remaining_payment(self):
+        payment = get_remaining_payment(self.total_remaining_amount)
+        return OrderSummaryController(self._order, payment)
 
     @property
     def show_order_summary(self):
@@ -209,6 +233,12 @@ class OrderSummaryController:
     def payment_items(self):
         for payment_item in self._payment.payment_items:
             yield PaymentItemController(payment_item)
+
+    @property
+    def all_payment_items(self):
+        for payment in self._order.payments:
+            for payment_item in payment.payment_items:
+                yield PaymentItemController(payment_item)
 
     @property
     def has_waiting_list(self):
@@ -267,6 +297,16 @@ class PaymentItemController:
     @property
     def amount(self):
         return self._payment_item.amount
+
+    @property
+    def full_description(self):
+        names_list = []
+        if self._payment_item.order_product:
+            names_list.append(self.product.name)
+        if self._payment_item.description:
+            names_list.append(self._payment_item.description)
+
+        return ' - '.join(names_list)
 
 class EventController:
     def __init__(self, event):
