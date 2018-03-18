@@ -288,14 +288,15 @@ class MtsSignupFormController:
             return self.selected_stations_count < 3
 
     def total_stations(self, event):
-        total_blocks = OrderProduct.query.join(Order, aliased=False).filter_by(status='paid').join(
-            Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
+        total_blocks = OrderProduct.query.filter(OrderProduct.status.in_(('accepted', 'waiting')))\
+                                   .join(Order, aliased=False).filter_by(status='paid')\
+                                   .join(Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
         return total_blocks
 
     def remaining_stations(self, event):
         total_accepted = OrderProduct.query.filter_by(status='accepted').join(Order, aliased=False).filter_by(status='paid').join(
             Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
-        return 495-total_accepted
+        return 512-total_accepted
 
     def get_fast_train_available(self, weekend_ticket_key):
         weekend_ticket_form = self.form.get_product_by_key(weekend_ticket_key)
