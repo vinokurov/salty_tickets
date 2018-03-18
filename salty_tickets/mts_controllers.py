@@ -245,6 +245,8 @@ class MtsSignupFormController:
                 product_dict['available'] = self.get_fast_train_available(product_key)
             elif product_key.startswith('full_weekend'):
                 product_dict['available'] = self.get_full_weekend_available()
+            elif product_key.startswith('parties'):
+                product_dict['available'] = min([self.form.get_product_by_key(p).available_quantity for p in self.party_ticket_keys])
 
             if hasattr(product_form, 'keywords'):
                 product_dict['keywords'] = product_form.keywords.split(',')
@@ -294,9 +296,13 @@ class MtsSignupFormController:
         return total_blocks
 
     def remaining_stations(self, event):
-        total_accepted = OrderProduct.query.filter_by(status='accepted').join(Order, aliased=False).filter_by(status='paid').join(
-            Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
-        return 512-total_accepted
+        total_remaining = 0
+        for product in Product.query.filter_by(event_id=event.id, type='RegularPartnerWorkshop').all():
+            accepted = OrderProduct.query.filter_by(status='accepted').\
+                        join(Order, aliased=False).filter_by(status='paid').\
+                        join(Product, aliased=False).filter_by(id=product.id).count()
+            total_remaining += max(0, product.max_available - accepted)
+        return total_remaining
 
     def get_fast_train_available(self, weekend_ticket_key):
         weekend_ticket_form = self.form.get_product_by_key(weekend_ticket_key)
@@ -350,3 +356,4 @@ class MtsSignupFormController:
 
             if sorted([p.product.id for p in my_products]) == sorted([p.product.id for p in partner_products]):
                 return partner_registration
+

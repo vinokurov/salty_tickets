@@ -903,6 +903,14 @@ class FestivalTicketProduct(BaseProduct):
             else:
                 return '{}'.format(self.name)
 
+    @staticmethod
+    def get_registration_stats(product_model):
+        query = OrderProduct.query.filter_by(product_id=product_model.id). \
+            join(Order, aliased=True).filter_by(status=ORDER_STATUS_PAID)
+        accepted = query.filter(OrderProduct.status == ORDER_PRODUCT_STATUS_ACCEPTED).count()
+        waiting = query.filter(OrderProduct.status == ORDER_PRODUCT_STATUS_WAITING).count()
+        return WorkshopRegStats(accepted, waiting)
+
 
 
 class FestivalTrackProduct(FestivalTicketProduct):
@@ -919,11 +927,22 @@ class FestivalPartyProduct(FestivalTicketProduct):
     party_date = None
     party_time = None
     party_location = None
+    party_performers = None
 
     def get_form(self, product_model=None):
         form = super(FestivalPartyProduct, self).get_form(product_model=product_model)
         form.party_date = self.party_date
+        form.party_time = self.party_time
+        form.available_quantity = self.get_available_quantity(product_model)
+        form.party_location = self.party_location
+        form.party_performers = self.party_performers
         return form
+
+    @classmethod
+    def get_available_quantity(cls, product_model):
+        reg_stats = cls.get_registration_stats(product_model)
+        print(product_model.name, reg_stats)
+        return product_model.max_available - reg_stats.accepted
 
 
 class FestivalGroupDiscountProduct(BaseProduct):
