@@ -20,10 +20,14 @@
             v-model="selection_parties.{{product_key}}"
             price="{{ form_field.price | price_int }}"
             date="{{form_field.party_date}}"
+            time="{{form_field.party_time}}"
+            location="{{form_field.party_location}}"
+            performers="{{form_field.party_performers}}"
+            :available="products.{{product_key}}.available"
             :partner-mode="partnerMode"
             :fixed="fixed.{{product_key}}"
             title="{{ form_field.product_name }}">
-        {{ form_field.info }}
+        {{ form_field.info | safe }}
     </slt-mts-party-ticket>
 {% endmacro %}
 {% macro mts_station(product_key) %}
@@ -787,8 +791,16 @@ Vue.component('slt-mts-weekend-ticket', {
 <b-card :bg-variant="cardStyle[0]" :text-variant="cardStyle[1]">
     <h5 class="card-title"><fa-icon name="lock" v-if="fixed"></fa-icon> [[title]]
         <span class="badge badge-light float-right">[[price]]</span></h5>
-    <small><fa-icon name="calendar"></fa-icon> [[ date ]]</small><br>
-    <p class="card-text"><slot></slot></p>
+    <p class="card-text">
+        <b-badge variant="light float-right" v-if="available<100">
+          <fa-icon name="ticket"></fa-icon> [[availableText]]
+        </b-badge>
+        <small><fa-icon name="calendar"></fa-icon> [[ date ]]</small><br>
+        <small><fa-icon name="clock-o"></fa-icon> [[ time ]]</small><br>
+        <small><fa-icon name="map-pin"></fa-icon> [[ location ]]</small><br>
+        <small><slot></slot></small>
+        <small><ul><li v-for="performer in performers.split(', ')">[[ performer ]]</li></ul></small>
+    </p>
     <slt-radiobutton :name="inputName" :options="buttonOptions" :fixed="fixed" v-model="choice" size="sm"></slt-radiobutton>
 </b-card>
 </script>
@@ -801,7 +813,11 @@ Vue.component('slt-mts-party-ticket', {
     inputName: {type:String},
     title: {type:String},
     date: {type:String},
+    time: {type:String},
+    location: {type:String},
+    performers: {type:String},
     choice: {type:String},
+    available: {type:Number},
     partnerMode: {type:String, default:null},
     fixed: {type:Boolean, default:false},
   },
@@ -810,12 +826,24 @@ Vue.component('slt-mts-party-ticket', {
     event: 'input',
   },
   computed: {
+        soldOut: function () {
+            return this.available <= 0;
+        },
         cardStyle: function() {
+           if (this.soldOut) return ['secondary', 'light'];
+
            if( this.choice ) {
                 return ['dark', 'light'];
            } else {
                 return ['info', 'light'];
            }
+        },
+        availableText: function() {
+            if (this.available  > 0) {
+                return 'available: ' + this.available;
+            } else {
+                return 'SOLD OUT...';
+            }
         },
         buttonOptions: function() {
             if (this.partnerMode == 'single') {
