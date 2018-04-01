@@ -12,7 +12,7 @@ from salty_tickets.forms import create_event_form, create_crowdfunding_form, get
     get_crowdfunding_registration_from_form, RemainingPaymentForm
 from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
-from salty_tickets.mts_controllers import MtsSignupFormController
+from salty_tickets.mts_controllers import MtsSignupFormController, MtsTicketController
 from salty_tickets.payments import process_payment
 from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
     get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
@@ -277,6 +277,17 @@ def get_validated_partner_tokens(form):
 # @app.route('/register/thankyou/<string:event_key>', methods=('GET', 'POST'))
 # def signup_thankyou(event_key):
 #     return render_template('signup_thankyou.html', event_key=event_key)
+
+
+@app.route('/mts/<ticket_token>')
+def mts_registration_info(ticket_token):
+    ticket_controller = MtsTicketController.from_ticket_token(ticket_token)
+    return render_template(
+        'events/mind_the_shag_2018/ticket.html',
+        ticket_controller=ticket_controller,
+        config=config,
+    )
+
 
 
 @app.route('/c')

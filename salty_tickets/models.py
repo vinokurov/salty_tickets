@@ -127,6 +127,7 @@ class Registration(Base):
     registration_group = relationship('RegistrationGroup', uselist=False)
     order_products = relationship('OrderProduct', lazy='dynamic')
     orders = relationship('Order', secondary='order_products')
+    event = relationship("Event", uselist=False)
 
     def __repr__(self):
         return '<User %r>' % self.name

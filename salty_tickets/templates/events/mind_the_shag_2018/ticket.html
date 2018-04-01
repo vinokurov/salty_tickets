@@ -1,0 +1,185 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "slt.html" as slt %}
+
+{%- extends "bootstrap/base.html" %}
+
+{% block scripts %}
+{# {{ super() }} #}
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@1/dist/clipboard.min.js"></script>
+
+{%- endblock %}
+
+
+{% block styles %}
+{# {{ super() }} #}
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+@media (max-width: 400px) {
+  .btn-responsive {
+    white-space: normal;
+    font-size:75%;
+  }
+}
+</style>
+{%- endblock %}
+
+{% block content %}
+    <div class="container container-fluid my-5">
+        <div class="card mb-4">
+            <div class="card-block">
+                <h4 class="display-5 card-title">
+                    <a href="{{ ticket_controller.ticket_url }}">Mind the Shag Ticket: {{ ticket_controller.token }}</a>
+                </h4>
+                <p class="card-text">
+                    <div class="container">
+                      <div class="row">
+                        <div class="col-sm">
+                            <small>
+                            <table class="table">
+                                <tr>
+                                    <th><a href="{{ ticket_controller.order.event.registration_url }}">{{ticket_controller.event.name}}</a></th>
+                                </tr>
+                                <tr>
+                                    <td>Name:</td>
+                                    <td>{{ ticket_controller.name}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Email:</td>
+                                    <td>{{ ticket_controller.email}}</td>
+                                </tr>
+                                <tr>
+                                    <td>Registered by:</td>
+                                    <td><a href="{{ticket_controller.order.order_status_url}}">{{ ticket_controller.order._order.registration.name}} on {{ ticket_controller.order.order_datetime}}</a></td>
+                                </tr>
+                            </table>
+                            </small>
+                        </div>
+                        <div class="col-sm">
+                            <img class="float-right" src="{{ticket_controller.qr_code_url}}"></img>
+                        </div>
+                      </div>
+                    </div>
+                </p>
+            </div>
+        </div>
+
+        {% if ticket_controller.order.total_remaining_amount %}
+        <div class="card mb-4 bg-warning">
+            <div class="card-block">
+                <h3 class="card-title"><a href="{{ticket_controller.order.order_status_url}}">Remaining Payment: {{ ticket_controller.order.total_remaining_amount | price }}</a></h3>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if ticket_controller.weekend_ticket %}
+        <div class="card mb-4">
+            <div class="card-block">
+                <h5 class="display-5 card-title text-center">{{ ticket_controller.weekend_ticket.name }}</h5>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-block">
+                <small>
+                <table class="table">
+                {% if ticket_controller.peek(ticket_controller.saturday_stations) %}
+                        <tr>
+                            <th colspan="5"><h5 class="display-5 text-center">Saturday Stations</h5></th>
+                        </tr>
+                    {% for item in ticket_controller.saturday_stations %}
+                        <tr>
+                            <td>{{item.name}}</td>
+                            <td>{{item.dance_role | title}}</td>
+                            <td>{{item.status | title}}</td>
+                            <td>{{item.time}} </td>
+                            <td>{{item.location}}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                {% if ticket_controller.peek(ticket_controller.sunday_stations) %}
+                        <tr>
+                            <th colspan="5"><h5 class="display-5 text-center">Sunday Stations</h5></th>
+                        </tr>
+                    {% for item in ticket_controller.sunday_stations %}
+                        <tr>
+                            <td>{{item.name}}</td>
+                            <td>{{item.dance_role | title}}</td>
+                            <td>{{item.status | title}}</td>
+                            <td>{{item.time}} </td>
+                            <td>{{item.location}}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                {% if ticket_controller.peek(ticket_controller.parties) %}
+                        <tr>
+                            <th colspan="5"><h5 class="display-5 text-center">Parties</h5></th>
+                        </tr>
+                    {% for item in ticket_controller.parties %}
+                        <tr>
+                            <td>{{item.name}}</td>
+                            <td></td>
+                            <td>{{item.status | title}}</td>
+                            <td>{{item.date}} {{item.time}}</td>
+                            <td>{{item.location}}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </table>
+                </small>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-block">
+                <h5 class="display-5 card-title">Locations</h5>
+                <p class="card-body">
+                    <small>
+                    <b>Workshops Saturday/Sunday</b>: Factory Fitness & Dance Studio, 407 Hornsey Rd, N19 4DX<br>
+                    Nearest Train Stations: Archway, Finsbury Park, Crouch Hill & Upper Holloway<br>
+                    Also buses from Kings Cross
+                    </small>
+                </p>
+                <p class="card-body">
+                    <small>
+                    <b>Friday Party</b>: Limehouse Town Hall, 646 Commercial Rd, Poplar, E14 7HA<br>
+                    Nearest Train Stations: Limehouse (DLR)
+                    </small>
+                </p>
+                <p class="card-body">
+                    <small>
+                    <b>Saturday Party</b>: Islington Assembly Hall, Upper St, London, N1 2UD<br>
+                    Nearest Train Stations: Highbury & Islington
+                    </small>
+                </p>
+                <p class="card-body">
+                    <small>
+                    <b>Sunday Party</b>: JuJu's bar, 15 Hanbury St, E1 6QR<br>
+                    Nearest Train Stations: Liverpool Street, Shoreditch High Street
+                    </small>
+                </p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-block">
+                <h5 class="display-5 card-title">Contacts</h5>
+                <p class="card-body">
+                    <small>
+                        Web: <a href="http://mindtheshag.co.uk">http://mindtheshag.co.uk</a><br>
+                        Facebook: <a href="https://www.facebook.com/SaltyJitterbugs/">https://www.facebook.com/SaltyJitterbugs/</a><br>
+                        Email: salty.jitterbugs@gmail.com
+                    </small>
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

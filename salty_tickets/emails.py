@@ -8,7 +8,7 @@ from salty_tickets.config import EMAIL_FROM
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, PaymentController
 
 
-def send_email(email_from, email_to, subj, body_text, body_html):
+def send_email(email_from, email_to, subj, body_text, body_html, files=None):
     email_data = {
         'from': email_from,
         'to': [email_to],
@@ -20,7 +20,9 @@ def send_email(email_from, email_to, subj, body_text, body_html):
         email_data['bcc'] = config.EMAIL_DEBUG
     result = requests.post('https://api.mailgun.net/v3/saltyjitterbugs.co.uk/messages',
                            auth=('api', config.MAILGUN_KEY),
-                           data=email_data)
+                           data=email_data,
+                           files=files)
+    return result
 
 
 def prepare_email_html(html):
@@ -30,6 +32,13 @@ def prepare_email_html(html):
     html_for_email = re.sub(r'<style.*</style>', '', html_for_email, flags=re.DOTALL)
     # print(html_for_email)
     return html_for_email
+
+
+def pdf_attachment_from_url(url, filename):
+    import weasyprint
+    pdf = weasyprint.HTML(url)
+    attachment = ("attachment", (filename, pdf.write_pdf()))
+    return attachment
 
 
 def send_registration_confirmation(user_order):
