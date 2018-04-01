@@ -377,7 +377,8 @@ class MtsTicketController:
 
     @property
     def order(self):
-        return OrderSummaryController(self._registration.order)
+        user_order = OrderProduct.query.filter_by(registration_id=self._registration.id).first().order
+        return OrderSummaryController(user_order)
 
     @property
     def name(self):
