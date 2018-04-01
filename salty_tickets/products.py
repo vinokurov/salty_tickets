@@ -941,7 +941,6 @@ class FestivalPartyProduct(FestivalTicketProduct):
     @classmethod
     def get_available_quantity(cls, product_model):
         reg_stats = cls.get_registration_stats(product_model)
-        print(product_model.name, reg_stats)
         return product_model.max_available - reg_stats.accepted
 
 

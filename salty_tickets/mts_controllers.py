@@ -293,8 +293,9 @@ class MtsSignupFormController:
             return self.selected_stations_count < 3
 
     def total_stations(self, event):
-        total_blocks = OrderProduct.query.join(Order, aliased=False).filter_by(status='paid').join(
-            Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
+        total_blocks = OrderProduct.query.filter(OrderProduct.status.in_(('accepted', 'waiting')))\
+                                   .join(Order, aliased=False).filter_by(status='paid')\
+                                   .join(Product, aliased=False).filter_by(event_id=event.id, type='RegularPartnerWorkshop').count()
         return total_blocks
 
     def remaining_stations(self, event):
