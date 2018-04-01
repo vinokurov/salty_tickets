@@ -21,18 +21,9 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
-body{
-   min-width:800px; /* suppose you want minimum width of 1000px */
-   width: auto !important;  /* Firefox will set width as auto */
-   width:800px;             /* As IE ignores !important it will set width as 1000px; */
-}
-
-
-@media (max-width: 400px) {
-  .btn-responsive {
-    white-space: normal;
-    font-size:75%;
-  }
+@page {
+    size: A4;
+    margin: 0in 0.44in 0.2in 0.44in;
 }
 </style>
 {%- endblock %}
@@ -41,16 +32,16 @@ body{
     <div class="container container-fluid my-5">
         <div class="card mb-4">
             <div class="card-block">
-                    <img class="float-right" src="{{ticket_controller.qr_code_url}}"></img>
                 <h4 class="display-5 card-title">
                     <a href="{{ ticket_controller.ticket_url }}">Mind the Shag Ticket: {{ ticket_controller.token }}</a>
                 </h4>
                 <p class="card-text">
-                    <small>
+                    <small class="float-right">
                         Name: <b>{{ ticket_controller.name}}</b><br>
                         Email: {{ ticket_controller.email}}<br>
                         Registered by: <a href="{{ticket_controller.order.order_status_url}}">{{ ticket_controller.order._order.registration.name}} on {{ ticket_controller.order.order_datetime}}</a>
                     </small>
+                    <img src="{{ticket_controller.qr_code_url}}"></img><br>
                 </p>
             </div>
         </div>
