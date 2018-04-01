@@ -21,6 +21,12 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+body{
+   min-width:800px; /* suppose you want minimum width of 1000px */
+   width: auto !important;  /* Firefox will set width as auto */
+   width:800px;             /* As IE ignores !important it will set width as 1000px; */
+}
+
 
 @media (max-width: 400px) {
   .btn-responsive {
@@ -35,38 +41,16 @@
     <div class="container container-fluid my-5">
         <div class="card mb-4">
             <div class="card-block">
+                    <img class="float-right" src="{{ticket_controller.qr_code_url}}"></img>
                 <h4 class="display-5 card-title">
                     <a href="{{ ticket_controller.ticket_url }}">Mind the Shag Ticket: {{ ticket_controller.token }}</a>
                 </h4>
                 <p class="card-text">
-                    <div class="container">
-                      <div class="row">
-                        <div class="col-sm">
-                            <small>
-                            <table class="table">
-                                <tr>
-                                    <th><a href="{{ ticket_controller.order.event.registration_url }}">{{ticket_controller.event.name}}</a></th>
-                                </tr>
-                                <tr>
-                                    <td>Name:</td>
-                                    <td>{{ ticket_controller.name}}</td>
-                                </tr>
-                                <tr>
-                                    <td>Email:</td>
-                                    <td>{{ ticket_controller.email}}</td>
-                                </tr>
-                                <tr>
-                                    <td>Registered by:</td>
-                                    <td><a href="{{ticket_controller.order.order_status_url}}">{{ ticket_controller.order._order.registration.name}} on {{ ticket_controller.order.order_datetime}}</a></td>
-                                </tr>
-                            </table>
-                            </small>
-                        </div>
-                        <div class="col-sm">
-                            <img class="float-right" src="{{ticket_controller.qr_code_url}}"></img>
-                        </div>
-                      </div>
-                    </div>
+                    <small>
+                        Name: <b>{{ ticket_controller.name}}</b><br>
+                        Email: {{ ticket_controller.email}}<br>
+                        Registered by: <a href="{{ticket_controller.order.order_status_url}}">{{ ticket_controller.order._order.registration.name}} on {{ ticket_controller.order.order_datetime}}</a>
+                    </small>
                 </p>
             </div>
         </div>
