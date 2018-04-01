@@ -4,8 +4,8 @@ from salty_tickets.tokens import order_serialize
 
 event = Event.query.filter_by(id=6).one()
 registration = Registration(
-    name='Urszula Nowicka',
-    email='nowickaurszula01@gmail.com',
+    name='NAME',
+    email='EMAIL@gmail.com',
     comment='volunteer, manually added',
     country='UK',
     city='London',

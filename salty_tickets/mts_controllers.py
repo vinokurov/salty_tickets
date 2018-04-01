@@ -1,6 +1,9 @@
+import itertools
+from flask import url_for
+from salty_tickets.controllers import EventController, OrderSummaryController
 from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product, Registration
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
-from salty_tickets.tokens import GroupToken
+from salty_tickets.tokens import GroupToken, MtsTicketToken
 
 
 class MtsSignupFormController:
@@ -357,3 +360,122 @@ class MtsSignupFormController:
             if sorted([p.product.id for p in my_products]) == sorted([p.product.id for p in partner_products]):
                 return partner_registration
 
+
+class MtsTicketController:
+    def __init__(self, registration):
+        self._registration = registration
+
+    @classmethod
+    def from_ticket_token(cls, ticket_token):
+        token_serialiser = MtsTicketToken()
+        registration = token_serialiser.deserialize(ticket_token)
+        return cls(registration)
+
+    @property
+    def event(self):
+        return EventController(self._registration.event)
+
+    @property
+    def order(self):
+        return OrderSummaryController(self._registration.order)
+
+    @property
+    def name(self):
+        return self._registration.name
+
+    @property
+    def email(self):
+        return self._registration.email
+
+    @property
+    def token(self):
+        token_serialiser = MtsTicketToken()
+        return token_serialiser.serialize(self._registration)
+
+    @property
+    def ticket_url(self):
+        return url_for('mts_registration_info', ticket_token=self.token)
+
+    @property
+    def qr_code_url(self):
+        size=150
+        return f'https://api.qrserver.com/v1/create-qr-code/?size={size}x{size}&data={self.ticket_url}'
+
+    @property
+    def saturday_stations(self):
+        filter_func = lambda x: (x.item_type == 'RegularPartnerWorkshop') and (x.date == '7-April-2018')
+        sort_func = lambda x: x.date+x.time
+        return sorted(self.items(filter_func), key=sort_func)
+
+    @property
+    def sunday_stations(self):
+        filter_func = lambda x: x.item_type == 'RegularPartnerWorkshop' and x.date == '8-April-2018'
+        sort_func = lambda x: x.date + x.time
+        return sorted(self.items(filter_func), key=sort_func)
+
+    @property
+    def parties(self):
+        filter_func = lambda x: x.item_type == 'FestivalPartyProduct'
+        sort_func = lambda x: x.date + x.time
+        return sorted(self.items(filter_func), key=sort_func)
+
+    def items(self, filter=None):
+        for order_product in self._registration.order_products:
+            op = MtsOrderProductController(order_product)
+            if not filter or filter(op):
+                yield op
+
+    @property
+    def weekend_ticket(self):
+        op = list(self.items(lambda x: x.item_type == 'FestivalTrackProduct'))
+        if len(op):
+            return op[0]
+
+    @staticmethod
+    def peek(iterable):
+        if isinstance(iterable, list):
+            if len(iterable):
+                return iterable[0]
+            return None
+
+        try:
+            first = next(iterable)
+        except StopIteration:
+            return None
+        return first, itertools.chain([first], iterable)
+
+
+class MtsOrderProductController:
+    def __init__(self, order_product):
+        self._order_product = order_product
+
+    @property
+    def name(self):
+        return self._order_product.product.name
+
+    @property
+    def status(self):
+        return self._order_product.status
+
+    @property
+    def dance_role(self):
+        return self._order_product.details_as_dict.get('dance_role') or 'N/A'
+
+    @property
+    def time(self):
+        return self._order_product.product.parameters_as_dict.get('workshop_time') or \
+               self._order_product.product.parameters_as_dict.get('party_time') or ''
+
+    @property
+    def date(self):
+        return self._order_product.product.parameters_as_dict.get('workshop_date') or \
+               self._order_product.product.parameters_as_dict.get('party_date') or ''
+
+    @property
+    def location(self):
+        return self._order_product.product.parameters_as_dict.get('workshop_location') or \
+               self._order_product.product.parameters_as_dict.get('party_location') or ''
+
+    @property
+    def item_type(self):
+        return self._order_product.product.type

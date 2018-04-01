@@ -85,13 +85,11 @@ class Token:
         raise NotImplementedError()
 
     def serialize(self, obj):
-        return '{}_{}'.format(self.prefix, self._encode(obj.id))
+        return self.code_to_str(self._encode(obj.id))
 
     def deserialize(self, token_str):
-        if not token_str.startswith(self.prefix+'_'):
-            raise BadSignature('Invalid token')
-        token_body = token_str.split(self.prefix+'_')[1]
-        decode_res = self._decode(token_body)
+        token_code = self.code_from_str(token_str)
+        decode_res = self._decode(token_code)
         if decode_res:
             id = decode_res
             return self._retrieve_object(id)
@@ -100,6 +98,15 @@ class Token:
 
     def _retrieve_object(self, id):
         raise NotImplementedError()
+
+    def code_to_str(self, code):
+        return f'{self.prefix}_{code}'
+
+    def code_from_str(self, token_str):
+        if not token_str.startswith(self.prefix+'_'):
+            raise BadSignature('Invalid token')
+        token_code = token_str.split(self.prefix+'_')[1]
+        return token_code
 
 
 class ItsdangerousMixin:
@@ -153,5 +160,18 @@ class RegistrationToken(ItsdangerousMixin, Token):
     def _retrieve_object(self, id):
         return Registration.query.filter_by(id=id).one()
 
+
+class MtsTicketToken(HashidsMixin, Token):
+    prefix = ''
+    salt = SALT_REGISTRATION_TOKEN
+    min_length = 8
+    def _retrieve_object(self, id):
+        return Registration.query.filter_by(id=id).one()
+
+    def code_to_str(self, code):
+        return str(code)
+
+    def code_from_str(self, token_str):
+        return token_str
 
 
