@@ -820,6 +820,10 @@ class MarketingProduct(BaseProduct):
         else:
             return 0
 
+    def is_selected(self, product_form):
+        return False
+
+
 
 class DonateProduct(BaseProduct):
     make_public = True

@@ -1,5 +1,16 @@
 {% extends "signup.html" %}
 {% import "bootstrap/wtf.html" as wtf %}
+
+{% block og_meta %}
+<meta property="og:title" content="Mind the Shag 2018">
+<meta property="og:image" content="{{ url_for('static', filename='events/{}/event_preview.jpg'.format(event.event_key), _external=True) }}">
+<meta property="og:url" content="{{ url_for('register_form', event_key=event.event_key, _external=True) }}">
+<meta property="og:description"
+      content="Born out of London's premier fast-dance night, Salty Mondays, and now in its 2nd edition,
+      the gang wants to invite you to: 'Mind the Shag 2018'.
+      This Shag weekend will bring top international teachers to London to give a shot of energy to your Shag dancing.">
+{% endblock %}
+
 {% macro mts_weekend_ticket(product_key, icon) %}
     {% set form_field = form.get_product_by_key(product_key) %}
     <slt-mts-weekend-ticket
@@ -212,6 +223,27 @@ header .intro-text {
 
             <div class="container-fluid">
                 <div class="container my-4">
+                    <h3 >Parties</h3>
+                    <div class="card-deck mt-2">
+                    {{ mts_party_ticket('friday_party') }}
+                    {{ mts_party_ticket('saturday_party') }}
+                    {{ mts_party_ticket('sunday_party') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="container my-4">
+                    <div class="bd-callout bd-callout-info">
+                        <h4><fa-icon name="ticket"></fa-icon> Saturday party</h4>
+
+                        <p>More tickets are available at the <a href="https://app.dice.fm/event/eo87d-salty-jitterbugs-mind-the-shag-7th-apr-islington-assembly-hall-london-tickets">Islington Assembly Hall events page</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="container my-4">
                     <div class="bd-callout bd-callout-info">
                         <h4><fa-icon name="info"></fa-icon> Already registered and want to add more stations/parties?</h4>
 
@@ -327,17 +359,6 @@ header .intro-text {
                         </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <div class="container-fluid">
-                <div class="container my-4">
-                    <h3 >Parties</h3>
-                    <div class="card-deck mt-2">
-                    {{ mts_party_ticket('friday_party') }}
-                    {{ mts_party_ticket('saturday_party') }}
-                    {{ mts_party_ticket('sunday_party') }}
-                    </div>
                 </div>
             </div>
 
@@ -814,7 +835,7 @@ Vue.component('slt-mts-weekend-ticket', {
         <small><slot></slot></small>
         <small><ul><li v-for="performer in performers.split(', ')">[[ performer ]]</li></ul></small>
     </p>
-    <slt-radiobutton :name="inputName" :options="buttonOptions" :fixed="fixed" v-model="choice" size="sm"></slt-radiobutton>
+    <slt-radiobutton :name="inputName" :options="buttonOptions" :fixed="fixed" v-model="choice" v-if="!soldOut" size="sm"></slt-radiobutton>
 </b-card>
 </script>
 
