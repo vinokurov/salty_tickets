@@ -3,7 +3,7 @@ from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField,
     HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError, Optional
 from wtforms import Form as NoCsrfForm
-from salty_tickets.models import Event, Registration, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
+from salty_tickets.sql_models import Event, Registration, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
 from salty_tickets.products import get_product_by_model
 
 

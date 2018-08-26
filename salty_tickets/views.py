@@ -10,7 +10,7 @@ from salty_tickets.emails import send_registration_confirmation, send_cancellati
 from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm, \
     get_crowdfunding_registration_from_form, RemainingPaymentForm
-from salty_tickets.models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
+from salty_tickets.sql_models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
 from salty_tickets.mts_controllers import MtsSignupFormController, MtsTicketController
 from salty_tickets.payments import process_payment

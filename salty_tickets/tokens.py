@@ -3,7 +3,7 @@ from datetime import datetime
 from itsdangerous import URLSafeSerializer, BadSignature
 from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER, SALT_GROUP_TOKEN, \
     SALT_PARTNER_TOKEN, SALT_REGISTRATION_TOKEN
-from salty_tickets.models import OrderProduct, Order, RegistrationGroup, Registration
+from salty_tickets.sql_models import OrderProduct, Order, RegistrationGroup, Registration
 from hashids import Hashids
 
 

@@ -1,6 +1,6 @@
 from salty_tickets import config
 from salty_tickets.database import db_session
-from salty_tickets.models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID, Payment, PaymentItem
+from salty_tickets.sql_models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID, Payment, PaymentItem
 
 
 def process_payment(payment, stripe_token, stripe_sk=None):

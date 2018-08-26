@@ -14,7 +14,7 @@ from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField,
     HiddenField, IntegerField, FloatField, RadioField, TextField
 from wtforms.validators import Optional, ValidationError
 
-from salty_tickets.models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
+from salty_tickets.sql_models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
     ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
     SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem, RegistrationGroup
 import json

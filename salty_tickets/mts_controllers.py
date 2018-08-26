@@ -1,7 +1,7 @@
 import itertools
 from flask import url_for
 from salty_tickets.controllers import EventController, OrderSummaryController
-from salty_tickets.models import RegistrationGroup, OrderProduct, Order, Product, Registration
+from salty_tickets.sql_models import RegistrationGroup, OrderProduct, Order, Product, Registration
 from salty_tickets.products import WORKSHOP_OPTIONS, FESTIVAL_TICKET, FestivalGroupDiscountProduct
 from salty_tickets.tokens import GroupToken, MtsTicketToken
 

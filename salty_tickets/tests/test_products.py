@@ -4,7 +4,7 @@ import mock
 import pytest
 from salty_tickets.forms import create_event_form, SignupForm, FormWithProducts
 from salty_tickets.products import CouplesOnlyWorkshop, RegularPartnerWorkshop, WorkshopRegStats
-from salty_tickets.models import Product, Event, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
+from salty_tickets.sql_models import Product, Event, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
 from wtforms import Form
 
 

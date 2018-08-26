@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from salty_tickets.controllers import OrderSummaryController, OrderProductController, price_format
-from salty_tickets.models import ORDER_PRODUCT_STATUS_WAITING, ORDER_PRODUCT_STATUS_ACCEPTED, Order, OrderProduct, \
+from salty_tickets.sql_models import ORDER_PRODUCT_STATUS_WAITING, ORDER_PRODUCT_STATUS_ACCEPTED, Order, OrderProduct, \
     Product
 from mock import Mock
 from salty_tickets.tokens import order_product_serialize
