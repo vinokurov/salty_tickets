@@ -54,3 +54,34 @@ def test_pricer_special_price_if_more_than():
     assert purchase.purchase_items[1].price == product_list[1].base_price
     assert purchase.purchase_items[2].price == 20
     assert purchase.purchase_items[3].price == product_list[3].base_price
+
+
+def test_pricer_special_price_if_more_than_2_persons():
+    product_list = [
+        BaseProduct(name='Product 1', base_price=25, tags={'offer'}),
+        BaseProduct(name='Product 2', base_price=25, tags={'offer'}),
+        BaseProduct(name='Product 3', base_price=25, tags={'offer'}),
+        BaseProduct(name='Product 4', base_price=15, tags={'regular'}),
+    ]
+
+    event_products = {p.key: p for p in product_list}
+    pricing_rules = [
+        SpecialPriceIfMoreThanPriceRule(more_than=2, tag='offer', special_price=20)
+    ]
+    pricer = ProductPricer(event_products, pricing_rules)
+
+    purchase = Purchase(
+        purchase_items=[
+            PurchaseItem(name=f'Item 1: lead', product_key=product_list[0].key, parameters={'person': 'Mr Leader'}),
+            PurchaseItem(name=f'Item 1: follow', product_key=product_list[0].key, parameters={'person': 'Ms Follower'}),
+            PurchaseItem(name=f'Item 2: lead', product_key=product_list[1].key, parameters={'person': 'Mr Leader'}),
+            PurchaseItem(name=f'Item 2: follow', product_key=product_list[1].key, parameters={'person': 'Ms Follower'}),
+            PurchaseItem(name=f'Item 3: lead', product_key=product_list[2].key, parameters={'person': 'Mr Leader'}),
+            PurchaseItem(name=f'Item 3: follow', product_key=product_list[2].key, parameters={'person': 'Ms Follower'}),
+        ]
+    )
+
+    assert purchase.total_price == 0
+
+    pricer.price(purchase)
+    assert purchase.total_price == 25*2 + 25*2 + 20*2

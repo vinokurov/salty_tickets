@@ -13,6 +13,7 @@ class Event:
     info: str = None
     active: bool = False
     products: dict = field(default_factory=dict)
+    pricing_rules: dict = field(default_factory=dict)
 
     def __post_init__(self):
         self.key = string_to_key(self.name)
