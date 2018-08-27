@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 
-
 @dataclass
 class ProductPricer:
     """
@@ -23,6 +22,11 @@ class ProductPricer:
         price = min([p for p in possible_prices if p is not None])
         return price
 
+    @classmethod
+    def from_event(cls, event):
+        pricing_rules = [PRICING_RULES[k](**kwargs) for k, kwargs in event.pricing_rules.items()]
+        return cls(event.products, pricing_rules)
+
 
 class BasePriceRule:
     def price(self, item, purchase_items, event_products):
@@ -38,7 +42,17 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
     def price(self, item, purchase_items, event_products):
         applicable_product_keys = [k for k, p in event_products.items() if self.tag in p.tags]
         if item.product_key in applicable_product_keys:
-            already = len([i for i in purchase_items if i.price is not None and i.product_key in applicable_product_keys])
-            if already >= self.more_than:
+            already = [i for i in purchase_items if i.price is not None and i.product_key in applicable_product_keys]
+
+            # make sure we count only purchase items for one person
+            person = item.parameters.get('person')
+            if person:
+                already = [i for i in already if i.parameters.get('person') == person]
+
+            if len(already) >= self.more_than:
                 return self.special_price
 
+
+PRICING_RULES = {
+    'special_price_if_more_than': SpecialPriceIfMoreThanPriceRule,
+}
