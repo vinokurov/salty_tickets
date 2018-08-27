@@ -1,3 +1,5 @@
+import datetime
+
 import dataclasses
 from mongoengine import fields
 
@@ -32,12 +34,16 @@ def fields_from_dataclass(dataclass_class, skip=None):
             'float': fields.FloatField,
             'bool': fields.BooleanField,
             'list': fields.ListField,
+            'datetime': fields.DateTimeField,
         }
 
         original_fields = mongo_class.__dict__.copy()
         for field in dataclass_fields:
             if field.name not in skip and field.name not in original_fields:
-                field_obj = field_mapping[field.type.__name__](db_field=field.name)
+                kwargs = dict(db_field=field.name)
+                if field.default == dataclasses.MISSING and field.default_factory == dataclasses.MISSING:
+                    kwargs['required'] = True
+                field_obj = field_mapping[field.type.__name__](**kwargs)
                 field_obj.name = field.name
                 field_obj.owner_document = mongo_class
                 setattr(mongo_class, field.name, field_obj)
