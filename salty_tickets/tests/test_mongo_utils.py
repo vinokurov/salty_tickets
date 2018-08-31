@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from dataclasses import dataclass
 from salty_tickets.mongo_utils import fields_from_dataclass
@@ -13,13 +14,14 @@ def test_fields_from_dataclass():
         f: float
         b: bool
         d: datetime
+        dc: Decimal
         # l: list
 
     @fields_from_dataclass(MyDataClass)
     class MyMongoDoc(fields.Document):
         pass
 
-    kwargs = dict(s='ss', i=1, f=0.5, b=True, d=datetime(2018, 8, 27, 12, 35))
+    kwargs = dict(s='ss', i=1, f=0.5, b=True, d=datetime(2018, 8, 27, 12, 35), dc=Decimal('0.1'))
 
     my_doc = MyMongoDoc(**kwargs)
     assert isinstance(my_doc, MyMongoDoc)
@@ -46,3 +48,25 @@ def test_fields_from_dataclass_required_fields():
     assert MyMongoDoc.i.required
     assert not MyMongoDoc.f.required
     assert not MyMongoDoc.b.required
+
+
+def test_fields_from_dataclass_extra_fields():
+    @dataclass
+    class MyDataClass:
+        s: str
+        b: bool
+
+    @fields_from_dataclass(MyDataClass)
+    class MyMongoDoc(fields.Document):
+        i = fields.IntField(default=10)
+        s = fields.EmailField()
+
+    assert isinstance(MyMongoDoc.s, fields.EmailField)
+
+    kwargs = dict(s='aa@gmail.com', b=True)
+    doc = MyMongoDoc(**kwargs)
+    assert doc.i == 10
+
+    dc = MyDataClass(**kwargs)
+    assert doc.to_json() == MyMongoDoc.from_dataclass(dc).to_json()
+    assert doc.to_dataclass() == dc

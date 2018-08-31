@@ -1,6 +1,8 @@
 from datetime import datetime
+from typing import List, Dict
 
 from dataclasses import dataclass, field
+from salty_tickets.constants import PAYMENT_STATUS
 
 
 @dataclass
@@ -12,29 +14,38 @@ class Order:
     purchases: list = field(default_factory=list)
     payments: list = field(default_factory=list)
 
+    def __post_init__(self):
+        self.update_total_price()
+        self.update_total_paid()
+
     def update_total_price(self):
-        self.total_price = sum([i.price for i in self.purchase_items])
+        for p in self.purchases:
+            p.update_total_price()
+        self.total_price = sum([p.total_price for p in self.purchases])
 
     def update_total_paid(self):
-        self.total_paid = sum([p.price for p in self.payments if p.status == 'success'])
-
-
-@dataclass
-class Purchase:
-    date: datetime = field(default_factory=datetime.utcnow)
-    purchase_items: list = field(default_factory=list)
-    total_price: float = 0
-
-    def update_total_price(self):
-        self.total_price = sum([i.price for i in self.purchase_items])
+        self.total_paid = sum([p.price for p in self.payments if p.status == PAYMENT_STATUS.OK])
 
 
 @dataclass
 class PurchaseItem:
     name: str
     product_key: str
-    parameters: dict = field(default_factory=dict)
+    parameters: Dict = field(default_factory=dict)
     price: float = None
+
+
+@dataclass
+class Purchase:
+    date: datetime = field(default_factory=datetime.utcnow)
+    purchase_items: List[PurchaseItem] = field(default_factory=list)
+    total_price: float = 0
+
+    def __post_init__(self):
+        self.update_total_price()
+
+    def update_total_price(self):
+        self.total_price = sum([i.price for i in self.purchase_items])
 
 
 @dataclass
@@ -43,7 +54,7 @@ class Payment:
     transaction_fee: float = 0
     total_amount: float = 0
 
-    status: str = 'new'
+    status: str = PAYMENT_STATUS.NEW
     stripe_details: dict = field(default_factory=dict)
     date: datetime = field(default_factory=datetime.utcnow)
 

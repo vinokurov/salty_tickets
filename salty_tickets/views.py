@@ -7,9 +7,9 @@ from salty_tickets.controllers import OrderSummaryController, OrderProductContro
 from salty_tickets.database import db_session
 from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation, \
     send_remaining_payment_confirmation
-from salty_tickets.forms import create_event_form, create_crowdfunding_form, get_registration_from_form, \
+from salty_tickets.forms import create_event_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm, \
-    get_crowdfunding_registration_from_form, RemainingPaymentForm
+     RemainingPaymentForm
 from salty_tickets.sql_models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
     VotingSession
 from salty_tickets.mts_controllers import MtsSignupFormController, MtsTicketController
@@ -300,85 +300,6 @@ def crowdfunding_index():
         return redirect(url_for('crowdfunding_form', event_key=event.event_key))
     else:
         return redirect('/')
-
-
-@app.route('/crowdfunding/<string:event_key>', methods=('GET', 'POST'))
-def crowdfunding_form(event_key):
-    event = Event.query.filter_by(event_key=event_key).first()
-    if not event:
-        event = Event.query.\
-            filter_by(active=True, event_type='crowdfunding').\
-            filter(Event.name.startswith(event_key)).first()
-        if event:
-            return redirect(url_for('crowdfunding_form', event_key=event.event_key))
-        else:
-            return redirect(url_for('crowdfunding_index'))
-
-    form = create_crowdfunding_form(event)()
-
-    total_stats = get_total_raised(event)
-
-    if form.validate_on_submit():
-        registration = get_crowdfunding_registration_from_form(form)
-        registration.crowdfunding_registration_properties = \
-                CrowdfundingRegistrationProperties(anonymous=form.anonymous.data)
-        # partner_registration = get_partner_registration_from_form(form)
-        user_order = get_order_for_crowdfunding_event(event, form, registration, None)
-        user_order.registration = registration
-        event.orders.append(user_order)
-        db_session.commit()
-        success, response = process_payment(user_order.payments[0], form.stripe_token.data)
-        if success:
-            return redirect(url_for('crowdfunding_thankyou', event_key=event.event_key))
-        else:
-            # print(response)
-            return render_template('event_purchase_error.html', error_message=response)
-
-    contributors = Registration.query.\
-        join(Order, aliased=True).join(Event, aliased=True).filter_by(event_key=event_key).\
-        order_by(desc(Registration.registered_datetime)).all()
-    return render_template(
-        'events/{}/crowdfunding.html'.format(event_key),
-        event=event,
-        form=form,
-        total_stats=total_stats,
-        contributors=contributors,
-        config=config
-    )
-
-
-@app.route('/crowdfunding/checkout/<string:event_key>', methods=['POST'])
-def crowdfunding_checkout(event_key):
-    event = Event.query.filter_by(event_key=event_key).first()
-    form = create_crowdfunding_form(event)()
-
-    return_dict = dict(errors={})
-
-    if form.validate_on_submit():
-        registration = get_crowdfunding_registration_from_form(form)
-        user_order = get_order_for_crowdfunding_event(event, form, registration, None)
-        return_dict['stripe'] = get_stripe_properties(event, user_order, form)
-        order_summary_controller = OrderSummaryController(user_order)
-        return_dict['order_summary_html'] = render_template('order_summary.html',
-                                                            order_summary_controller=order_summary_controller)
-        return_dict['disable_checkout'] = user_order.order_products.count() == 0
-    else:
-        form_errors_controller = FormErrorController(form)
-        return_dict['order_summary_html'] = render_template('form_errors.html',
-                                                            form_errors=form_errors_controller)
-        return_dict['errors'] = {v: k for v, k in form_errors_controller.errors}
-        return_dict['disable_checkout'] = True
-    return jsonify(return_dict)
-
-
-@app.route('/crowdfunding/thankyou/<string:event_key>', methods=('GET', 'POST'))
-def crowdfunding_thankyou(event_key):
-    return render_template('crowdfunding_thankyou.html', event_key=event_key)
-
-
-@app.route('/crowdfunding/contributors/<string:event_key>', methods=['GET'])
-def crowdfunding_contributors(event_key):
-    pass
 
 
 @app.teardown_appcontext

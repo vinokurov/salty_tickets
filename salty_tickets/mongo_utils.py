@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 
 import dataclasses
 from mongoengine import fields
@@ -29,12 +30,13 @@ def fields_from_dataclass(dataclass_class, skip=None):
     def class_rebuilder(mongo_class):
         dataclass_fields = dataclasses.fields(dataclass_class)
         field_mapping = {
-            'str': fields.StringField,
-            'int': fields.IntField,
-            'float': fields.FloatField,
-            'bool': fields.BooleanField,
-            'list': fields.ListField,
-            'datetime': fields.DateTimeField,
+            str: fields.StringField,
+            int: fields.IntField,
+            float: fields.FloatField,
+            bool: fields.BooleanField,
+            # 'list': fields.ListField,
+            datetime.datetime: fields.DateTimeField,
+            Decimal: fields.DecimalField
         }
 
         original_fields = mongo_class.__dict__.copy()
@@ -43,7 +45,7 @@ def fields_from_dataclass(dataclass_class, skip=None):
                 kwargs = dict(db_field=field.name)
                 if field.default == dataclasses.MISSING and field.default_factory == dataclasses.MISSING:
                     kwargs['required'] = True
-                field_obj = field_mapping[field.type.__name__](**kwargs)
+                field_obj = field_mapping[field.type](**kwargs)
                 field_obj.name = field.name
                 field_obj.owner_document = mongo_class
                 setattr(mongo_class, field.name, field_obj)

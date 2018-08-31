@@ -13,7 +13,8 @@ class ProductRegistrationDocument(fields.EmbeddedDocument):
     full_name = fields.StringField()
     email = fields.EmailField()
     dance_role = fields.BaseField(choices=['leader', 'follower'])
-    accepted = fields.BooleanField(default=False)
+    as_couple = fields.BooleanField(default=False)
+    status = fields.BaseField(choices=['accepted', 'waiting', 'cancelled', 'new'], default='new')
     registration = fields.ReferenceField('RegistrationDocument')
     #
     # def to_model_short(self):
@@ -24,7 +25,7 @@ class ProductRegistrationDocument(fields.EmbeddedDocument):
 class EventProductDocument(fields.EmbeddedDocument):
     name = fields.StringField(required=True)
     key = fields.StringField(required=True)
-    info = fields.MultiLineStringField()
+    info = fields.StringField()
     max_available = fields.IntField(min_value=0, default=0)
     base_price = fields.DecimalField(default=0)
     image_url = fields.URLField()
