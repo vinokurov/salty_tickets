@@ -1,10 +1,10 @@
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
-simona_fundraising_event = models.Event.query.filter_by(event_key='simona_de_leo_s_crowdfunding_campaign').one()
+simona_fundraising_event = sql_models.Event.query.filter_by(event_key='simona_de_leo_s_crowdfunding_campaign').one()
 
 simona_fundraising_event.products.append(
     products.MarketingProduct(

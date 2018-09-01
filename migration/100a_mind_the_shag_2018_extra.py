@@ -2,10 +2,10 @@ import json
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
-event = models.Event.query.filter_by(name='Mind The Shag 2018').one()
+event = sql_models.Event.query.filter_by(name='Mind The Shag 2018').one()
 
 ARGS_BLOCK = {
     'ratio':1.4,

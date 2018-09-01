@@ -1,5 +1,5 @@
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 
 sql = """
 ALTER TABLE registrations ADD country varchar(255) DEFAULT NULL;
@@ -14,15 +14,15 @@ database.db_session.execute(sql)
 database.db_session.commit()
 
 # fix registration.event_id links
-for reg in models.Registration.query.all():
-    order = models.Order.query.join(models.OrderProduct, aliased=False). \
-        join(models.order_product_registrations_mapping, aliased=False). \
+for reg in sql_models.Registration.query.all():
+    order = sql_models.Order.query.join(sql_models.OrderProduct, aliased=False). \
+        join(sql_models.order_product_registrations_mapping, aliased=False). \
         filter_by(registration_id=reg.id).first()
     if order:
         reg.event_id = order.event_id
 
 # fix registration_group_id
-for rg in models.RegistrationGroup.query.all():
+for rg in sql_models.RegistrationGroup.query.all():
     for op in rg.signup_group.order_products:
         op.registrations[0].registration_group_id = rg.id
 

@@ -2,14 +2,14 @@ import json
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
-event = models.Event.query.filter_by(event_key='salty_recipes_with_patrick_fancy').one()
+event = sql_models.Event.query.filter_by(event_key='salty_recipes_with_patrick_fancy').one()
 event.active = False
 database.db_session.commit()
 
-event = models.Event(
+event = sql_models.Event(
     name='Salty Recipes with Simona & Rokas',
     start_date=datetime.datetime(2017, 11, 26),
     event_type='dance'

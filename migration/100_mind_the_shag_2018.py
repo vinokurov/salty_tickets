@@ -2,13 +2,13 @@ import json
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
-models.Base.metadata.create_all(bind=database.engine)
+sql_models.Base.metadata.create_all(bind=database.engine)
 database.db_session.commit()
 
-event = models.Event(
+event = sql_models.Event(
     name='Mind The Shag 2018',
     start_date=datetime.datetime(2018, 4, 6),
     event_type='dance'

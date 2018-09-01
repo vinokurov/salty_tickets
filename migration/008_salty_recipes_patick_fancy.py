@@ -2,7 +2,7 @@ import json
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
 # event = models.Event.query.filter_by(event_key='salty_recipes_with_pol_sara').one()
@@ -20,7 +20,7 @@ from salty_tickets import products
 #     event_type='dance'
 # )
 
-event = models.Event.query.filter_by(event_key='salty_recipes_with_patrick_fancy').one()
+event = sql_models.Event.query.filter_by(event_key='salty_recipes_with_patrick_fancy').one()
 for product in event.products.all():
     database.db_session.delete(product)
 

@@ -1,5 +1,5 @@
 from salty_tickets.database import db_session
-from salty_tickets.models import Product, ProductParameter
+from salty_tickets.sql_models import Product, ProductParameter
 
 fri_party = Product.query.filter_by(event_id=6, name='Friday Party').one()
 sat_party = Product.query.filter_by(event_id=6, name='Saturday Party').one()

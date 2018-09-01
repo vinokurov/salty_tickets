@@ -1,6 +1,6 @@
 import pandas as pd
 from geopy import Nominatim
-from salty_tickets import models, database
+from salty_tickets import sql_models, database
 
 PAYMENTS_CSV_PATH = '~/Downloads/payments.csv'
 
@@ -8,9 +8,9 @@ columns = ['id', 'Card Address Country', 'Card Address City']
 df = pd.read_csv(PAYMENTS_CSV_PATH, encoding="ISO-8859-1")[columns].set_index('id')
 geolocator = Nominatim()
 
-for reg in models.Registration.query.all():
-    order = models.Order.query.join(models.OrderProduct, aliased=False). \
-        join(models.order_product_registrations_mapping, aliased=False). \
+for reg in sql_models.Registration.query.all():
+    order = sql_models.Order.query.join(sql_models.OrderProduct, aliased=False). \
+        join(sql_models.order_product_registrations_mapping, aliased=False). \
         filter_by(registration_id=reg.id).first()
     if order and order.payments:
         for payments in order.payments:

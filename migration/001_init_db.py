@@ -1,15 +1,15 @@
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
 # database.db_session.drop_all()
-models.Base.metadata.drop_all(bind=database.engine)
-models.Base.metadata.create_all(bind=database.engine)
+sql_models.Base.metadata.drop_all(bind=database.engine)
+sql_models.Base.metadata.create_all(bind=database.engine)
 database.db_session.commit()
 
-event = models.Event(
+event = sql_models.Event(
     name='Salty Recipes with Pol & Sara',
     start_date=datetime.datetime(2017, 7, 29),
     event_type='dance'
@@ -39,7 +39,7 @@ event = models.Event(
 database.db_session.add(event)
 database.db_session.commit()
 
-simona_fundraising_event = models.Event(
+simona_fundraising_event = sql_models.Event(
     name='Simona De Leo\'s Crowdfunding Campaign',
     start_date=datetime.datetime(2017, 5, 27),
     event_type='crowdfunding'

@@ -1,4 +1,4 @@
-from salty_tickets.models import Event
+from salty_tickets.sql_models import Event
 from salty_tickets import products
 
 for order in Event.query.filter_by(id=2).one().orders:

@@ -1,7 +1,7 @@
 import unidecode
 from salty_tickets import config
 from salty_tickets.emails import send_email, pdf_attachment_from_url
-from salty_tickets.models import Order, Registration, OrderProduct
+from salty_tickets.sql_models import Order, Registration, OrderProduct
 from salty_tickets.mts_controllers import MtsTicketController
 
 config.MODE_TESTING = True

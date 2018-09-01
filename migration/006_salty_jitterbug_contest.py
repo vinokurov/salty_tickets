@@ -1,10 +1,10 @@
 import datetime
 
 from salty_tickets import database
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import products
 
-event = models.Event(
+event = sql_models.Event(
     name='Salty Jitterbugs Contest 10/07',
     start_date=datetime.datetime(2017, 7, 10),
     event_type='dance'

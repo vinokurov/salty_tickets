@@ -1,5 +1,5 @@
-from salty_tickets import models
+from salty_tickets import sql_models
 from salty_tickets import database
 
-models.Base.metadata.create_all(bind=database.engine)
+sql_models.Base.metadata.create_all(bind=database.engine)
 database.db_session.commit()
