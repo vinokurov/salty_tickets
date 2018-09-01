@@ -38,7 +38,9 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     country = StringField('Country')
     state = StringField('State')
     city = StringField('City')
-    dance_role = SelectField('Your Dance Role in Couple', choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower')], default=LEADER)
+    dance_role = SelectField('Your Dance Role in Couple',
+                             choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower')],
+                             default=LEADER)
     partner_name = StringField(u'Partner\'s name', validators=[need_partner_check])
     partner_email = StringField(u'Partner\'s email', validators=[need_partner_check])
     partner_location_query = StringField('Partner\'s Location')
@@ -49,16 +51,12 @@ class DanceSignupForm(FormWithProducts, SignupForm):
 
 
 def create_event_form(event):
-    assert (isinstance(event, Event))
-
     class EventForm(DanceSignupForm):
         pass
 
-    product_keys = []
     for product_key, product in event.products.items():
-        setattr(EventForm, product_key, FormField(product.create_form()))
-        product_keys.append(product_key)
-    setattr(EventForm, 'product_keys', product_keys)
+        setattr(EventForm, product_key, FormField(product.get_form_class()))
+
     return EventForm
 
 
@@ -95,7 +93,7 @@ def get_primary_personal_info_from_form(form):
         full_name=form.name.data,
         email=form.email.data,
         comment=form.comment.data,
-        location=form.location,
+        # location=form.location,
     )
 
 
@@ -104,7 +102,7 @@ def get_partner_personal_info_from_form(form):
         full_name=form.partner_name.data,
         email=form.partner_email.data,
         comment=form.comment.data,
-        location=form.partner_location,
+        # location=form.partner_location,
     )
 
 

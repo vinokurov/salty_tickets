@@ -68,33 +68,8 @@ class WorkshopProduct(BaseProduct):
             waiting=len([r for r in registered if r.status == REG_STATUS.WAITING]),
         )
 
-    def create_form(self):
-        class RegularPartnerWorkshopForm(NoCsrfForm):
-            product_name = self.name
-            product_id = self.key
-            info = self.info
-            price = self.base_price
-            add = RadioField(label='Add', default='', validators=[Optional()], choices=[
-                (LEADER, 'Leader'),
-                (FOLLOWER, 'Follower'),
-                (COUPLE, 'Couple'),
-                ('', 'None')
-            ])
-            # partner_token = StringField(label='Partner\'s registration token', validators=[PartnerTokenValid()])
-            product_type = self.__class__.__name__
-            workshop_date = self.start_datetime.date()
-            workshop_time = self.start_datetime.time()
-            workshop_location = self.location
-            workshop_level = self.level
-            workshop_price = self.base_price
-            workshop_teachers = self.teachers
-            waiting_lists = self.waiting_list.waiting_stats
-            available_quantity = self.get_available_quantity()
-            keywords = self.tags
-
-            def needs_partner(self):
-                return self.add.data == COUPLE
-
+    @staticmethod
+    def get_form_class():
         return RegularPartnerWorkshopForm
 
     def get_available_quantity(self):
@@ -111,6 +86,15 @@ class WorkshopProduct(BaseProduct):
     @classmethod
     def parse_form(cls, form_data):
         pass
+
+
+class RegularPartnerWorkshopForm(NoCsrfForm):
+    add = RadioField(label='Add', default='', validators=[Optional()], choices=[
+        (LEADER, 'Leader'),
+        (FOLLOWER, 'Follower'),
+        (COUPLE, 'Couple'),
+        ('', 'None')
+    ])
 
 
 @dataclass
