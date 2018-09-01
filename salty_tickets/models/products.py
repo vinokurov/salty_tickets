@@ -7,7 +7,7 @@ from wtforms import Form as NoCsrfForm, TextAreaField
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
     HiddenField, IntegerField, FloatField, RadioField, TextField
 from wtforms.validators import Optional, ValidationError
-from salty_tickets.constants import DANCE_ROLE, WORKSHOP_OPTIONS, REGISTRATION_STATUS
+from salty_tickets.constants import REG_STATUS, LEADER, FOLLOWER, COUPLE
 from salty_tickets.utils import string_to_key
 
 
@@ -23,7 +23,8 @@ class BaseProduct:
     registrations: list = field(default_factory=list)
 
     def __post_init__(self):
-        self.key = string_to_key(self.name)
+        if self.key is None:
+            self.key = string_to_key(self.name)
 
     def create_form(self):
         raise NotImplementedError()
@@ -46,24 +47,25 @@ class WorkshopProduct(BaseProduct):
     teachers: str = None
 
     def __post_init__(self):
+        super(WorkshopProduct, self).__post_init__()
         self.waiting_list = AutoBalanceWaitingList(
             max_available=self.max_available,
             ratio=self.ratio,
             registration_stats={
-                WORKSHOP_OPTIONS.LEADER: self._get_registration_stats_for_role(WORKSHOP_OPTIONS.LEADER),
-                WORKSHOP_OPTIONS.FOLLOWER: self._get_registration_stats_for_role(WORKSHOP_OPTIONS.FOLLOWER),
-                WORKSHOP_OPTIONS.COUPLE: self._get_registration_stats_for_role(WORKSHOP_OPTIONS.COUPLE),
+                LEADER: self._get_registration_stats_for_role(LEADER),
+                FOLLOWER: self._get_registration_stats_for_role(FOLLOWER),
+                COUPLE: self._get_registration_stats_for_role(COUPLE),
             }
         )
 
     def _get_registration_stats_for_role(self, option):
-        if option == WORKSHOP_OPTIONS.COUPLE:
+        if option == COUPLE:
             registered = [r for r in self.registrations if r.as_couple]
         else:
             registered = [r for r in self.registrations if r.dance_role == option]
         return RegistrationStats(
-            accepted=len([r for r in registered if r.status == REGISTRATION_STATUS.ACCEPTED]),
-            waiting=len([r for r in registered if r.status == REGISTRATION_STATUS.WAITING]),
+            accepted=len([r for r in registered if r.status == REG_STATUS.ACCEPTED]),
+            waiting=len([r for r in registered if r.status == REG_STATUS.WAITING]),
         )
 
     def create_form(self):
@@ -72,11 +74,11 @@ class WorkshopProduct(BaseProduct):
             product_id = self.key
             info = self.info
             price = self.base_price
-            add = RadioField(label='Add', default=WORKSHOP_OPTIONS.NONE, validators=[Optional()], choices=[
-                (WORKSHOP_OPTIONS.LEADER, 'Leader'),
-                (WORKSHOP_OPTIONS.FOLLOWER, 'Follower'),
-                (WORKSHOP_OPTIONS.COUPLE, 'Couple'),
-                (WORKSHOP_OPTIONS.NONE, 'None')
+            add = RadioField(label='Add', default='', validators=[Optional()], choices=[
+                (LEADER, 'Leader'),
+                (FOLLOWER, 'Follower'),
+                (COUPLE, 'Couple'),
+                ('', 'None')
             ])
             # partner_token = StringField(label='Partner\'s registration token', validators=[PartnerTokenValid()])
             product_type = self.__class__.__name__
@@ -91,7 +93,7 @@ class WorkshopProduct(BaseProduct):
             keywords = self.tags
 
             def needs_partner(self):
-                return self.add.data == WORKSHOP_OPTIONS.COUPLE
+                return self.add.data == COUPLE
 
         return RegularPartnerWorkshopForm
 
@@ -102,8 +104,8 @@ class WorkshopProduct(BaseProduct):
         if self.waiting_list is None:
             raise LookupError('WorkShopProduct.waiting_list is not set up')
 
-        total_accepted = self.waiting_list.registration_stats[WORKSHOP_OPTIONS.LEADER].accepted \
-                         + self.waiting_list.registration_stats[WORKSHOP_OPTIONS.FOLLOWER].accepted
+        total_accepted = self.waiting_list.registration_stats[LEADER].accepted \
+                         + self.waiting_list.registration_stats[FOLLOWER].accepted
         return self.max_available - total_accepted
 
     @classmethod

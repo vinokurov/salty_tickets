@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from salty_tickets.constants import DANCE_ROLE
+from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.models.event import Event
 from salty_tickets.models.personal_info import PersonalInfo
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
@@ -8,7 +8,6 @@ from wtforms.validators import Email, DataRequired, ValidationError, Optional
 from wtforms import Form as NoCsrfForm
 # from salty_tickets.sql_models import Event, Registration, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
 # from salty_tickets.products import get_product_by_model
-
 
 
 class SignupForm(FlaskForm):
@@ -39,7 +38,7 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     country = StringField('Country')
     state = StringField('State')
     city = StringField('City')
-    dance_role = SelectField('Your Dance Role in Couple', choices=[(DANCE_ROLE.LEADER, 'Leader'), (DANCE_ROLE.FOLLOWER, 'Follower')], default=DANCE_ROLE.LEADER)
+    dance_role = SelectField('Your Dance Role in Couple', choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower')], default=LEADER)
     partner_name = StringField(u'Partner\'s name', validators=[need_partner_check])
     partner_email = StringField(u'Partner\'s email', validators=[need_partner_check])
     partner_location_query = StringField('Partner\'s Location')
@@ -61,7 +60,6 @@ def create_event_form(event):
         product_keys.append(product_key)
     setattr(EventForm, 'product_keys', product_keys)
     return EventForm
-
 
 
 def get_registration_from_form(form):

@@ -1,23 +1,17 @@
-class DANCE_ROLE:
-    LEADER = 'leader'
-    FOLLOWER = 'follower'
+
+LEADER = 'leader'
+FOLLOWER = 'follower'
+COUPLE = 'couple'
 
 
-class WORKSHOP_OPTIONS:
-    LEADER = DANCE_ROLE.LEADER
-    FOLLOWER = DANCE_ROLE.FOLLOWER
-    COUPLE = 'couple'
-    NONE = ''
-
-
-class REGISTRATION_STATUS:
+class REG_STATUS:
     ACCEPTED = 'accepted'
     WAITING = 'waiting'
     CANCELED = 'canceled'
     NEW = 'new'
 
 
-class PAYMENT_STATUS:
+class PMT_STATUS:
     NEW = 'new'
     OK = 'ok'
     FAILED = 'failed'

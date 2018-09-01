@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Dict
 
 from dataclasses import dataclass, field
-from salty_tickets.constants import PAYMENT_STATUS
+from salty_tickets.constants import PMT_STATUS
 
 
 @dataclass
@@ -24,7 +24,7 @@ class Order:
         self.total_price = sum([p.total_price for p in self.purchases])
 
     def update_total_paid(self):
-        self.total_paid = sum([p.price for p in self.payments if p.status == PAYMENT_STATUS.OK])
+        self.total_paid = sum([p.price for p in self.payments if p.status == PMT_STATUS.OK])
 
 
 @dataclass
@@ -54,7 +54,7 @@ class Payment:
     transaction_fee: float = 0
     total_amount: float = 0
 
-    status: str = PAYMENT_STATUS.NEW
+    status: str = PMT_STATUS.NEW
     stripe_details: dict = field(default_factory=dict)
     date: datetime = field(default_factory=datetime.utcnow)
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from salty_tickets.constants import PAYMENT_STATUS
+from salty_tickets.constants import PMT_STATUS
 from salty_tickets.models.order import Payment, Purchase, PurchaseItem, Order
 
 
@@ -8,7 +8,7 @@ def test_payment():
     before = datetime.utcnow()
     payment = Payment(price=10)
     after = datetime.utcnow()
-    assert payment.status == PAYMENT_STATUS.NEW
+    assert payment.status == PMT_STATUS.NEW
     assert before <= payment.date <= after
 
 
@@ -30,8 +30,8 @@ def test_order():
         PurchaseItem('Item 2', 'prod2', price=15.0),
     ])
     payments = [
-        Payment(price=10.0, transaction_fee=0.5, status=PAYMENT_STATUS.FAILED),
-        Payment(price=10.0, transaction_fee=0.5, status=PAYMENT_STATUS.OK),
+        Payment(price=10.0, transaction_fee=0.5, status=PMT_STATUS.FAILED),
+        Payment(price=10.0, transaction_fee=0.5, status=PMT_STATUS.OK),
     ]
     order = Order('Mr Dancer', 'dance@gmail.com', purchases=[purchase], payments=payments)
     assert order.total_price == 25.0

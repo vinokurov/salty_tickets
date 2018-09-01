@@ -4,7 +4,8 @@ from waiting_lists import RegistrationStats
 
 
 def test_workshop_product():
-    workshop_product = WorkshopProduct(name='Test')
+    workshop_product = WorkshopProduct(name='Test Product')
+    assert workshop_product.key == 'test_product'
 
 
 def test_workshop_product_get_available_quantity():

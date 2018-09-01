@@ -3,6 +3,7 @@ import datetime
 import dataclasses
 from mongoengine import fields, connect
 from salty_tickets import models
+from salty_tickets.constants import FOLLOWER, LEADER, REG_STATUS
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import BaseProduct, ProductRegistration
 from salty_tickets.mongo_utils import fields_from_dataclass
@@ -12,9 +13,11 @@ from salty_tickets.mongo_utils import fields_from_dataclass
 class ProductRegistrationDocument(fields.EmbeddedDocument):
     full_name = fields.StringField()
     email = fields.EmailField()
-    dance_role = fields.BaseField(choices=['leader', 'follower'])
+    dance_role = fields.BaseField(choices=[LEADER, FOLLOWER])
     as_couple = fields.BooleanField(default=False)
-    status = fields.BaseField(choices=['accepted', 'waiting', 'cancelled', 'new'], default='new')
+    status = fields.BaseField(
+        choices=[REG_STATUS.ACCEPTED, REG_STATUS.WAITING, REG_STATUS.CANCELED, REG_STATUS.NEW],
+        default=REG_STATUS.NEW)
     registration = fields.ReferenceField('RegistrationDocument')
     #
     # def to_model_short(self):
