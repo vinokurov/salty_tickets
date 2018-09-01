@@ -1,14 +1,13 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Dict
 
 from dataclasses import dataclass, field
 from salty_tickets.models.order import PurchaseItem
-from waiting_lists import AutoBalanceWaitingList, RegistrationStats
-from wtforms import Form as NoCsrfForm, TextAreaField
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
-    HiddenField, IntegerField, FloatField, RadioField, TextField
-from wtforms.validators import Optional, ValidationError
-from salty_tickets.constants import REG_STATUS, LEADER, FOLLOWER, COUPLE
+from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats
+from wtforms import Form as NoCsrfForm
+from wtforms.fields import RadioField
+from wtforms.validators import Optional
+from salty_tickets.constants import LEADER, FOLLOWER, COUPLE, ACCEPTED, WAITING
 from salty_tickets.utils import string_to_key
 
 
@@ -32,13 +31,13 @@ class BaseProduct:
 
     def parse_form(self, form):
         if form.get_product_by_key(self.key).add.data:
-            return PurchaseItem(name=self.name, product_key=self.key)
+            return [PurchaseItem(name=self.name, product_key=self.key)]
 
     def get_available_quantity(self):
         if self.max_available is None:
             return None
 
-        total_accepted = len([r for r in self.registrations if r.status == REG_STATUS.ACCEPTED])
+        total_accepted = len([r for r in self.registrations if r.status == ACCEPTED])
         return self.max_available - total_accepted
 
 
@@ -79,8 +78,8 @@ class WaitListedPartnerProduct(PartnerProduct):
         else:
             registered = [r for r in self.registrations if r.dance_role == option]
         return RegistrationStats(
-            accepted=len([r for r in registered if r.status == REG_STATUS.ACCEPTED]),
-            waiting=len([r for r in registered if r.status == REG_STATUS.WAITING]),
+            accepted=len([r for r in registered if r.status == ACCEPTED]),
+            waiting=len([r for r in registered if r.status == WAITING]),
         )
 
     def get_available_quantity(self):

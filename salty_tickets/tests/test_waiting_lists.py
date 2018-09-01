@@ -1,5 +1,5 @@
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
-from waiting_lists import AutoBalanceWaitingList, RegistrationStats
+from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats
 
 
 def test_auto_balance_waiting_list():

@@ -4,15 +4,14 @@ FOLLOWER = 'follower'
 COUPLE = 'couple'
 
 
-class REG_STATUS:
-    ACCEPTED = 'accepted'
-    WAITING = 'waiting'
-    CANCELED = 'canceled'
-    NEW = 'new'
+ACCEPTED = 'accepted'
+WAITING = 'waiting'
+CANCELED = 'canceled'
+NEW = 'new'
 
+REGISTRATION_STATUSES = [ACCEPTED, WAITING, CANCELED, NEW]
 
-class PMT_STATUS:
-    NEW = 'new'
-    OK = 'ok'
-    FAILED = 'failed'
+SUCCESSFUL = 'successful'
+FAILED = 'failed'
+PAYMENT_STATUSES = [SUCCESSFUL, FAILED, NEW]
 

@@ -45,14 +45,17 @@ def fields_from_dataclass(dataclass_class, skip=None):
                 kwargs = dict(db_field=field.name)
                 if field.default == dataclasses.MISSING and field.default_factory == dataclasses.MISSING:
                     kwargs['required'] = True
-                field_obj = field_mapping[field.type](**kwargs)
-                field_obj.name = field.name
-                field_obj.owner_document = mongo_class
-                setattr(mongo_class, field.name, field_obj)
-                mongo_class._fields[field.name] = field_obj
-                mongo_class._fields_ordered += (field.name,)
-                mongo_class._db_field_map[field.name] = field.name
-                mongo_class._reverse_db_field_map[field.name] = field.name
+                if field.type in field_mapping:
+                    field_obj = field_mapping[field.type](**kwargs)
+                    field_obj.name = field.name
+                    field_obj.owner_document = mongo_class
+                    setattr(mongo_class, field.name, field_obj)
+                    mongo_class._fields[field.name] = field_obj
+                    mongo_class._fields_ordered += (field.name,)
+                    mongo_class._db_field_map[field.name] = field.name
+                    mongo_class._reverse_db_field_map[field.name] = field.name
+                else:
+                    print(f'missing mapping for field type {field.type}')
 
         def _from_dataclass(cls, dataclass_inst):
             return dataclass_to_mongo(dataclass_inst, cls, skip)
