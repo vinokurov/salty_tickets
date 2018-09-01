@@ -1,13 +1,9 @@
 from flask_wtf import FlaskForm
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
-from salty_tickets.models.event import Event
 from salty_tickets.models.personal_info import PersonalInfo
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
     HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError, Optional
-from wtforms import Form as NoCsrfForm
-# from salty_tickets.sql_models import Event, Registration, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER
-# from salty_tickets.products import get_product_by_model
 
 
 class SignupForm(FlaskForm):
@@ -25,12 +21,11 @@ class FormWithProducts:
         return getattr(self, product_key)
 
 
-def need_partner_check(form, field):
-    for key in form.product_keys:
-        product_form = form.get_product_by_key(key)
-        needs_partner = product_form.needs_partner()
-        if needs_partner and not field.data:
-            raise ValidationError('Partner details are required')
+def need_partner_check(event, event_form, form_field):
+    if not form_field.data:
+        for key, product in event.products.items():
+            if product.needs_partner(event_form):
+                raise ValidationError('Partner details are required')
 
 
 class DanceSignupForm(FormWithProducts, SignupForm):
@@ -39,10 +34,10 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     state = StringField('State')
     city = StringField('City')
     dance_role = SelectField('Your Dance Role in Couple',
-                             choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower')],
-                             default=LEADER)
-    partner_name = StringField(u'Partner\'s name', validators=[need_partner_check])
-    partner_email = StringField(u'Partner\'s email', validators=[need_partner_check])
+                             choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower'), ('', 'None')],
+                             default='')
+    partner_name = StringField(u'Partner\'s name')
+    partner_email = StringField(u'Partner\'s email')
     partner_location_query = StringField('Partner\'s Location')
     partner_country = StringField('Partner\'s Country')
     partner_state = StringField('Partner\'s State')
@@ -51,8 +46,15 @@ class DanceSignupForm(FormWithProducts, SignupForm):
 
 
 def create_event_form(event):
+    def need_partner_validator(event_form, form_field):
+        return need_partner_check(event, event_form, form_field)
+
     class EventForm(DanceSignupForm):
-        pass
+        dance_role = SelectField('Your Dance Role in Couple',
+                                 choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower'), ('', 'None')],
+                                 default='', validators=[need_partner_validator])
+        partner_name = StringField(u'Partner\'s name', validators=[need_partner_validator])
+        partner_email = StringField(u'Partner\'s email', validators=[need_partner_validator])
 
     for product_key, product in event.products.items():
         setattr(EventForm, product_key, FormField(product.get_form_class()))

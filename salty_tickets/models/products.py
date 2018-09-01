@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Dict
 
 from dataclasses import dataclass, field
+from salty_tickets.models.order import PurchaseItem
 from waiting_lists import AutoBalanceWaitingList, RegistrationStats
 from wtforms import Form as NoCsrfForm, TextAreaField
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
@@ -26,28 +27,42 @@ class BaseProduct:
         if self.key is None:
             self.key = string_to_key(self.name)
 
-    def create_form(self):
+    def get_form_class(self):
         raise NotImplementedError()
 
-    @classmethod
-    def parse_form(cls, form_data):
-        raise NotImplemented()
+    def parse_form(self, form):
+        if form.get_product_by_key(self.key).add.data:
+            return PurchaseItem(name=self.name, product_key=self.key)
+
+    def get_available_quantity(self):
+        if self.max_available is None:
+            return None
+
+        total_accepted = len([r for r in self.registrations if r.status == REG_STATUS.ACCEPTED])
+        return self.max_available - total_accepted
 
 
 @dataclass
-class WorkshopProduct(BaseProduct):
-    start_datetime: datetime = None
-    end_datetime: datetime = None
+class PartnerProduct(BaseProduct):
+    def needs_partner(self, event_form):
+        product_data = event_form.get_product_by_key(self.key)
+        return product_data.add.data == COUPLE
 
+    def get_form_class(self):
+        return PartnerProductForm
+
+    @classmethod
+    def parse_form(cls, form_data):
+        pass
+
+
+@dataclass
+class WaitListedPartnerProduct(PartnerProduct):
     ratio: float = 100
     allow_first: int = None
-    level: str = None
-    duration: str = None
-    location: str = None
-    teachers: str = None
 
     def __post_init__(self):
-        super(WorkshopProduct, self).__post_init__()
+        super(WaitListedPartnerProduct, self).__post_init__()
         self.waiting_list = AutoBalanceWaitingList(
             max_available=self.max_available,
             ratio=self.ratio,
@@ -68,10 +83,6 @@ class WorkshopProduct(BaseProduct):
             waiting=len([r for r in registered if r.status == REG_STATUS.WAITING]),
         )
 
-    @staticmethod
-    def get_form_class():
-        return RegularPartnerWorkshopForm
-
     def get_available_quantity(self):
         if self.max_available is None:
             return None
@@ -83,12 +94,19 @@ class WorkshopProduct(BaseProduct):
                          + self.waiting_list.registration_stats[FOLLOWER].accepted
         return self.max_available - total_accepted
 
-    @classmethod
-    def parse_form(cls, form_data):
-        pass
+
+@dataclass
+class WorkshopProduct(WaitListedPartnerProduct):
+    start_datetime: datetime = None
+    end_datetime: datetime = None
+
+    level: str = None
+    duration: str = None
+    location: str = None
+    teachers: str = None
 
 
-class RegularPartnerWorkshopForm(NoCsrfForm):
+class PartnerProductForm(NoCsrfForm):
     add = RadioField(label='Add', default='', validators=[Optional()], choices=[
         (LEADER, 'Leader'),
         (FOLLOWER, 'Follower'),
@@ -98,8 +116,10 @@ class RegularPartnerWorkshopForm(NoCsrfForm):
 
 
 @dataclass
-class TicketProduct(BaseProduct):
-    pass
+class PartyProduct(PartnerProduct):
+    start_datetime: datetime = None
+    end_datetime: datetime = None
+    location: str = None
 
 
 @dataclass
