@@ -13,8 +13,8 @@ class ProductPricer:
         self.price_rules.append(BasePriceRule())
 
     def price(self, purchase):
-        for item in purchase.purchase_items:
-            item.price = self.determine_product_price(item, purchase.purchase_items)
+        for item in purchase.items:
+            item.price = self.determine_product_price(item, purchase.items)
 
         purchase.update_total_price()
 

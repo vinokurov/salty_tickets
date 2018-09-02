@@ -1,9 +1,10 @@
+import mongomock_mate
 from datetime import datetime
 
 import pytest
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING
-from salty_tickets.dao import EventDocument, TicketsDAO, RegistrationDocument, ProductRegistrationDocument
+from salty_tickets.dao import EventDocument, TicketsDAO, RegistrationDocument, RegistrationProductDetailsDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
 
@@ -25,9 +26,9 @@ def salty_recipes(test_dao):
         'start_date': datetime(2018, 7, 10),
         'end_date': datetime(2018, 7, 11),
         'products': [
-            WorkshopProduct(name='Saturday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2),
-            WorkshopProduct(name='Sunday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2),
-            PartyProduct('Party', base_price=10.0, max_available=50),
+            WorkshopProduct(name='Saturday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
+            WorkshopProduct(name='Sunday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
+            PartyProduct('Party', base_price=10.0, max_available=50, tags={'full'}),
         ],
         'registrations': {
             'Chang Schultheis': {'saturday': (LEADER, ACCEPTED),
@@ -48,9 +49,11 @@ def salty_recipes(test_dao):
         'couples': {
             'sunday': ('Stevie Stumpf', 'Albertine Segers'),
         },
-        'orders': {
-            'Chang Schultheis'
-        }
+        'orders': [
+            {
+                'name': 'Chang Schultheis',
+            }
+        ]
     }
     save_event_from_meta(event_meta)
     return event_meta
@@ -70,22 +73,26 @@ def save_event_from_meta(event_meta):
 
     for full_name, products in event_meta['registrations'].items():
         email = full_name.replace(' ', '.') + '@salty.co.uk'
-        reg = RegistrationDocument(full_name=full_name, email=email, event=new_event,
-                                   product_keys=list(products.keys()))
-        reg.save()
-        registration_docs[reg.full_name] = reg
-
+        reg = RegistrationDocument(full_name=full_name, email=email, event=new_event)
         # add to event.product
         for p_key, details in products.items():
             dance_role, status = details
-            kwargs = {'full_name': reg.full_name, 'email': reg.email, 'registration': reg, 'status': status}
+            kwargs = {'product_key': p_key, 'status': status}
             if dance_role:
                 kwargs['dance_role'] = dance_role
+            reg.products.append(RegistrationProductDetailsDocument(**kwargs))
+        reg.save()
+        registration_docs[reg.full_name] = reg
 
-            prod_reg = ProductRegistrationDocument(**kwargs)
-            new_event.products[p_key].registrations.append(prod_reg)
+    # couples
+    for prod_key, couples in event_meta['couples'].items():
+        partner_registration = RegistrationDocument.objects(event=new_event, full_name=couples[1]).first()
+        RegistrationDocument.objects(event=new_event, full_name=couples[0]).update(
+            set__products__S__partner_registration=partner_registration)
 
-    new_event.save()
+        partner_registration = RegistrationDocument.objects(event=new_event, full_name=couples[0]).first()
+        RegistrationDocument.objects(event=new_event, full_name=couples[1]).update(
+            set__products__S__partner_registration=partner_registration)
 
 
 def test_dao_get_event(test_dao, salty_recipes):
@@ -93,4 +100,9 @@ def test_dao_get_event(test_dao, salty_recipes):
     assert event.name == salty_recipes['name']
     assert list(event.products.keys()) == [p.key for p in salty_recipes['products']]
     assert event.products['saturday'].name == salty_recipes['products'][0].name
+
+    assert isinstance(event.products['saturday'], WorkshopProduct)
+    assert isinstance(event.products['party'], PartyProduct)
+    print(event.products['sunday'].registrations)
+
 

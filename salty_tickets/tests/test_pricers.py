@@ -14,7 +14,7 @@ def test_base_pricer():
     pricer = ProductPricer(event_products)
 
     purchase = Purchase(
-        purchase_items=[
+        items=[
             PurchaseItem(name='Item 1', product_key=product_list[0].key),
             PurchaseItem(name='Item 3', product_key=product_list[2].key),
         ]
@@ -24,8 +24,8 @@ def test_base_pricer():
 
     pricer.price(purchase)
     assert purchase.total_price == product_list[0].base_price + product_list[2].base_price
-    assert purchase.purchase_items[0].price == product_list[0].base_price
-    assert purchase.purchase_items[1].price == product_list[2].base_price
+    assert purchase.items[0].price == product_list[0].base_price
+    assert purchase.items[1].price == product_list[2].base_price
 
 
 def test_pricer_special_price_if_more_than():
@@ -43,17 +43,17 @@ def test_pricer_special_price_if_more_than():
     pricer = ProductPricer(event_products, pricing_rules)
 
     purchase = Purchase(
-        purchase_items=[PurchaseItem(name=f'Item - {p.name}', product_key=p.key) for p in product_list]
+        items=[PurchaseItem(name=f'Item - {p.name}', product_key=p.key) for p in product_list]
     )
 
     assert purchase.total_price == 0
 
     pricer.price(purchase)
     assert purchase.total_price == 25 + 25 + 20 + 15
-    assert purchase.purchase_items[0].price == product_list[0].base_price
-    assert purchase.purchase_items[1].price == product_list[1].base_price
-    assert purchase.purchase_items[2].price == 20
-    assert purchase.purchase_items[3].price == product_list[3].base_price
+    assert purchase.items[0].price == product_list[0].base_price
+    assert purchase.items[1].price == product_list[1].base_price
+    assert purchase.items[2].price == 20
+    assert purchase.items[3].price == product_list[3].base_price
 
 
 def test_pricer_special_price_if_more_than_2_persons():
@@ -71,7 +71,7 @@ def test_pricer_special_price_if_more_than_2_persons():
     pricer = ProductPricer(event_products, pricing_rules)
 
     purchase = Purchase(
-        purchase_items=[
+        items=[
             PurchaseItem(name=f'Item 1: lead', product_key=product_list[0].key, parameters={'person': 'Mr Leader'}),
             PurchaseItem(name=f'Item 1: follow', product_key=product_list[0].key, parameters={'person': 'Ms Follower'}),
             PurchaseItem(name=f'Item 2: lead', product_key=product_list[1].key, parameters={'person': 'Mr Leader'}),

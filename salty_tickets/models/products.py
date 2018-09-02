@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Set
 
 from dataclasses import dataclass, field
 from salty_tickets.models.order import PurchaseItem
@@ -19,7 +19,7 @@ class BaseProduct:
     max_available: int = None
     base_price: float = 0
     image_url: str = None
-    tags: set = field(default_factory=set)
+    tags: Set = field(default_factory=set)
     registrations: list = field(default_factory=list)
 
     def __post_init__(self):

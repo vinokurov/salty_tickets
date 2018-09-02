@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict
 
 from dataclasses import dataclass, field
 from salty_tickets.utils import string_to_key
@@ -12,8 +13,8 @@ class Event:
     end_date: datetime = None
     info: str = None
     active: bool = False
-    products: dict = field(default_factory=dict)
-    pricing_rules: dict = field(default_factory=dict)
+    products: Dict = field(default_factory=dict)
+    pricing_rules: Dict = field(default_factory=dict)
 
     def __post_init__(self):
         if self.key is None:

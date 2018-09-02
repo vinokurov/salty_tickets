@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from typing import List, Dict, Set
 
 import dataclasses
 from mongoengine import fields
@@ -34,9 +35,11 @@ def fields_from_dataclass(dataclass_class, skip=None):
             int: fields.IntField,
             float: fields.FloatField,
             bool: fields.BooleanField,
-            # 'list': fields.ListField,
             datetime.datetime: fields.DateTimeField,
-            Decimal: fields.DecimalField
+            Decimal: fields.DecimalField,
+            Dict: fields.DictField,
+            List: fields.ListField,
+            Set: fields.ListField,
         }
 
         original_fields = mongo_class.__dict__.copy()
