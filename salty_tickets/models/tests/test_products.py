@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE, ACCEPTED, WAITING
-from salty_tickets.models.personal_info import PersonInfo
-from salty_tickets.models.products import WorkshopProduct, ProductRegistration, WaitListedPartnerProduct, PartnerProduct
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.products import WorkshopProduct, WaitListedPartnerProduct, PartnerProduct
 from salty_tickets.waiting_lists import RegistrationStats
 
 

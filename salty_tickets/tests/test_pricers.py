@@ -1,5 +1,5 @@
-from salty_tickets.models.personal_info import PersonInfo
-from salty_tickets.models.products import BaseProduct, ProductRegistration
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.products import BaseProduct
 from salty_tickets.pricers import ProductPricer, SpecialPriceIfMoreThanPriceRule
 
 
@@ -21,7 +21,7 @@ def test_base_pricer():
     for r in registrations:
         assert r.price is None
 
-    pricer.price(registrations)
+    pricer.price_all(registrations)
     assert registrations[0].price == product_list[0].base_price
     assert registrations[1].price == product_list[2].base_price
 
@@ -42,7 +42,7 @@ def test_pricer_special_price_if_more_than():
 
     registrations = [ProductRegistration(product_key=p.key) for p in products]
 
-    pricer.price(registrations)
+    pricer.price_all(registrations)
     assert registrations[0].price == products[0].base_price
     assert registrations[1].price == products[1].base_price
     assert registrations[2].price == 20
@@ -78,5 +78,5 @@ def test_pricer_special_price_if_more_than_2_persons():
         ProductRegistration(product_key=products[3].key, person=mr_one),
     ]
 
-    pricer.price(registrations)
+    pricer.price_all(registrations)
     assert [r.price for r in registrations] == [25, 25, 25, 25, 20, 15]

@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
-from salty_tickets.models.personal_info import PersonInfo
+from salty_tickets.models.registrations import PersonInfo
 from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
     HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError, Optional

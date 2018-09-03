@@ -187,16 +187,16 @@ def mts_get_order_for_event(event, form, registration=None, partner_registration
                 if weekend_ticket_key:
                     product_keywords = product.keywords.split(',')
                     if weekend_ticket_form.includes and set(weekend_ticket_form.includes.split(',')).intersection(product_keywords):
-                        order_product[0].price = 0
-                        order_product[1].price = 0
+                        order_product[0].price_all = 0
+                        order_product[1].price_all = 0
                     elif isinstance(product, RegularPartnerWorkshop):
                         if free_classes_remaining:
-                            order_product[0].price = 0
-                            order_product[1].price = 0
+                            order_product[0].price_all = 0
+                            order_product[1].price_all = 0
                             free_classes_remaining -= 1
                         elif mts_form_controller.is_special_extra_block_price:
-                            order_product[0].price = product.get_discount_price_by_key('extra_block')
-                            order_product[1].price = product.get_discount_price_by_key('extra_block')
+                            order_product[0].price_all = product.get_discount_price_by_key('extra_block')
+                            order_product[1].price_all = product.get_discount_price_by_key('extra_block')
 
                 order_product[0].registration = registration
                 order_product[1].registration = partner_registration

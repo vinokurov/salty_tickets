@@ -62,7 +62,7 @@ class OrderProductController:
 
     @property
     def price(self):
-        return self._order_product.price
+        return self._order_product.price_all
 
     @property
     def total_paid(self):
@@ -70,7 +70,7 @@ class OrderProductController:
 
     @property
     def total_remaining(self):
-        return self._order_product.price - sum([item.amount for item in self._order_product.payment_items])
+        return self._order_product.price_all - sum([item.amount for item in self._order_product.payment_items])
 
     @property
     def status(self):

@@ -97,14 +97,14 @@ class BaseProduct:
     def get_payment_item(self, order_product):
         payment_item = PaymentItem()
         if order_product.status == ORDER_PRODUCT_STATUS_WAITING:
-            amount = min(order_product.price,
-                         self.get_waiting_list_price(order_product.product, order_product.price))
+            amount = min(order_product.price_all,
+                         self.get_waiting_list_price(order_product.product, order_product.price_all))
             payment_item.amount = amount
             if amount:
                 payment_item.description = 'Refundable deposit'
 
         else:
-            payment_item.amount = order_product.price
+            payment_item.amount = order_product.price_all
         payment_item.order_product = order_product
         return payment_item
 

@@ -5,9 +5,8 @@ from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER, REGISTRATION_STATUSES, NEW
 from salty_tickets.models.event import Event
-from salty_tickets.models.order import Payment
-from salty_tickets.models.personal_info import PersonInfo
-from salty_tickets.models.products import BaseProduct, ProductRegistration
+from salty_tickets.models.registrations import Payment, PersonInfo, ProductRegistration
+from salty_tickets.models.products import BaseProduct
 from salty_tickets.mongo_utils import fields_from_dataclass
 
 
@@ -63,7 +62,7 @@ class EventProductDocument(fields.EmbeddedDocument):
         return product_model
 
 
-@fields_from_dataclass(Event, skip=['products'])
+@fields_from_dataclass(Event, skip=['products', 'pricing_rules'])
 class EventDocument(fields.Document):
     __meta__ = {
         'collection': 'events',
@@ -117,7 +116,7 @@ class TicketsDAO:
     def __init__(self):
         connect(host='mongomock://localhost')
 
-    def get_event_by_key(self, key, get_registrations=True):
+    def get_event_by_key(self, key, get_registrations=True) -> Event:
         event_doc = EventDocument.objects(key=key).first()
         if event_doc is None:
             return None

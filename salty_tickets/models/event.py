@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Dict
 
 from dataclasses import dataclass, field
+from salty_tickets.models.products import BaseProduct
+from salty_tickets.pricers import BasePriceRule
 from salty_tickets.utils import string_to_key
 
 
@@ -13,7 +15,7 @@ class Event:
     end_date: datetime = None
     info: str = None
     active: bool = False
-    products: Dict = field(default_factory=dict)
+    products: Dict[str, BaseProduct] = field(default_factory=dict)
     pricing_rules: Dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -22,4 +24,3 @@ class Event:
 
     def append_products(self, product_list):
         self.products.update({p.key: p for p in product_list})
-

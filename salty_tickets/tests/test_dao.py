@@ -19,6 +19,7 @@ class TestTicketsDAO(TicketsDAO):
 def test_dao():
     return TestTicketsDAO()
 
+
 @pytest.fixture
 def salty_recipes(test_dao):
     event_meta = {
@@ -132,8 +133,9 @@ def test_dao_get_event(test_dao, salty_recipes):
     for prod_key, product in event.products.items():
         for reg in product.registrations:
             assert reg.id is not None
-
+    assert isinstance(event.products['saturday'], WorkshopProduct)
     print(event.products['saturday'].waiting_list)
+    # assert event.products['saturday'].waiting_list.registration_stats[LEADER].accepted
 
     # print(salty_recipes['registration_ids']['Stevie Stumpf'])
     # print([pr.to_dataclass() for pr in ProductRegistrationDocument.objects(person=salty_recipes['registration_ids']['Stevie Stumpf']).all()])

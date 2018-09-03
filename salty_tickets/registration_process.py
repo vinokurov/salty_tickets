@@ -1,5 +1,5 @@
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
-from salty_tickets.models.order import Purchase, Order
+from salty_tickets.models.registrations import Purchase, Order
 from salty_tickets.pricers import ProductPricer
 
 
@@ -11,7 +11,7 @@ def register(event, form):
 
     purchase = Purchase(purchase_items)
     pricer = ProductPricer.from_event(event)
-    pricer.price(purchase)
+    pricer.price_all(purchase)
 
     order = Order(
         full_name=personal_info.full_name,

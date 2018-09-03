@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Dict, Set
+# from typing import Set, List
+import typing
 
 from dataclasses import dataclass, field
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
-from salty_tickets.models.personal_info import PersonInfo
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration
 from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats, flip_role
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField
@@ -20,32 +21,32 @@ class BaseProduct:
     max_available: int = None
     base_price: float = 0
     image_url: str = None
-    tags: Set = field(default_factory=set)
-    registrations: list = field(default_factory=list)
+    tags: typing.Set = field(default_factory=set)
+    registrations: typing.List[ProductRegistration] = field(default_factory=list)
 
     def __post_init__(self):
         if self.key is None:
             self.key = string_to_key(self.name)
 
-    def get_form_class(self):
+    def get_form_class(self) -> NoCsrfForm:
         raise NotImplementedError()
 
-    def parse_form(self, form):
-        if form.get_product_by_key(self.key).add.data:
-            return [PurchaseItem(name=self.name, product_key=self.key)]
+    def parse_form(self, form) -> typing.List[ProductRegistration]:
+        if self.added(form.get_product_by_key(self.key)):
+            return [self._create_base_registration()]
 
-    def get_available_quantity(self):
+    def get_available_quantity(self) -> typing.Optional[int]:
         if self.max_available is None:
             return None
 
         total_accepted = len([r for r in self.registrations if r.status == ACCEPTED])
         return self.max_available - total_accepted
 
-    def added(self, product_form):
+    def added(self, product_form) -> bool:
         return bool(product_form.add.data)
 
-    def _create_base_registration(self):
-        return ProductRegistration(name=self.name, product_key=self.key)
+    def _create_base_registration(self) -> ProductRegistration:
+        return ProductRegistration(product_key=self.key)
 
 
 @dataclass
@@ -64,7 +65,7 @@ class PartnerProduct(BaseProduct):
         product_registration.registered_by = registered_by
         return product_registration
 
-    def parse_form(self, event_form):
+    def parse_form(self, event_form) -> typing.List[ProductRegistration]:
         product_data = event_form.get_product_by_key(self.key)
         if self.added(product_data):
             if product_data.add.data == COUPLE:
@@ -83,8 +84,6 @@ class PartnerProduct(BaseProduct):
                 person_info.dance_role = product_data.add.data
                 registration = self.create_registration(person_info, person_info)
                 return [registration]
-
-
 
 
 @dataclass
@@ -114,7 +113,7 @@ class WaitListedPartnerProduct(PartnerProduct):
             waiting=len([r for r in registered if r.status == WAITING]),
         )
 
-    def get_available_quantity(self):
+    def get_available_quantity(self) -> typing.Optional[int]:
         if self.max_available is None:
             return None
 
@@ -151,18 +150,3 @@ class PartyProduct(PartnerProduct):
     start_datetime: datetime = None
     end_datetime: datetime = None
     location: str = None
-
-
-@dataclass
-class ProductRegistration:
-    registered_by: PersonInfo = None
-    person: PersonInfo = None
-    partner: PersonInfo = None
-    dance_role: str = None
-    as_couple: bool = False
-    status: str = None
-    details: Dict = field(default_factory=dict)
-    price: float = None
-    paid: float = None
-    date: datetime = None
-    product_key: str = None

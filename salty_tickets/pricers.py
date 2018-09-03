@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 from dataclasses import dataclass, field
-from salty_tickets.models.products import ProductRegistration, BaseProduct
+from salty_tickets.models.registrations import ProductRegistration
 
 
 @dataclass
@@ -15,12 +15,12 @@ class ProductPricer:
     def __post_init__(self):
         self.price_rules.append(BasePriceRule())
 
-    def price(self, registrations: List[ProductRegistration]):
+    def price_all(self, registrations: List[ProductRegistration]):
         for reg in registrations:
             reg.price = self.optimal_price(reg, registrations)
 
     def optimal_price(self, registration: ProductRegistration,
-                      registration_list: List[ProductRegistration]):
+                      registration_list: List[ProductRegistration]) -> float:
         possible_prices = [rule.price(registration, registration_list, self.event_products)
                            for rule in self.price_rules]
         price = min([p for p in possible_prices if p is not None])
@@ -33,7 +33,7 @@ class ProductPricer:
 
 
 class BasePriceRule:
-    def price(self, registration, registration_list, event_products):
+    def price(self, registration, registration_list, event_products) -> float:
         return event_products[registration.product_key].base_price
 
 
@@ -43,7 +43,7 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
     special_price: float
     tag: str
 
-    def price(self, registration, registration_list, event_products):
+    def price(self, registration, registration_list, event_products) -> float:
         applicable_product_keys = [k for k, p in event_products.items()
                                    if self.tag in p.tags]
         if registration.product_key in applicable_product_keys:

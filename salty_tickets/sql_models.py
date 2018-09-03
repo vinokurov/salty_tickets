@@ -156,7 +156,7 @@ class Order(Base):
     @property
     def products_price(self):
         # return self.order_products.with_entities(func.sum(OrderProduct.price)).scalar()
-        return sum([p.price for p in self.order_products.all()])
+        return sum([p.price_all for p in self.order_products.all()])
 
 
 class OrderProduct(Base):

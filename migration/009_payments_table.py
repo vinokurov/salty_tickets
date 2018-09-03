@@ -21,7 +21,7 @@ for order in Order.query.all():
     for op in order.order_products:
         item = PaymentItem(
             order_product_id=op.id,
-            amount=op.price
+            amount=op.price_all
         )
         payment.payment_items.append(item)
 database.db_session.commit()
