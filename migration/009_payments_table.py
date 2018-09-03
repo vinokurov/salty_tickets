@@ -1,6 +1,6 @@
 from salty_tickets import sql_models
 from salty_tickets import database
-from salty_tickets.sql_models import Order, Payment, PaymentItem, PAYMENT_STATUS_PAID
+from salty_tickets.to_delete.sql_models import Order, Payment, PaymentItem, PAYMENT_STATUS_PAID
 
 sql_models.Base.metadata.create_all(bind=database.engine)
 database.db_session.commit()

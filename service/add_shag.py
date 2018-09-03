@@ -1,9 +1,9 @@
 from salty_tickets import sql_models
-from salty_tickets.controllers import OrderSummaryController
-from salty_tickets.database import db_session
-from salty_tickets.sql_models import Registration, Order, ORDER_PRODUCT_STATUS_ACCEPTED, OrderProduct, DANCE_ROLE_LEADER, DANCE_ROLE_FOLLOWER, \
-    ORDER_STATUS_PAID, PAYMENT_STATUS_PAID
-from salty_tickets.pricing_rules import add_payment_to_user_order, balance_event_waiting_lists
+from salty_tickets.to_delete.controllers import OrderSummaryController
+from salty_tickets.to_delete.database import db_session
+from salty_tickets.to_delete.sql_models import Registration, Order, ORDER_PRODUCT_STATUS_ACCEPTED, OrderProduct, DANCE_ROLE_LEADER, \
+    ORDER_STATUS_PAID
+from salty_tickets.to_delete.pricing_rules import add_payment_to_user_order, balance_event_waiting_lists
 
 event = sql_models.Event.query.filter_by(event_key='salty_recipes_with_simona_rokas').one()
 print(event.name)

@@ -1,5 +1,5 @@
-from salty_tickets.database import db_session
-from salty_tickets.sql_models import Event, Registration, Order, Product, OrderProduct, Payment, OrderProductDetail
+from salty_tickets.to_delete.database import db_session
+from salty_tickets.to_delete.sql_models import Event, Registration, Order, Product, OrderProduct, Payment, OrderProductDetail
 from salty_tickets.tokens import order_serialize
 
 event = Event.query.filter_by(id=6).one()

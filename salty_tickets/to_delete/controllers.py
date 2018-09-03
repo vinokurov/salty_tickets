@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 
 from flask import url_for
 from salty_tickets.forms import RemainingPaymentForm
-from salty_tickets.sql_models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
+from salty_tickets.to_delete.sql_models import Event, OrderProduct, Order, Registration, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, \
     SIGNUP_GROUP_TYPE_PARTNERS, group_order_product_mapping, PAYMENT_STATUS_PAID
 from salty_tickets.payments import get_remaining_payment
-from salty_tickets.products import get_product_by_model
+from salty_tickets.to_delete.products import get_product_by_model
 from salty_tickets.tokens import email_deserialize, order_product_serialize, order_product_deserialize, order_serialize, \
     GroupToken
 

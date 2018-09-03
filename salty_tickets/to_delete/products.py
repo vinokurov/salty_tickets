@@ -1,22 +1,18 @@
 import inspect
 from collections import namedtuple
 
-import math
-
 from itsdangerous import BadSignature
-from salty_tickets.database import db_session
-from salty_tickets.discounts import discount_users
+from salty_tickets.to_delete.database import db_session
+from salty_tickets.to_delete.discounts import discount_users
 from salty_tickets.tokens import order_product_deserialize, order_product_token_expired, GroupToken
 from sqlalchemy import asc
 from sqlalchemy.orm import aliased
 from wtforms import Form as NoCsrfForm, TextAreaField
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
-    HiddenField, IntegerField, FloatField, RadioField, TextField
+from wtforms.fields import StringField, SelectField, BooleanField, FloatField, RadioField
 from wtforms.validators import Optional, ValidationError
 
-from salty_tickets.sql_models import Product, ProductParameter, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
-    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, Registration, \
-    SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem, RegistrationGroup
+from salty_tickets.to_delete.sql_models import Product, OrderProduct, DANCE_ROLE_FOLLOWER, DANCE_ROLE_LEADER, Order, \
+    ORDER_STATUS_PAID, OrderProductDetail, ORDER_PRODUCT_STATUS_ACCEPTED, ORDER_PRODUCT_STATUS_WAITING, SignupGroup, group_order_product_mapping, SIGNUP_GROUP_PARTNERS, PaymentItem, RegistrationGroup
 import json
 
 

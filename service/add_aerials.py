@@ -1,5 +1,5 @@
 from salty_tickets import sql_models, database
-from salty_tickets.pricing_rules import create_partners_group
+from salty_tickets.to_delete.pricing_rules import create_partners_group
 
 event = sql_models.Event.query.filter_by(id=1).one()
 print(event.name)

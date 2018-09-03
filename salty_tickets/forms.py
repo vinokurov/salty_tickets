@@ -1,9 +1,8 @@
 from flask_wtf import FlaskForm
-from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
+from salty_tickets.constants import LEADER, FOLLOWER
 from salty_tickets.models.registrations import PersonInfo
-from wtforms.fields import StringField, DateTimeField, SubmitField, SelectField, BooleanField, FormField, FieldList, \
-    HiddenField, TextAreaField, RadioField
-from wtforms.validators import Email, DataRequired, ValidationError, Optional
+from wtforms.fields import StringField, SubmitField, SelectField, BooleanField, FormField, HiddenField, TextAreaField, RadioField
+from wtforms.validators import Email, DataRequired, ValidationError
 
 
 class SignupForm(FlaskForm):
@@ -63,7 +62,7 @@ def create_event_form(event):
 
 
 def get_registration_from_form(form):
-    from salty_tickets.sql_models import Event, Registration
+    from salty_tickets.to_delete.sql_models import Registration
     assert isinstance(form, SignupForm)
     registration_model = Registration(
         name=form.name.data,
@@ -77,7 +76,7 @@ def get_registration_from_form(form):
 
 
 def get_partner_registration_from_form(form):
-    from salty_tickets.sql_models import Event, Registration
+    from salty_tickets.to_delete.sql_models import Registration
     assert isinstance(form, SignupForm)
     registration_model = Registration(
         name=form.partner_name.data,

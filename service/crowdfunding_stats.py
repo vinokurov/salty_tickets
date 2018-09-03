@@ -1,5 +1,4 @@
-from salty_tickets.sql_models import Event
-from salty_tickets import products
+from salty_tickets.to_delete.sql_models import Event
 
 for order in Event.query.filter_by(id=2).one().orders:
     print(order.registration.name, order.registration.email, order.registration.registered_datetime, order.status, order.total_price)

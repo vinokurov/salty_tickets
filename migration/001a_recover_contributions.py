@@ -1,5 +1,5 @@
-from salty_tickets.database import db_session
-from salty_tickets.sql_models import Registration, Order, OrderProduct, Event, Product, CrowdfundingRegistrationProperties
+from salty_tickets.to_delete.database import db_session
+from salty_tickets.to_delete.sql_models import Registration, Order, OrderProduct, Event, Product, CrowdfundingRegistrationProperties
 
 event = Event.query.filter_by(event_key='simona_de_leo_s_crowdfunding_campaign').one()
 

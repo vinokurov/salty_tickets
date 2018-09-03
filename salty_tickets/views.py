@@ -3,24 +3,20 @@ from flask import url_for, jsonify
 from itsdangerous import BadSignature
 from salty_tickets import app
 from salty_tickets import config
-from salty_tickets.controllers import OrderSummaryController, OrderProductController, FormErrorController
-from salty_tickets.database import db_session
+from salty_tickets.to_delete.controllers import OrderSummaryController, OrderProductController, FormErrorController
+from salty_tickets.to_delete.database import db_session
 from salty_tickets.emails import send_registration_confirmation, send_cancellation_request_confirmation, \
     send_remaining_payment_confirmation
 from salty_tickets.forms import create_event_form, get_registration_from_form, \
     get_partner_registration_from_form, OrderProductCancelForm, VoteForm, VoteAdminForm, \
      RemainingPaymentForm
-from salty_tickets.sql_models import Event, CrowdfundingRegistrationProperties, Registration, RefundRequest, Order, Vote, \
+from salty_tickets.to_delete.sql_models import Event, RefundRequest, Vote, \
     VotingSession
-from salty_tickets.mts_controllers import MtsSignupFormController, MtsTicketController
+from salty_tickets.to_delete.mts_controllers import MtsSignupFormController, MtsTicketController
 from salty_tickets.payments import process_payment
-from salty_tickets.pricing_rules import get_order_for_event, get_total_raised, \
-    get_order_for_crowdfunding_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
+from salty_tickets.to_delete.pricing_rules import get_order_for_event, get_stripe_properties, balance_event_waiting_lists, process_partner_registrations, \
     mts_get_order_for_event, process_mts_group_registrations
-from salty_tickets.products import flip_role
-from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize, \
-    RegistrationToken
-from sqlalchemy import desc
+from salty_tickets.tokens import email_deserialize, order_product_deserialize, order_deserialize, order_serialize
 from werkzeug.utils import redirect
 from htmlmin import minify
 
@@ -448,7 +444,7 @@ def vote_admin():
 @app.route('/vote/admin/data.csv')
 def vote_data():
     import pandas as pd
-    from salty_tickets.database import engine
+    from salty_tickets.to_delete.database import engine
     voting_sessions_df = pd.read_sql_query(VotingSession.query.statement, engine)
     votes_df = pd.read_sql_query(Vote.query.statement, engine)
 

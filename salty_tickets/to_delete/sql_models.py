@@ -1,8 +1,6 @@
 import datetime
 
-from flask import jsonify
-from salty_tickets import config
-from salty_tickets.database import Base
+from salty_tickets.to_delete.database import Base
 # from salty_tickets.products import get_product_by_model
 from salty_tickets.utils import string_to_key
 from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean

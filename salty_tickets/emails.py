@@ -3,9 +3,9 @@ import logging
 import requests
 from flask import render_template
 from salty_tickets import config
-from premailer import transform, Premailer
+from premailer import Premailer
 from salty_tickets.config import EMAIL_FROM
-from salty_tickets.controllers import OrderSummaryController, OrderProductController, PaymentController
+from salty_tickets.to_delete.controllers import OrderSummaryController, OrderProductController
 
 
 def send_email(email_from, email_to, subj, body_text, body_html, files=None):

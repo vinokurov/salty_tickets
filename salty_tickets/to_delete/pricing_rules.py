@@ -1,12 +1,11 @@
-from salty_tickets.database import db_session
+from salty_tickets.to_delete.database import db_session
 from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
-from salty_tickets.sql_models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
+from salty_tickets.to_delete.sql_models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
     Product, Registration, OrderProduct, ORDER_PRODUCT_STATUS_WAITING, \
-    ORDER_STATUS_PAID, Payment, RegistrationGroup, SIGNUP_GROUP_FESTIVAL
-from salty_tickets.mts_controllers import MtsSignupFormController
+    ORDER_STATUS_PAID, Payment, RegistrationGroup
+from salty_tickets.to_delete.mts_controllers import MtsSignupFormController
 from salty_tickets.payments import stripe_amount, update_payment_total, transaction_fee
-from salty_tickets.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop, \
-    FestivalGroupDiscountProduct
+from salty_tickets.to_delete.products import get_product_by_model, RegularPartnerWorkshop, CouplesOnlyWorkshop
 from salty_tickets.tokens import order_product_deserialize, GroupToken
 
 
