@@ -12,7 +12,10 @@ def mongo_to_dataclass(mongo_model, dataclass_class, skip_fields=None):
 
     model_fields = [f.name for f in dataclasses.fields(dataclass_class) if f.name not in skip_fields]
     kwargs = {f: mongo_model[f] for f in model_fields}
-    return dataclass_class(**kwargs)
+    dtcl = dataclass_class(**kwargs)
+    if isinstance(mongo_model, fields.Document):
+        dtcl.id = mongo_model.id
+    return dtcl
 
 
 def dataclass_to_mongo(dataclass_inst, mongo_class, skip_fields=None):

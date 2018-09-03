@@ -1,7 +1,8 @@
 from unittest.mock import Mock
 
 import pytest
-from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
+from salty_tickets.constants import LEADER, FOLLOWER, COUPLE, ACCEPTED, WAITING
+from salty_tickets.models.personal_info import PersonInfo
 from salty_tickets.models.products import WorkshopProduct, ProductRegistration, WaitListedPartnerProduct, PartnerProduct
 from salty_tickets.waiting_lists import RegistrationStats
 
@@ -19,18 +20,22 @@ def test_wait_listed_partner_product_get_available_quantity():
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10)
     assert workshop_product.registrations == []
     assert workshop_product.get_available_quantity() == 10
+    
+    mr_one = PersonInfo(full_name="Mr One", email='mr.one@gmail.com')
+    mr_two = PersonInfo(full_name="Mr Two", email='mr.two@gmail.com')
+
 
     registrations = [
-        ProductRegistration(full_name="Mr One", email='one@gmail.com', status='accepted', dance_role='leader'),
-        ProductRegistration(full_name="Mr Two", email='two@gmail.com', status='accepted', dance_role='leader'),
+        ProductRegistration(person=mr_one, status=ACCEPTED, dance_role=LEADER),
+        ProductRegistration(person=mr_two, status=ACCEPTED, dance_role=LEADER),
     ]
 
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10, registrations=registrations)
     assert workshop_product.get_available_quantity() == 8
 
     registrations = [
-        ProductRegistration(full_name="Mr One", email='one@gmail.com', status='accepted', dance_role='leader'),
-        ProductRegistration(full_name="Mr Two", email='two@gmail.com', status='waiting', dance_role='leader'),
+        ProductRegistration(person=mr_one, status=ACCEPTED, dance_role=LEADER),
+        ProductRegistration(person=mr_two, status=WAITING, dance_role=LEADER),
     ]
 
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10, registrations=registrations)
@@ -38,27 +43,33 @@ def test_wait_listed_partner_product_get_available_quantity():
 
 
 def test_wait_listed_partner_product_waiting_list():
+    mr_one = PersonInfo(full_name="Mr One", email='mr.one@gmail.com')
+    mr_two = PersonInfo(full_name="Mr Two", email='mr.two@gmail.com')
+    ms_one = PersonInfo(full_name="Ms One", email='ms.one@gmail.com')
+    ms_two = PersonInfo(full_name="Ms Two", email='ms.two@gmail.com')
+    ms_three = PersonInfo(full_name="Ms Three", email='ms.three@gmail.com')
+
     registrations = [
-        ProductRegistration(full_name="Mr One", email='one@gmail.com', status='accepted', dance_role='leader'),
-        ProductRegistration(full_name="Mr Two", email='two@gmail.com', status='accepted', dance_role='leader', as_couple=True),
-        ProductRegistration(full_name="Ms One", email='one@gmail.com', status='accepted', dance_role='follower'),
-        ProductRegistration(full_name="Ms Two", email='two@gmail.com', status='accepted', dance_role='follower', as_couple=True),
-        ProductRegistration(full_name="Ms Three", email='three@gmail.com', status='accepted', dance_role='follower'),
+        ProductRegistration(person=mr_one, status=ACCEPTED, dance_role=LEADER),
+        ProductRegistration(person=mr_two, status=ACCEPTED, dance_role=LEADER, as_couple=True, partner=ms_two),
+        ProductRegistration(person=ms_one, status=ACCEPTED, dance_role=FOLLOWER),
+        ProductRegistration(person=ms_two, status=ACCEPTED, dance_role=FOLLOWER, as_couple=True, partner=mr_two),
+        ProductRegistration(person=ms_three, status=ACCEPTED, dance_role=FOLLOWER),
     ]
 
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10, registrations=registrations)
-    assert workshop_product.waiting_list.registration_stats['leader'] == RegistrationStats(accepted=2, waiting=0)
-    assert workshop_product.waiting_list.registration_stats['follower'] == RegistrationStats(accepted=3, waiting=0)
-    assert workshop_product.waiting_list.registration_stats['couple'] == RegistrationStats(accepted=2, waiting=0)
+    assert workshop_product.waiting_list.registration_stats[LEADER] == RegistrationStats(accepted=2, waiting=0)
+    assert workshop_product.waiting_list.registration_stats[FOLLOWER] == RegistrationStats(accepted=3, waiting=0)
+    assert workshop_product.waiting_list.registration_stats[COUPLE] == RegistrationStats(accepted=2, waiting=0)
 
     #############
     registrations = [
-        ProductRegistration(full_name="Mr One", email='one@gmail.com', status='accepted', dance_role='leader'),
-        ProductRegistration(full_name="Mr Two", email='two@gmail.com', status='waiting', dance_role='leader'),
+        ProductRegistration(person=mr_one, status=ACCEPTED, dance_role=LEADER),
+        ProductRegistration(person=mr_two, status=WAITING, dance_role=LEADER),
     ]
 
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10, registrations=registrations)
-    assert workshop_product.waiting_list.registration_stats['leader'] == RegistrationStats(accepted=1, waiting=1)
+    assert workshop_product.waiting_list.registration_stats[LEADER] == RegistrationStats(accepted=1, waiting=1)
 
     ####
     workshop_product = WaitListedPartnerProduct(name='Test', max_available=10, ratio=1.5, registrations=registrations)

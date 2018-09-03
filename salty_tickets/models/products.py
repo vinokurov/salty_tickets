@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Dict, Set
 
 from dataclasses import dataclass, field
-from salty_tickets.models.order import PurchaseItem
-from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats
+from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
+from salty_tickets.models.personal_info import PersonInfo
+from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats, flip_role
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField
 from wtforms.validators import Optional
@@ -40,6 +41,12 @@ class BaseProduct:
         total_accepted = len([r for r in self.registrations if r.status == ACCEPTED])
         return self.max_available - total_accepted
 
+    def added(self, product_form):
+        return bool(product_form.add.data)
+
+    def _create_base_registration(self):
+        return ProductRegistration(name=self.name, product_key=self.key)
+
 
 @dataclass
 class PartnerProduct(BaseProduct):
@@ -50,9 +57,34 @@ class PartnerProduct(BaseProduct):
     def get_form_class(self):
         return PartnerProductForm
 
-    @classmethod
-    def parse_form(cls, form_data):
-        pass
+    def create_registration(self, person_info: PersonInfo, registered_by: PersonInfo):
+        product_registration = self._create_base_registration()
+        product_registration.name = f'{product_registration.name} / {person_info.dance_role} / {person_info.full_name}'
+        product_registration.person = person_info
+        product_registration.registered_by = registered_by
+        return product_registration
+
+    def parse_form(self, event_form):
+        product_data = event_form.get_product_by_key(self.key)
+        if self.added(product_data):
+            if product_data.add.data == COUPLE:
+                person_info = get_primary_personal_info_from_form(event_form)
+                partner_info = get_partner_personal_info_from_form(event_form)
+                person_info.dance_role = event_form.dance_role.data
+                partner_info.dance_role = flip_role(person_info.dance_role)
+
+                registration_1 = self.create_registration(person_info, person_info)
+                registration_2 = self.create_registration(partner_info, person_info)
+
+                return [registration_1, registration_2]
+
+            elif product_data.add.data in [LEADER, FOLLOWER]:
+                person_info = get_primary_personal_info_from_form(event_form)
+                person_info.dance_role = product_data.add.data
+                registration = self.create_registration(person_info, person_info)
+                return [registration]
+
+
 
 
 @dataclass
@@ -123,9 +155,14 @@ class PartyProduct(PartnerProduct):
 
 @dataclass
 class ProductRegistration:
-    full_name: str
-    email: str
+    registered_by: PersonInfo = None
+    person: PersonInfo = None
+    partner: PersonInfo = None
     dance_role: str = None
     as_couple: bool = False
     status: str = None
     details: Dict = field(default_factory=dict)
+    price: float = None
+    paid: float = None
+    date: datetime = None
+    product_key: str = None
