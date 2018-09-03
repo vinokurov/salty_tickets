@@ -3,11 +3,12 @@ from datetime import datetime
 
 import pytest
 from mongoengine import connect
-from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING, SUCCESSFUL, FAILED
+from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING, SUCCESSFUL, FAILED, COUPLE
 from salty_tickets.dao import EventDocument, TicketsDAO, RegistrationDocument, ProductRegistrationDocument, \
     PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
+from salty_tickets.waiting_lists import RegistrationStats
 
 
 class TestTicketsDAO(TicketsDAO):
@@ -134,10 +135,18 @@ def test_dao_get_event(test_dao, salty_recipes):
         for reg in product.registrations:
             assert reg.id is not None
     assert isinstance(event.products['saturday'], WorkshopProduct)
-    print(event.products['saturday'].waiting_list)
-    # assert event.products['saturday'].waiting_list.registration_stats[LEADER].accepted
 
-    # print(salty_recipes['registration_ids']['Stevie Stumpf'])
-    # print([pr.to_dataclass() for pr in ProductRegistrationDocument.objects(person=salty_recipes['registration_ids']['Stevie Stumpf']).all()])
+    assert event.products['saturday'].waiting_list.registration_stats == {
+        LEADER: RegistrationStats(accepted=1, waiting=0),
+        FOLLOWER: RegistrationStats(accepted=4, waiting=1),
+        COUPLE: RegistrationStats(accepted=0, waiting=0)
+    }
+
+    assert event.products['sunday'].waiting_list.registration_stats == {
+        LEADER: RegistrationStats(accepted=3, waiting=0),
+        FOLLOWER: RegistrationStats(accepted=2, waiting=0),
+        COUPLE: RegistrationStats(accepted=2, waiting=0)
+    }
+
 
 

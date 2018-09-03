@@ -91,9 +91,9 @@ class WaitListedPartnerProduct(PartnerProduct):
     ratio: float = 100
     allow_first: int = None
 
-    def __post_init__(self):
-        super(WaitListedPartnerProduct, self).__post_init__()
-        self.waiting_list = AutoBalanceWaitingList(
+    @property
+    def waiting_list(self) -> AutoBalanceWaitingList:
+        return AutoBalanceWaitingList(
             max_available=self.max_available,
             ratio=self.ratio,
             registration_stats={
