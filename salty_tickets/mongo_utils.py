@@ -6,12 +6,12 @@ import dataclasses
 from mongoengine import fields
 
 
-def mongo_to_dataclass(mongo_model, dataclass_class, skip_fields=None):
+def mongo_to_dataclass(mongo_model, dataclass_class, skip_fields=None, **kwargs):
     if skip_fields is None:
         skip_fields = []
 
     model_fields = [f.name for f in dataclasses.fields(dataclass_class) if f.name not in skip_fields]
-    kwargs = {f: mongo_model[f] for f in model_fields}
+    kwargs.update({f: mongo_model[f] for f in model_fields if f not in kwargs})
     dtcl = dataclass_class(**kwargs)
     if isinstance(mongo_model, fields.Document):
         dtcl.id = mongo_model.id
@@ -32,6 +32,7 @@ def fields_from_dataclass(dataclass_class, skip=None):
         skip = []
 
     def class_rebuilder(mongo_class):
+        setattr(mongo_class, '_skip_fields', skip)
         dataclass_fields = dataclasses.fields(dataclass_class)
         field_mapping = {
             str: fields.StringField,
@@ -66,8 +67,8 @@ def fields_from_dataclass(dataclass_class, skip=None):
         def _from_dataclass(cls, dataclass_inst):
             return dataclass_to_mongo(dataclass_inst, cls, skip)
 
-        def _to_dataclass(self):
-            return mongo_to_dataclass(self, dataclass_class, skip)
+        def _to_dataclass(self, **dt_kwargs):
+            return mongo_to_dataclass(self, dataclass_class, skip, **dt_kwargs)
 
         setattr(mongo_class, '_from_dataclass', classmethod(_from_dataclass))
         setattr(mongo_class, '_to_dataclass', _to_dataclass)

@@ -8,7 +8,7 @@ from salty_tickets.dao import EventDocument, TicketsDAO, RegistrationDocument, P
     PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
-from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration, Payment
 from salty_tickets.waiting_lists import RegistrationStats
 
 
@@ -116,7 +116,7 @@ def save_event_from_meta(event_meta):
     for full_name, payments in event_meta['payments'].items():
         for price, fee, status in payments:
             PaymentDocument(price=price, transaction_fee=fee, status=status,
-                            event=new_event, payed_by=registration_docs[full_name]).save()
+                            event=new_event, paid_by=registration_docs[full_name]).save()
 
     event_meta['registration_ids'] = {name: reg.id for name, reg in registration_docs.items()}
 
@@ -195,7 +195,7 @@ def test_add_registration(test_dao, salty_recipes):
     assert ms_y.id == registration_doc.partner.id
 
 
-def test_add__multiple_registrations(test_dao, salty_recipes):
+def test_add_multiple_registrations(test_dao, salty_recipes):
     mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
@@ -218,4 +218,139 @@ def test_add__multiple_registrations(test_dao, salty_recipes):
     assert mr_x.id == registration_doc.person.id
     assert mr_x.id == registration_doc.registered_by.id
     assert ms_y.id == registration_doc.partner.id
+
+    sat_registrations = test_dao.get_registrations_for_product('salty_recipes', 'saturday')
+    assert registrations[1] in sat_registrations
+    assert registrations[0] == sat_registrations[-2]
+    assert registrations[0].id == sat_registrations[-2].id
+    assert mr_x == sat_registrations[-2].person
+    assert mr_x.id == sat_registrations[-2].person.id
+
+
+def test_dao_get_doc(test_dao, salty_recipes):
+    event = test_dao._get_doc(EventDocument, 'salty_recipes')
+    assert event.name == salty_recipes['name']
+
+    event = test_dao._get_doc(EventDocument, event.id)
+    assert event.name == salty_recipes['name']
+
+    event = test_dao._get_doc(EventDocument, event.to_dataclass())
+    assert event.name == salty_recipes['name']
+
+    assert event == test_dao._get_doc(EventDocument, event)
+
+    with pytest.raises(ValueError):
+        test_dao._get_doc(EventDocument, 10)
+
+
+def test_add_retrieve_payments(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registrations = [
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunay', price=25, paid=25),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunday', price=25, paid=25),
+        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party', price=5, paid=5),
+    ]
+
+    for r in registrations:
+        test_dao.add_registration(r, event='salty_recipes')
+
+    payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
+                      date=datetime(2018, 9, 3, 17, 0))
+
+    test_dao.add_payment(payment, 'salty_recipes')
+    assert payment.id
+    print(payment.id)
+    doc = PaymentDocument.objects(id=payment.id).first()
+    print(doc, doc.event, doc.paid_by)
+
+    mr_x_payments = test_dao.get_payments_by_person('salty_recipes', mr_x)
+    assert payment.id == mr_x_payments[0].id
+    assert payment == mr_x_payments[0]
+
+
+def test_add_retrieve_payments_auto_regester(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registrations = [
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunay', price=25, paid=25),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunday', price=25, paid=25),
+        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party', price=5, paid=5),
+    ]
+
+    payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
+                      date=datetime(2018, 9, 3, 17, 0))
+
+    test_dao.add_payment(payment, 'salty_recipes', register=True)
+    assert payment.id
+    doc = PaymentDocument.objects(id=payment.id).first()
+
+    mr_x_payments = test_dao.get_payments_by_person('salty_recipes', mr_x)
+    assert payment.id == mr_x_payments[0].id
+    assert payment == mr_x_payments[0]
+
+
+def test_dao_update_doc(test_dao, salty_recipes):
+    person = RegistrationDocument.objects(full_name='Yi Damon').first().to_dataclass()
+    person.email = 'aaa@sss.ddd'
+    person.comment = 'Some Comment'
+    person.location = {'country': 'UK', 'city': 'London'}
+    test_dao._update_doc(RegistrationDocument, person)
+
+    person_1 = RegistrationDocument.objects(full_name='Yi Damon').first().to_dataclass()
+    assert person == person_1
+
+
+def test_update_statuses(test_dao, salty_recipes):
+    """Here we test DAO methods to update entities on a real use case"""
+
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registrations = [
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=NEW,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=NEW,
+                            product_key='saturday', price=25, paid=25),
+    ]
+    payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
+                      date=datetime(2018, 9, 3, 17, 0))
+
+    # add NEW registration and payments
+    for r in registrations:
+        test_dao.add_registration(r, event='salty_recipes')
+    test_dao.add_payment(payment, 'salty_recipes')
+
+    saved_payment = test_dao.get_payments_by_person('salty_recipes', mr_x)[0]
+    assert saved_payment.status == NEW
+
+    # payment has been successful -> update payment status
+    saved_payment.status = SUCCESSFUL
+    print(saved_payment.id)
+    test_dao.update_payment(saved_payment)
+    assert test_dao.get_payments_by_person('salty_recipes', mr_x)[0].status == SUCCESSFUL
+
+    # update registrations statuses to ACCEPTED
+    for reg in saved_payment.registrations:
+        reg.status = ACCEPTED
+        test_dao.update_registration(reg)
+
+    saved_registrations = test_dao.get_registrations_for_product('salty_recipes', 'saturday')
+    assert saved_registrations[-1] == saved_payment.registrations[-1]
+    assert saved_registrations[-2] == saved_payment.registrations[-2]
+    assert saved_registrations[-2].id == saved_payment.registrations[-2].id
 

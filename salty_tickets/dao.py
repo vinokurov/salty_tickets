@@ -2,6 +2,7 @@ import datetime
 from typing import List
 
 import dataclasses
+from bson import ObjectId
 from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER, REGISTRATION_STATUSES, NEW
@@ -104,14 +105,20 @@ class RegistrationDocument(fields.Document):
     event = fields.ReferenceField(EventDocument)
 
 
-@fields_from_dataclass(Payment, skip=['payed_by', 'event'])
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations'])
 class PaymentDocument(fields.Document):
     __meta__ = {
         'collection': 'payments'
     }
     date = fields.DateTimeField(null=False, default=datetime.datetime.utcnow)
-    payed_by = fields.ReferenceField(RegistrationDocument)
+    paid_by = fields.ReferenceField(RegistrationDocument)
     event = fields.ReferenceField(EventDocument)
+    registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
+
+    def to_dataclass(self):
+        model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
+        model.registrations = [r.to_dataclass() for r in self.registrations]
+        return model
 
 
 class TicketsDAO:
@@ -172,7 +179,7 @@ class TicketsDAO:
             person_doc.save()
             person.id = person_doc.id
 
-    def add_registration(self, registration: ProductRegistration, event: Event):
+    def add_registration(self, registration: ProductRegistration, event):
         if hasattr(registration, 'id'):
             raise ValueError(f'Registration already exists: {registration}')
 
@@ -185,3 +192,62 @@ class TicketsDAO:
         registration_doc.save()
         registration.id = registration_doc.id
 
+    def add_payment(self, payment: Payment, event, register=False):
+        if hasattr(payment, 'id'):
+            raise ValueError(f'Payment already exists: {payment}')
+        payment_doc = PaymentDocument.from_dataclass(payment)
+        payment_doc.event = self._get_event_doc(event)
+        payment_doc.paid_by = self._get_or_create_new_person(payment.paid_by, event)
+        for reg in payment.registrations:
+            if not hasattr(reg, 'id'):
+                if not register:
+                    raise ValueError(f'Registrations need to be added first: {reg}')
+                else:
+                    self.add_registration(reg, event)
+            payment_doc.registrations.append(reg.id)
+
+        payment_doc.save()
+        payment.id = payment_doc.id
+
+    @staticmethod
+    def _get_doc(doc_class, model):
+        if isinstance(model, doc_class):
+            return model
+        elif hasattr(model, 'id'):
+            return doc_class.objects(id=model.id).first()
+        elif isinstance(model, ObjectId):
+            return doc_class.objects(id=model).first()
+        elif hasattr(doc_class, 'key') and isinstance(model, str):
+            return doc_class.objects(key=model).first()
+        else:
+            raise ValueError(f'Can\'t find {doc_class} by {model}')
+
+    def get_payments_by_person(self, event, person: PersonInfo):
+        event_doc = self._get_doc(EventDocument, event)
+        person_doc = self._get_doc(RegistrationDocument, person)
+        print(event_doc, person_doc)
+        payment_docs = PaymentDocument.objects(event=event_doc, paid_by=person_doc).all()
+        return [p.to_dataclass() for p in payment_docs]
+
+    def _update_doc(self, doc_class, model):
+        saved_model = self._get_doc(doc_class, model)
+        need_save = False
+        for field in dataclasses.fields(model):
+            if field.name not in doc_class._skip_fields:
+                if getattr(model, field.name) != getattr(saved_model, field.name):
+                    print(field.name, getattr(model, field.name), getattr(saved_model, field.name))
+                    setattr(saved_model, field.name, getattr(model, field.name))
+                    need_save = True
+        if need_save:
+            # print(saved_model.paid_by)
+            saved_model.save()
+            model = saved_model.to_dataclass()
+
+    def update_person(self, person: PersonInfo):
+        self._update_doc(RegistrationDocument, person)
+
+    def update_registration(self, registration: ProductRegistration):
+        self._update_doc(ProductRegistrationDocument, registration)
+
+    def update_payment(self, payment: Payment):
+        self._update_doc(PaymentDocument, payment)

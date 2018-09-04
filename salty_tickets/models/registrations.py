@@ -42,7 +42,7 @@ class Payment:
     status: str = NEW
     stripe_details: Dict = field(default_factory=dict)
     date: datetime = field(default_factory=datetime.utcnow)
-    info_items: List[str] = field(default_factory=list)
+    info_items: List = field(default_factory=list)
 
     @property
     def total_amount(self):
