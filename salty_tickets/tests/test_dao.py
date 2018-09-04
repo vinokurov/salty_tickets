@@ -8,6 +8,7 @@ from salty_tickets.dao import EventDocument, TicketsDAO, RegistrationDocument, P
     PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration
 from salty_tickets.waiting_lists import RegistrationStats
 
 
@@ -149,4 +150,72 @@ def test_dao_get_event(test_dao, salty_recipes):
     }
 
 
+def test_dao_get_registrations_for_product(test_dao, salty_recipes):
+    registrations = test_dao.get_registrations_for_product('salty_recipes', 'saturday')
+
+    saturday_names = [name for name, det in salty_recipes['registrations'].items() if 'saturday' in det]
+    assert [r.person.full_name for r in registrations] == saturday_names
+
+    LEN = len(registrations)
+    event = test_dao.get_event_by_key('salty_recipes')
+    assert LEN == len(test_dao.get_registrations_for_product(event, event.products['saturday']))
+
+    event_doc = EventDocument.objects(key='salty_recipes').first()
+    assert LEN == len(test_dao.get_registrations_for_product(event_doc, event_doc.products['saturday']))
+
+
+def test_add_person(test_dao, salty_recipes):
+    person = PersonInfo(full_name='Mr X', email='mr.x@email.com')
+    test_dao.add_person(person, event='salty_recipes')
+
+    assert person.id is not None
+    person_doc = RegistrationDocument.objects(id=person.id).first()
+    assert person.full_name == person_doc.full_name
+    assert person.email == person_doc.email
+    assert person_doc.event.name == salty_recipes['name']
+
+
+def test_add_registration(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registration = ProductRegistration(
+        person=mr_x,
+        partner=ms_y,
+        registered_by=mr_x,
+        dance_role=LEADER,
+        status=ACCEPTED,
+        product_key='saturday'
+    )
+    test_dao.add_registration(registration, event='salty_recipes')
+    assert registration.id
+    registration_doc = ProductRegistrationDocument.objects(id=registration.id).first()
+    assert mr_x.id == registration_doc.person.id
+    assert mr_x.id == registration_doc.registered_by.id
+    assert ms_y.id == registration_doc.partner.id
+
+
+def test_add__multiple_registrations(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registrations = [
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday'),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='saturday'),
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunay'),
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            product_key='sunday'),
+        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party'),
+    ]
+    for r in registrations:
+        test_dao.add_registration(r, event='salty_recipes')
+
+    assert registrations[0].id
+    registration_doc = ProductRegistrationDocument.objects(id=registrations[0].id).first()
+    assert mr_x.id == registration_doc.person.id
+    assert mr_x.id == registration_doc.registered_by.id
+    assert ms_y.id == registration_doc.partner.id
 

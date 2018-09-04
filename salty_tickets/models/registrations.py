@@ -27,6 +27,10 @@ class ProductRegistration:
     date: datetime = None
     product_key: str = None
 
+    def __post_init__(self):
+        if self.partner:
+            self.as_couple = True
+
 
 @dataclass
 class Payment:

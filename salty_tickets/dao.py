@@ -1,4 +1,5 @@
 import datetime
+from typing import List
 
 import dataclasses
 from mongoengine import fields, connect
@@ -15,7 +16,7 @@ class ProductRegistrationDocument(fields.Document):
     __meta__ = {
         'collection': 'product_registrations'
     }
-    dance_role = fields.BaseField(choices=[LEADER, FOLLOWER])
+    dance_role = fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
     status = fields.BaseField(
         choices=REGISTRATION_STATUSES,
         default=NEW)
@@ -68,6 +69,7 @@ class EventDocument(fields.Document):
         'collection': 'events',
         'indexes': ['key', 'start_date', 'active']
     }
+    key = fields.StringField()
     products = fields.MapField(fields.EmbeddedDocumentField(EventProductDocument))
 
     @classmethod
@@ -129,23 +131,57 @@ class TicketsDAO:
 
         return event_model
 
-    def get_registrations_for_product(self, event, product):
-        filter = {}
-        if isinstance(product, str):
-            filter['product_key'] = product
-        else:
-            filter['product_key'] = product.key
+    def get_registrations_for_product(self, event, product) -> List[ProductRegistration]:
+        filter = {
+            'product_key': self._get_product_key(product),
+            'event': self._get_event_doc(event)
+        }
 
-        if isinstance(event, str):
-            filter['event__key'] = event
-        elif event.id:
-            filter['event'] = event.id
-        else:
-            raise ValueError(f'Invalid event argument: {event}')
-
-        return [r.to_dataclass()
-                for r in ProductRegistrationDocument.objects(**filter).all()]
+        items = ProductRegistrationDocument.objects(**filter).all()
+        return [r.to_dataclass() for r in items]
 
     def create_event(self, event_model):
         event_doc = EventDocument.from_dataclass(event_model)
         event_doc.save()
+
+    def _get_event_doc(self, event):
+        if isinstance(event, str):
+            return EventDocument.objects(key=event).first()
+        elif hasattr(event, 'id') and event.id:
+            return EventDocument.objects(id=event.id).first()
+        else:
+            raise ValueError(f'Invalid event argument: {event}')
+
+    def _get_product_key(self, product):
+        if isinstance(product, str):
+            return product
+        else:
+            return product.key
+
+    def _get_or_create_new_person(self, person, event):
+        if not hasattr(person, 'id'):
+            self.add_person(person, event)
+        return RegistrationDocument.objects(id=person.id).first()
+
+    def add_person(self, person: PersonInfo, event: Event):
+        if hasattr(person, 'id'):
+            raise ValueError(f'Person already exists: {person}')
+        else:
+            person_doc = RegistrationDocument.from_dataclass(person)
+            person_doc.event = self._get_event_doc(event)
+            person_doc.save()
+            person.id = person_doc.id
+
+    def add_registration(self, registration: ProductRegistration, event: Event):
+        if hasattr(registration, 'id'):
+            raise ValueError(f'Registration already exists: {registration}')
+
+        registration_doc = ProductRegistrationDocument.from_dataclass(registration)
+        registration_doc.event = self._get_event_doc(event)
+        registration_doc.person = self._get_or_create_new_person(registration.person, event)
+        registration_doc.registered_by = self._get_or_create_new_person(registration.registered_by, event)
+        if registration.partner:
+            registration_doc.partner = self._get_or_create_new_person(registration.partner, event)
+        registration_doc.save()
+        registration.id = registration_doc.id
+
