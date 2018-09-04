@@ -225,9 +225,22 @@ class TicketsDAO:
     def get_payments_by_person(self, event, person: PersonInfo):
         event_doc = self._get_doc(EventDocument, event)
         person_doc = self._get_doc(RegistrationDocument, person)
-        print(event_doc, person_doc)
         payment_docs = PaymentDocument.objects(event=event_doc, paid_by=person_doc).all()
         return [p.to_dataclass() for p in payment_docs]
+
+    def query_registrations(self, event, person: PersonInfo=None, paid_by: PersonInfo=None,
+                            partner: PersonInfo=None, product=None):
+        filters = {'event': self._get_doc(EventDocument, event)}
+        if person is not None:
+            filters['person'] = self._get_doc(RegistrationDocument, person)
+        if paid_by is not None:
+            filters['paid_by'] = self._get_doc(RegistrationDocument, paid_by)
+        if partner is not None:
+            filters['partner'] = self._get_doc(RegistrationDocument, partner)
+        if product is not None:
+            filters['product_key'] = self._get_product_key(product)
+
+        return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).all()]
 
     def _update_doc(self, doc_class, model):
         saved_model = self._get_doc(doc_class, model)
@@ -251,3 +264,11 @@ class TicketsDAO:
 
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)
+
+    def mark_registrations_as_couple(self,
+                                     registration_1: ProductRegistration,
+                                     registration_2: ProductRegistration):
+        registration_1.partner = registration_2.person
+        registration_2.partner = registration_1.person
+        self.update_registration(registration_1)
+        self.update_registration(registration_2)

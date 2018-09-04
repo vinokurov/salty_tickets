@@ -324,16 +324,14 @@ def test_update_statuses(test_dao, salty_recipes):
     registrations = [
         ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=NEW,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=NEW,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=FOLLOWER, status=NEW,
                             product_key='saturday', price=25, paid=25),
     ]
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
                       date=datetime(2018, 9, 3, 17, 0))
 
     # add NEW registration and payments
-    for r in registrations:
-        test_dao.add_registration(r, event='salty_recipes')
-    test_dao.add_payment(payment, 'salty_recipes')
+    test_dao.add_payment(payment, 'salty_recipes', register=True)
 
     saved_payment = test_dao.get_payments_by_person('salty_recipes', mr_x)[0]
     assert saved_payment.status == NEW
@@ -353,4 +351,38 @@ def test_update_statuses(test_dao, salty_recipes):
     assert saved_registrations[-1] == saved_payment.registrations[-1]
     assert saved_registrations[-2] == saved_payment.registrations[-2]
     assert saved_registrations[-2].id == saved_payment.registrations[-2].id
+
+
+def test_dao_mark_registrations_as_couple(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+
+    registrations = [
+        ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER, status=NEW,
+                            product_key='saturday', price=25, paid=25),
+        ProductRegistration(person=ms_y, registered_by=ms_y, dance_role=FOLLOWER, status=NEW,
+                            product_key='saturday', price=25, paid=25),
+    ]
+    for r in registrations:
+        test_dao.add_registration(r, event='salty_recipes')
+
+    assert registrations[0].partner is None
+    assert registrations[1].partner is None
+
+    test_dao.mark_registrations_as_couple(registrations[0], registrations[1])
+
+    assert registrations[0].partner == ms_y
+    assert registrations[1].partner == mr_x
+
+    assert test_dao.ge
+
+
+def test_dao_query_registrations(test_dao, salty_recipes):
+    person_0 = RegistrationDocument.objects(full_name='Chang Schultheis').first()
+
+    registrations = test_dao.query_registrations('salty_recipes', person=person_0)
+    assert [(r.person.full_name, r.product_key) for r in registrations] == [('Chang Schultheis', 'saturday'), ('Chang Schultheis', 'sunday'), ('Chang Schultheis', 'party')]
+
+    registrations = test_dao.query_registrations('salty_recipes', person=person_0, product='saturday')
+    assert [(r.person.full_name, r.product_key) for r in registrations] == [('Chang Schultheis', 'saturday')]
 
