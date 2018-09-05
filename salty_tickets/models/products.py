@@ -58,32 +58,36 @@ class PartnerProduct(BaseProduct):
     def get_form_class(self):
         return PartnerProductForm
 
-    def create_registration(self, person_info: PersonInfo, registered_by: PersonInfo):
-        product_registration = self._create_base_registration()
-        product_registration.name = f'{product_registration.name} / {person_info.dance_role} / {person_info.full_name}'
-        product_registration.person = person_info
-        product_registration.registered_by = registered_by
-        return product_registration
+    def create_registration(self, person_info: PersonInfo, registered_by: PersonInfo, dance_role):
+        registration = self._create_base_registration()
+        registration.info = f'{self.name} / {dance_role} / {person_info.full_name}'
+        registration.person = person_info
+        registration.registered_by = registered_by
+        registration.dance_role = dance_role
+        return registration
 
     def parse_form(self, event_form) -> typing.List[ProductRegistration]:
         product_data = event_form.get_product_by_key(self.key)
         if self.added(product_data):
             if product_data.add.data == COUPLE:
-                person_info = get_primary_personal_info_from_form(event_form)
-                partner_info = get_partner_personal_info_from_form(event_form)
-                person_info.dance_role = event_form.dance_role.data
-                partner_info.dance_role = flip_role(person_info.dance_role)
+                person_1 = get_primary_personal_info_from_form(event_form)
+                person_2 = get_partner_personal_info_from_form(event_form)
 
-                registration_1 = self.create_registration(person_info, person_info)
-                registration_2 = self.create_registration(partner_info, person_info)
+                dance_role = event_form.dance_role.data
+                registration_1 = self.create_registration(person_1, person_1, dance_role)
+                registration_2 = self.create_registration(person_2, person_1, flip_role(dance_role))
+
+                registration_1.partner = person_2
+                registration_2.partner = person_1
 
                 return [registration_1, registration_2]
 
             elif product_data.add.data in [LEADER, FOLLOWER]:
-                person_info = get_primary_personal_info_from_form(event_form)
-                person_info.dance_role = product_data.add.data
-                registration = self.create_registration(person_info, person_info)
+                person_1 = get_primary_personal_info_from_form(event_form)
+                dance_role = product_data.add.data
+                registration = self.create_registration(person_1, person_1, dance_role)
                 return [registration]
+        return []
 
 
 @dataclass

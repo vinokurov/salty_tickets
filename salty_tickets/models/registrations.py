@@ -20,12 +20,13 @@ class ProductRegistration:
     partner: PersonInfo = None
     dance_role: str = None
     as_couple: bool = False
-    status: str = None
+    status: str = NEW
     details: Dict = field(default_factory=dict)
     price: float = None
     paid: float = None
     date: datetime = None
     product_key: str = None
+    info: str = None
 
     def __post_init__(self):
         if self.partner:

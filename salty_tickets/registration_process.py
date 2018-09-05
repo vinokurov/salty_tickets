@@ -1,46 +1,68 @@
+from typing import Dict, List
+
+from dataclasses import dataclass, field
+from dataclasses_json import DataClassJsonMixin
+from salty_tickets.constants import NEW
+from salty_tickets.dao import TicketsDAO
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
-from salty_tickets.models.registrations import Purchase, Order
+from salty_tickets.models.event import Event
+from salty_tickets.models.registrations import Payment
+from salty_tickets.payments import transaction_fee
 from salty_tickets.pricers import ProductPricer
 
+"""
+Before chackout:
+    - get form data
+    - price products, validate fields
+    - return JSON with prices, field validation, etc
 
-def register(event, form):
-    personal_info = get_primary_personal_info_from_form(form)
-    purchase_items = register_primary(event, form)
-    partner_purchase_items = register_partner(event, form) or []
-    purchase_items += partner_purchase_items
+Checkout:
+    - generate Payment instance (with prices)
+    - save with status new
+    - return stripe details
+"""
 
-    purchase = Purchase(purchase_items)
+
+@dataclass
+class OrderSummary(DataClassJsonMixin):
+    total: float = 0
+    items: List[str] = field(default_factory=list)
+
+
+@dataclass
+class PricingResult(DataClassJsonMixin):
+    """These are AJAX objects containing result of pricing"""
+    errors: Dict[str, str] = field(default_factory=dict)
+    stripe: Dict = field(default_factory=dict)
+    order_summary: OrderSummary = field(default_factory=OrderSummary)
+    disable_checkout: bool = True
+    checkout_success: bool = False
+
+
+def get_payment_from_form(event: Event, form):
+    registrations = []
+    for prod_key, prod in event.products.items():
+        registrations += prod.parse_form(form)
+
+    # add prices
     pricer = ProductPricer.from_event(event)
-    pricer.price_all(purchase)
+    pricer.price_all(registrations)
 
-    order = Order(
-        full_name=personal_info.full_name,
-        email=personal_info.full_name,
-        purchases=[purchase]
+    total_price = sum([r.price for r in registrations])
+    payment = Payment(
+        price=total_price,
+        paid_by=registrations[0].registered_by,
+        transaction_fee=transaction_fee(total_price),
+        registrations=registrations,
+        status=NEW,
+        stripe_details={},
+        info_items=[r.info for r in registrations]
     )
-    order.update_total_price()
+    return payment
 
 
-def register_primary(event, form):
-    personal_info = get_primary_personal_info_from_form(form)
-    purchase_items = []
-    for product_key, product in event.products.items():
-        product_form_data = form.get_product_by_key(product_key)
-        if product.is_added(product_form_data):
-            purchase_items.append(product.get_purchase_item(product_form_data, personal_info))
-    return purchase_items
-
-
-def register_partner(event, form):
-    personal_info = get_partner_personal_info_from_form(form)
-    if personal_info:
-        purchase_items = []
-        for product_key, product in event.products.items():
-            product_form_data = form.get_product_by_key(product_key)
-            if product.is_added(product_form_data):
-                purchase_items.append(product.get_partner_purchase_item(product_form_data, personal_info))
-        return purchase_items or None
-
+def checkout_payment(event: Event, new_payment: Payment):
+    pass
 
 def registration_payment_success(event, registration, payment_details):
     pass
