@@ -2,6 +2,7 @@ import mongomock_mate
 from datetime import datetime
 
 import pytest
+from flask import Flask as _Flask
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
@@ -117,5 +118,29 @@ def save_event_from_meta(event_meta):
                             event=new_event, paid_by=registration_docs[full_name]).save()
 
     event_meta['registration_ids'] = {name: reg.id for name, reg in registration_docs.items()}
+
+
+class Flask(_Flask):
+    testing = True
+    # csrf_enabled = False
+    secret_key = __name__
+
+    def make_response(self, rv):
+        if rv is None:
+            rv = ''
+
+        return super(Flask, self).make_response(rv)
+
+
+@pytest.fixture
+def app():
+    app = Flask(__name__)
+    app.config['WTF_CSRF_ENABLED'] = False
+    return app
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()
 
 

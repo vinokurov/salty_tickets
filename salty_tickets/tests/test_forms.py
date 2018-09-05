@@ -8,32 +8,7 @@ from salty_tickets.forms import create_event_form, DanceSignupForm, get_primary_
     need_partner_check
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, BaseProduct, PartnerProductForm, PartyProduct
-from flask import Flask as _Flask
 from wtforms import ValidationError
-
-
-class Flask(_Flask):
-    testing = True
-    # csrf_enabled = False
-    secret_key = __name__
-
-    def make_response(self, rv):
-        if rv is None:
-            rv = ''
-
-        return super(Flask, self).make_response(rv)
-
-
-@pytest.fixture
-def app():
-    app = Flask(__name__)
-    app.config['WTF_CSRF_ENABLED'] = False
-    return app
-
-
-@pytest.fixture
-def client(app):
-    return app.test_client()
 
 
 @pytest.fixture
