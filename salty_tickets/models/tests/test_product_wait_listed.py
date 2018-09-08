@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from salty_tickets.constants import ACCEPTED, LEADER, FOLLOWER, WAITING
+from salty_tickets.constants import LEADER, FOLLOWER
 from salty_tickets.models.products import WaitListedPartnerProduct
 from salty_tickets.models.registrations import PersonInfo, ProductRegistration
 
@@ -72,13 +72,13 @@ FOLLOWER_NAMES = [
 @dataclass
 class RegistrationMeta:
     dance_role: str
-    status: str = ACCEPTED
+    wait_listed: bool = False
     active: bool = True
 
 
 @dataclass
 class CoupleRegistrationMeta:
-    status: str = ACCEPTED
+    wait_listed: bool = False
     active: bool = True
 
 
@@ -97,7 +97,7 @@ def util_generate_registrations(meta_list):
                 follower_idx += 1
             person = PersonInfo(full_name=name, email=f'{name}@{dance_role}.com')
             reg = ProductRegistration(registered_by=person, person=person, dance_role=dance_role,
-                                      status=meta.status, active=meta.active)
+                                      wait_listed=meta.wait_listed, active=meta.active)
             registrations.append(reg)
 
         elif isinstance(meta, CoupleRegistrationMeta):
@@ -110,9 +110,9 @@ def util_generate_registrations(meta_list):
             follower = PersonInfo(full_name=name, email=f'{name}@follower.com')
 
             reg1 = ProductRegistration(registered_by=leader, person=leader, partner=follower,
-                                       dance_role=LEADER, status=meta.status, active=meta.active)
+                                       dance_role=LEADER, wait_listed=meta.wait_listed, active=meta.active)
             reg2 = ProductRegistration(registered_by=leader, person=follower, partner=leader,
-                                       dance_role=FOLLOWER, status=meta.status, active=meta.active)
+                                       dance_role=FOLLOWER, wait_listed=meta.wait_listed, active=meta.active)
             registrations.append(reg1)
             registrations.append(reg2)
 
@@ -139,13 +139,13 @@ def test_wait_listed_partner_product_balance_waiting_list():
     product = WaitListedPartnerProduct(ratio=1.0, allow_first=1, name='Test', max_available=10)
 
     product.registrations = util_generate_registrations([
-        CoupleRegistrationMeta(WAITING),
-        CoupleRegistrationMeta(WAITING),
-        CoupleRegistrationMeta(WAITING),
+        CoupleRegistrationMeta(wait_listed=True),
+        CoupleRegistrationMeta(wait_listed=True),
+        CoupleRegistrationMeta(wait_listed=True),
     ])
     balanced = product.balance_waiting_list()
     assert_registrations_eq(product.registrations, balanced)
-    assert all([r.status == ACCEPTED for r in product.registrations])
+    assert not any([r.wait_listed for r in product.registrations])
 
 
 def test_wait_listed_partner_product_balance_waiting_list_can_accept_one():
@@ -154,8 +154,8 @@ def test_wait_listed_partner_product_balance_waiting_list_can_accept_one():
     product.registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(),
-        RegistrationMeta(FOLLOWER, WAITING),
-        RegistrationMeta(FOLLOWER, WAITING),
+        RegistrationMeta(FOLLOWER, wait_listed=True),
+        RegistrationMeta(FOLLOWER, wait_listed=True),
     ])
     balanced = product.balance_waiting_list()
     assert_registrations_eq([product.registrations[-2]], balanced)
@@ -169,8 +169,8 @@ def test_wait_listed_partner_product_balance_waiting_list_couple_first():
     product.registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER),
-        RegistrationMeta(FOLLOWER, WAITING),
-        CoupleRegistrationMeta(WAITING),
+        RegistrationMeta(FOLLOWER, wait_listed=True),
+        CoupleRegistrationMeta(wait_listed=True),
     ])
     balanced = product.balance_waiting_list()
     assert_registrations_eq(product.registrations[-2:], balanced)
@@ -185,8 +185,8 @@ def test_wait_listed_partner_product_balance_waiting_list_real_scenario():
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER),
-        RegistrationMeta(FOLLOWER, WAITING),
-        RegistrationMeta(FOLLOWER, WAITING),
+        RegistrationMeta(FOLLOWER, wait_listed=True),
+        RegistrationMeta(FOLLOWER, wait_listed=True),
     ])
     # already 2 leads, 3 follows -> 1.5, 1 follower waiting
     assert [] == product.balance_waiting_list()

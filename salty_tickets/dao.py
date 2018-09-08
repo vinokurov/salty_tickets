@@ -19,9 +19,6 @@ class ProductRegistrationDocument(fields.Document):
         'collection': 'product_registrations'
     }
     dance_role = fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
-    status = fields.BaseField(
-        choices=REGISTRATION_STATUSES,
-        default=NEW)
     person = fields.ReferenceField('RegistrationDocument', required=True)
     partner = fields.ReferenceField('RegistrationDocument', null=True)
     registered_by = fields.ReferenceField('RegistrationDocument', required=True)

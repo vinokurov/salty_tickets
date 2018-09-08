@@ -9,7 +9,7 @@ import pytest
 from dataclasses import dataclass
 from flask import Flask as _Flask
 from mongoengine import connect
-from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING, SUCCESSFUL, FAILED
+from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
@@ -21,12 +21,17 @@ from stripe.error import CardError
 
 class TestTicketsDAO(TicketsDAO):
     def __init__(self):
-        connect(host='mongomock://localhost')
+        connection = connect(host='mongomock://localhost')
 
 
 @pytest.fixture
 def test_dao():
-    return TestTicketsDAO()
+    dao = TestTicketsDAO()
+    EventDocument.drop_collection()
+    RegistrationDocument.drop_collection()
+    PaymentDocument.drop_collection()
+    return dao
+
 
 
 @dataclass
@@ -36,7 +41,7 @@ class RegistrationMeta:
     price: float = None
     name: str = None
     active: bool = None
-    status: str = ACCEPTED
+    wait_listed: bool = False
     paid: float = None
 
 
@@ -70,8 +75,8 @@ def salty_recipes(test_dao):
         start_date=datetime(2018, 7, 10),
         end_date=datetime(2018, 7, 11),
         products=[
-            WorkshopProduct(name='Saturday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
-            WorkshopProduct(name='Sunday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
+            WorkshopProduct(name='Saturday', base_price=25.0, max_available=15, ratio=1.2, allow_first=2, tags={'full'}),
+            WorkshopProduct(name='Sunday', base_price=25.0, max_available=15, ratio=1.2, allow_first=2, tags={'full'}),
             PartyProduct('Party', base_price=10.0, max_available=50, tags={'full'}),
         ],
         payments=[
@@ -90,7 +95,7 @@ def salty_recipes(test_dao):
             PaymentMeta('Yi Damon', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')], FAILED),
             PaymentMeta('Yi Damon', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')], SUCCESSFUL),
             PaymentMeta('Berta Sadowski', [
-                RegistrationMeta('saturday', FOLLOWER, status=WAITING),
+                RegistrationMeta('saturday', FOLLOWER, wait_listed=True),
                 RegistrationMeta('party')
             ]),
             PaymentMeta('Emerson Damiano', [RegistrationMeta('sunday', LEADER), RegistrationMeta('party')]),
@@ -135,7 +140,6 @@ def save_event_from_meta(event_meta):
         registration_docs = []
 
         for reg_meta in payment_meta.registrations:
-            status = reg_meta.status or SUCCESSFUL
             price = reg_meta.price or new_event.products[reg_meta.product_key].base_price
             paid = reg_meta.paid or price
 
@@ -149,7 +153,8 @@ def save_event_from_meta(event_meta):
             else:
                 reg = persons[payment_meta.name]
 
-            kwargs = {'product_key': reg_meta.product_key, 'status': status, 'price': price, 'paid': paid,
+            kwargs = {'product_key': reg_meta.product_key, 'wait_listed': reg_meta.wait_listed,
+                      'price': price, 'paid': paid,
                       'event': new_event, 'person': reg, 'registered_by': reg, 'active': active}
             if reg_meta.dance_role is not None:
                 kwargs['dance_role'] = reg_meta.dance_role

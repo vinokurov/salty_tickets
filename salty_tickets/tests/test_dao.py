@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, SUCCESSFUL, COUPLE
+from salty_tickets.constants import LEADER, FOLLOWER, NEW, SUCCESSFUL, COUPLE
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
     PaymentDocument
 from salty_tickets.models.event import Event
@@ -72,7 +72,6 @@ def test_add_registration(test_dao, salty_recipes):
         partner=ms_y,
         registered_by=mr_x,
         dance_role=LEADER,
-        status=ACCEPTED,
         product_key='saturday'
     )
     test_dao.add_registration(registration, event='salty_recipes')
@@ -88,15 +87,15 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday'),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday'),
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunay'),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunday'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party'),
+        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='party'),
     ]
     for r in registrations:
         test_dao.add_registration(r, event='salty_recipes')
@@ -136,15 +135,15 @@ def test_add_retrieve_payments(test_dao, salty_recipes):
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunay', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunday', price=25, paid=25),
-        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party', price=5, paid=5),
+        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='party', price=5, paid=5),
     ]
 
     for r in registrations:
@@ -167,15 +166,15 @@ def test_add_retrieve_payments_auto_regester(test_dao, salty_recipes):
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunay', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
                             product_key='sunday', price=25, paid=25),
-        ProductRegistration(person=mr_x, registered_by=mr_x, status=ACCEPTED, product_key='party', price=5, paid=5),
+        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='party', price=5, paid=5),
     ]
 
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
@@ -208,9 +207,9 @@ def test_update_statuses(test_dao, salty_recipes):
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, status=NEW,
+        ProductRegistration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, active=False,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=FOLLOWER, status=NEW,
+        ProductRegistration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=FOLLOWER, active=False,
                             product_key='saturday', price=25, paid=25),
     ]
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
@@ -227,9 +226,9 @@ def test_update_statuses(test_dao, salty_recipes):
     test_dao.update_payment(saved_payment)
     assert SUCCESSFUL == test_dao.get_payments_by_person('salty_recipes', mr_x)[0].status
 
-    # update registrations statuses to ACCEPTED
+    # update registrations to active
     for reg in saved_payment.registrations:
-        reg.status = ACCEPTED
+        reg.active
         test_dao.update_registration(reg)
 
     saved_registrations = test_dao.get_registrations_for_product('salty_recipes', 'saturday')
@@ -243,9 +242,9 @@ def test_dao_mark_registrations_as_couple(test_dao, salty_recipes):
     ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER, status=NEW,
+        ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER, active=False,
                             product_key='saturday', price=25, paid=25),
-        ProductRegistration(person=ms_y, registered_by=ms_y, dance_role=FOLLOWER, status=NEW,
+        ProductRegistration(person=ms_y, registered_by=ms_y, dance_role=FOLLOWER, active=False,
                             product_key='saturday', price=25, paid=25),
     ]
     for r in registrations:
@@ -285,7 +284,7 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
     mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5,
                       registrations=[
-                            ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                            ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER,
                                                 product_key='saturday', price=25, paid=25),
                         ],
                       status=NEW, date=datetime(2018, 9, 3, 17, 0))

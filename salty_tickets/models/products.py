@@ -9,7 +9,7 @@ from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStat
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField
 from wtforms.validators import Optional
-from salty_tickets.constants import LEADER, FOLLOWER, COUPLE, ACCEPTED, WAITING
+from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.utils.utils import string_to_key
 
 
@@ -39,7 +39,7 @@ class BaseProduct:
         if self.max_available is None:
             return None
 
-        total_accepted = len([r for r in self.registrations if r.status == ACCEPTED])
+        total_accepted = len([r for r in self.registrations if not r.wait_listed])
         return self.max_available - total_accepted
 
     def added(self, product_form) -> bool:
@@ -119,8 +119,8 @@ class WaitListedPartnerProduct(PartnerProduct):
         else:
             registered = [r for r in self.registrations if r.dance_role == option and r.active]
         return RegistrationStats(
-            accepted=len([r for r in registered if r.status == ACCEPTED]),
-            waiting=len([r for r in registered if r.status == WAITING]),
+            accepted=len([r for r in registered if not r.wait_listed]),
+            waiting=len([r for r in registered if r.wait_listed]),
         )
 
     def get_available_quantity(self) -> typing.Optional[int]:
@@ -142,33 +142,32 @@ class WaitListedPartnerProduct(PartnerProduct):
                 if not regs:
                     continue
                 for r in regs:
-                    r.status = ACCEPTED
+                    r.wait_listed = False
                 balanced_registrations += regs
 
             for role in [LEADER, FOLLOWER]:
                 if self.waiting_list.needs_balancing(role):
                     reg = self._get_first_waiting(role)
-                    reg.status = ACCEPTED
+                    reg.wait_listed = False
                     balanced_registrations += [reg]
 
         return balanced_registrations
 
     def _get_first_waiting_couple(self) -> typing.List[ProductRegistration]:
         for r1 in self.registrations:
-            if r1.as_couple and (r1.status == WAITING) and r1.active:
+            if r1.as_couple and r1.wait_listed and r1.active:
                 r2_list = [r for r in self.registrations if r.person == r1.partner and r.active]
                 if r2_list:
                     r2 = r2_list[0]
-                    if r2.status is WAITING:
+                    if r2.wait_listed:
                         return [r1, r2]
                 return [r1]
         return []
 
     def _get_first_waiting(self, role: str) -> ProductRegistration:
         for r in self.registrations:
-            if r.active and (r.dance_role == role) and (r.status == WAITING):
+            if r.active and (r.dance_role == role) and r.wait_listed:
                 return r
-
 
 
 @dataclass

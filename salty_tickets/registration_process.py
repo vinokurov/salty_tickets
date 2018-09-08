@@ -172,6 +172,7 @@ def do_pay(dao: TicketsDAO):
 
 def balance_event_waiting_lists(dao: TicketsDAO, event: Event):
     balanced_registrations = []
+    event = dao.get_event_by_key(event.key)
     for product_key, product in event.products.items():
         if isinstance(product, WaitListedPartnerProduct):
             if product.waiting_list.has_waiting_list:

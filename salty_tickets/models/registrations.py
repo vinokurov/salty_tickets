@@ -2,14 +2,14 @@ from datetime import datetime
 from typing import List, Dict
 
 from dataclasses import dataclass, field
-from salty_tickets.constants import NEW, SUCCESSFUL
+from salty_tickets.constants import NEW, SUCCESSFUL, ACCEPTED
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class PersonInfo:
     full_name: str
     email: str
-    location: Dict = field(default_factory=dict)
+    location: Dict = field(default_factory=dict, hash=False)
     comment: str = None
 
 
@@ -19,7 +19,7 @@ class ProductRegistration:
     person: PersonInfo = None
     partner: PersonInfo = None
     dance_role: str = None
-    status: str = NEW
+    wait_listed: bool = False
     details: Dict = field(default_factory=dict)
     price: float = None
     paid: float = None

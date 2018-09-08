@@ -1,7 +1,7 @@
 import pytest
 from mock import patch
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
-from salty_tickets.dao import PaymentDocument
+from salty_tickets.dao import PaymentDocument, ProductRegistrationDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.registration_process import get_payment_from_form, do_checkout, do_price, do_pay
 from stripe.error import CardError
@@ -69,7 +69,8 @@ def test_register_one(test_dao, app, client, salty_recipes):
         assert 0.575 == payment.transaction_fee
         assert 'Mr X' == payment.paid_by.full_name
         assert NEW == payment.status
-        assert NEW == payment.registrations[0].status
+        assert not payment.registrations[0].active
+        assert not payment.registrations[0].wait_listed
 
     post_data = {
         'name': 'Mr X',
@@ -102,7 +103,8 @@ def test_register_couple(test_dao, app, client, salty_recipes):
         assert 'Mr X' == payment.registrations[1].partner.full_name
         assert 'Mr X' == payment.registrations[1].registered_by.full_name
         assert NEW == payment.status
-        assert NEW == payment.registrations[0].status
+        assert not payment.registrations[0].active
+        assert not payment.registrations[0].wait_listed
 
     post_data = {
         'name': 'Mr X',
@@ -132,6 +134,7 @@ def test_do_checkout(test_dao, app_routes, client, sample_data):
     assert NEW == payment.status
     for reg in payment.registrations:
         assert not reg.active
+        assert not reg.wait_listed
 
 
 def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
@@ -150,6 +153,7 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
     assert SUCCESSFUL == payment.status
     for reg in payment.registrations:
         assert reg.active
+        assert not reg.wait_listed
 
     # try do_pay on the same payment, make sure we receive an error
     res = client.post('/pay', data=post_data)
@@ -174,6 +178,7 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
     assert sample_stripe_card_error.json_body == payment.stripe.charge
     for reg in payment.registrations:
         assert not reg.active
+        assert not reg.wait_listed
 
 
 def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
@@ -200,5 +205,41 @@ def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, samp
     assert SUCCESSFUL == payment.status
     for reg in payment.registrations:
         assert reg.active
+        assert not reg.wait_listed
 
+
+def test_registration_process_balance(mock_stripe, sample_stripe_successful_charge,
+                                     test_dao, app_routes, client, sample_data, salty_recipes):
+
+    event = test_dao.get_event_by_key('salty_recipes')
+    assert event.products['saturday'].waiting_list.has_waiting_list
+    saturday_reg_stat = event.products['saturday'].waiting_list.registration_stats
+
+    followers_number = saturday_reg_stat[FOLLOWER].accepted
+    leaders_number = saturday_reg_stat[LEADER].accepted
+    ratio = event.products['saturday'].ratio
+
+    assert (followers_number + 1) / (leaders_number + 3) > ratio, 'Will still not be able to balance after 2 leads'
+    assert (followers_number + 1) / (leaders_number + 4) <= ratio, 'Will be able to balance 1 follow after 3 leads'
+
+    first_waiting_follower = [doc for key, doc in salty_recipes.registration_docs.items()
+                              if doc.wait_listed and doc.dance_role == FOLLOWER and doc.active][0]
+    assert first_waiting_follower
+
+    names = ['Antwan', 'Otto', 'Cruz', 'Genaro', 'Adalberto']
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    for leader_name in names[:4]:
+        first_waiting_follower.reload()
+        assert first_waiting_follower.wait_listed
+
+        form_data = {'name': leader_name, 'email': f'{leader_name}@email.com', 'saturday-add': LEADER}
+        res = client.post('/checkout', data=form_data)
+
+        post_data = {'payment_id': res.json['payment_id'], 'stripe_token': 'ch_test'}
+        res = client.post('/pay', data=post_data)
+        assert res.json['success']
+
+    first_waiting_follower.reload()
+    assert not first_waiting_follower.wait_listed
 
