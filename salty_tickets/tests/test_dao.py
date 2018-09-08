@@ -6,7 +6,7 @@ from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegist
     PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
-from salty_tickets.models.registrations import PersonInfo, ProductRegistration, Payment
+from salty_tickets.models.registrations import PersonInfo, ProductRegistration, Payment, PaymentStripeDetails
 from salty_tickets.waiting_lists import RegistrationStats
 
 
@@ -117,13 +117,13 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
 
 def test_dao_get_doc(test_dao, salty_recipes):
     event = test_dao._get_doc(EventDocument, 'salty_recipes')
-    assert event.name == salty_recipes.name
+    assert salty_recipes.name == event.name
 
     event = test_dao._get_doc(EventDocument, event.id)
-    assert event.name == salty_recipes.name
+    assert salty_recipes.name == event.name
 
     event = test_dao._get_doc(EventDocument, event.to_dataclass())
-    assert event.name == salty_recipes.name
+    assert salty_recipes.name == event.name
 
     assert event == test_dao._get_doc(EventDocument, event)
 
@@ -220,12 +220,12 @@ def test_update_statuses(test_dao, salty_recipes):
     test_dao.add_payment(payment, 'salty_recipes', register=True)
 
     saved_payment = test_dao.get_payments_by_person('salty_recipes', mr_x)[0]
-    assert saved_payment.status == NEW
+    assert NEW == saved_payment.status
 
     # payment has been successful -> update payment status
     saved_payment.status = SUCCESSFUL
     test_dao.update_payment(saved_payment)
-    assert test_dao.get_payments_by_person('salty_recipes', mr_x)[0].status == SUCCESSFUL
+    assert SUCCESSFUL == test_dao.get_payments_by_person('salty_recipes', mr_x)[0].status
 
     # update registrations statuses to ACCEPTED
     for reg in saved_payment.registrations:
@@ -256,24 +256,48 @@ def test_dao_mark_registrations_as_couple(test_dao, salty_recipes):
 
     test_dao.mark_registrations_as_couple(registrations[0], registrations[1])
 
-    assert registrations[0].partner == ms_y
-    assert registrations[1].partner == mr_x
+    assert ms_y == registrations[0].partner
+    assert mr_x == registrations[1].partner
 
 
 def test_dao_query_registrations(test_dao, salty_recipes):
     person_0 = RegistrationDocument.objects(full_name='Chang Schultheis').first()
 
     registrations = test_dao.query_registrations('salty_recipes', person=person_0)
-    assert [(r.person.full_name, r.product_key) for r in registrations] == [('Chang Schultheis', 'saturday'), ('Chang Schultheis', 'sunday'), ('Chang Schultheis', 'party')]
+    expected = [('Chang Schultheis', 'saturday'), ('Chang Schultheis', 'sunday'), ('Chang Schultheis', 'party')]
+    assert expected == [(r.person.full_name, r.product_key) for r in registrations]
 
     registrations = test_dao.query_registrations('salty_recipes', person=person_0, product='saturday')
-    assert [(r.person.full_name, r.product_key) for r in registrations] == [('Chang Schultheis', 'saturday')]
+    assert [('Chang Schultheis', 'saturday')] == [(r.person.full_name, r.product_key) for r in registrations]
 
 
 def test_get_payment_event(test_dao, salty_recipes):
     payment = PaymentDocument.objects().order_by('-_id').first().to_dataclass()
-    assert test_dao.get_event_by_key('salty_recipes') == test_dao.get_payment_event(payment)
 
-    assert test_dao.get_event_by_key('salty_recipes',
-                                     get_registrations=False) == test_dao.get_payment_event(payment,
-                                                                                            get_registrations=False)
+    expected = test_dao.get_event_by_key('salty_recipes')
+    assert expected == test_dao.get_payment_event(payment)
+
+    expected = test_dao.get_event_by_key('salty_recipes', get_registrations=False)
+    assert expected == test_dao.get_payment_event(payment, get_registrations=False)
+
+
+def test_get_payments_with_stripe_details(test_dao, salty_recipes):
+    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
+    payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5,
+                      registrations=[
+                            ProductRegistration(person=mr_x, registered_by=mr_x, dance_role=LEADER, status=ACCEPTED,
+                                                product_key='saturday', price=25, paid=25),
+                        ],
+                      status=NEW, date=datetime(2018, 9, 3, 17, 0))
+    test_dao.add_payment(payment, 'salty_recipes', register=True)
+
+    assert test_dao.get_payment_by_id(payment.id).stripe is None
+
+    stripe_details = PaymentStripeDetails(source='toc_123', charge={'id': 'ch_123', 'test': 'TEST'})
+    payment.stripe = stripe_details
+    test_dao.update_payment(payment)
+
+    assert stripe_details == PaymentDocument.objects(id=payment.id).first().stripe.to_dataclass()
+    assert stripe_details == test_dao.get_payment_by_id(payment.id).stripe
+
+

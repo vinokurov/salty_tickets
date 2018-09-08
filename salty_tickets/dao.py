@@ -1,4 +1,5 @@
 import datetime
+import typing
 from typing import List
 
 import dataclasses
@@ -109,7 +110,7 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'stripe'])
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations'])
 class PaymentDocument(fields.Document):
     __meta__ = {
         'collection': 'payments'
@@ -130,7 +131,7 @@ class PaymentDocument(fields.Document):
     @classmethod
     def from_dataclass(cls, model):
         doc = cls._from_dataclass(model)
-        if doc.stripe:
+        if doc.stripe is not None:
             doc.stripe = PaymentStripeDetailsDocument.from_dataclass(model.stripe)
         return doc
 
@@ -139,7 +140,7 @@ class TicketsDAO:
     def __init__(self):
         connect(host='mongomock://localhost')
 
-    def get_event_by_key(self, key, get_registrations=True) -> Event:
+    def get_event_by_key(self, key, get_registrations=True) -> typing.Optional[Event]:
         event_doc = EventDocument.objects(key=key).first()
         if event_doc is None:
             return None
@@ -257,16 +258,25 @@ class TicketsDAO:
         return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).all()]
 
     def _update_doc(self, doc_class, model):
-        saved_model = self._get_doc(doc_class, model)
+        saved_model_doc = self._get_doc(doc_class, model)
+        saved_model = saved_model_doc.to_dataclass()
         need_save = False
         for field in dataclasses.fields(model):
             if field.name not in doc_class._skip_fields:
                 if getattr(model, field.name) != getattr(saved_model, field.name):
-                    setattr(saved_model, field.name, getattr(model, field.name))
+                    value = getattr(model, field.name)
+                    if dataclasses.is_dataclass(value):
+                        value_mongo_cls = saved_model_doc._fields[field.name].document_type
+                        value_ = value_mongo_cls.from_dataclass(value)
+                        setattr(saved_model_doc, field.name, value_)
+                    else:
+                        setattr(saved_model_doc, field.name, value)
                     need_save = True
+            else:
+                print(f'{self._update_doc}: skipping field: {field.name} = {field}')
         if need_save:
-            saved_model.save()
-            model = saved_model.to_dataclass()
+            saved_model_doc.save()
+            model = saved_model_doc.to_dataclass()
 
     def update_person(self, person: PersonInfo):
         self._update_doc(RegistrationDocument, person)

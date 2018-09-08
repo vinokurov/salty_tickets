@@ -36,7 +36,7 @@ class ProductRegistration:
 class PaymentStripeDetails:
     source: str = None
     charge_id: str = None
-    charge: Dict = None
+    charge: Dict = field(default_factory=dict)
 
 
 @dataclass
@@ -48,7 +48,7 @@ class Payment:
     registrations: List[ProductRegistration] = field(default_factory=list)
 
     status: str = NEW
-    stripe: PaymentStripeDetails = field(default_factory=PaymentStripeDetails)
+    stripe: PaymentStripeDetails = None
     date: datetime = field(default_factory=datetime.utcnow)
     info_items: List = field(default_factory=list)
 

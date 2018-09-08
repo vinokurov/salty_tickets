@@ -11,7 +11,7 @@ from salty_tickets.forms import get_primary_personal_info_from_form, get_partner
     create_event_form, StripeCheckoutForm
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct
-from salty_tickets.models.registrations import Payment, PersonInfo
+from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails
 from salty_tickets.payments import transaction_fee, stripe_charge
 from salty_tickets.pricers import ProductPricer
 
@@ -149,7 +149,7 @@ def do_pay(dao: TicketsDAO):
         if payment is None or payment.status is not NEW:
             payment_result = PaymentResult(success=False, error_message='Invalid payment id')
         else:
-            payment.stripe.source = form.stripe_token.data
+            payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
             dao.update_payment(payment)
 
             success = stripe_charge(payment)
