@@ -86,7 +86,7 @@ class PaymentResult(DataClassJsonMixin):
     def from_paid_payment(cls, paid_payment: Payment):
         payment_result = PaymentResult(success=(paid_payment.status == SUCCESSFUL))
         if not payment_result.success:
-            payment_result.error_message = paid_payment.stripe_details.get('message')
+            payment_result.error_message = paid_payment.stripe.charge.get('message')
         else:
             payment_result.payee_id = str(paid_payment.paid_by.id)
         return payment_result
@@ -152,7 +152,7 @@ def do_pay(dao: TicketsDAO):
             payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
             dao.update_payment(payment)
 
-            success = stripe_charge(payment)
+            success = stripe_charge(payment, 'sk_123')
             dao.update_payment(payment)
             if success:
                 for reg in payment.registrations:

@@ -272,8 +272,8 @@ class TicketsDAO:
                     else:
                         setattr(saved_model_doc, field.name, value)
                     need_save = True
-            else:
-                print(f'{self._update_doc}: skipping field: {field.name} = {field}')
+            # else:
+            #     print(f'{self._update_doc}: skipping field: {field.name} = {field}')
         if need_save:
             saved_model_doc.save()
             model = saved_model_doc.to_dataclass()

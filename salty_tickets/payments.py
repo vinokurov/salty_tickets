@@ -48,7 +48,7 @@ def stripe_charge(payment: Payment, stripe_sk):
         payment.status = SUCCESSFUL
         return True
     except CardError as e:
-        payment.stripe_details = e.json_body
+        payment.stripe.charge = e.json_body
         payment.status = FAILED
         return False
 

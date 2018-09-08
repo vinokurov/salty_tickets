@@ -16,6 +16,7 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
 from salty_tickets.models.registrations import PersonInfo
 from salty_tickets.waiting_lists import flip_role
+from stripe.error import CardError
 
 
 class TestTicketsDAO(TicketsDAO):
@@ -212,3 +213,12 @@ def mock_stripe():
         yield mock_sp
 
 
+@pytest.fixture
+def sample_stripe_card_error():
+    return CardError('Sample card error', 'stripe_param', 123,
+                     json_body={'error': 'Sample card error', 'message': 'Sample card error'})
+
+
+@pytest.fixture
+def sample_stripe_successful_charge():
+    return {'id': 'ch_123', 'charge': 'CHARGE'}

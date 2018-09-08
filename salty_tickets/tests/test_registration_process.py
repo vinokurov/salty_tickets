@@ -1,9 +1,10 @@
 import pytest
 from mock import patch
-from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL
+from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import PaymentDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.registration_process import get_payment_from_form, do_checkout, do_price, do_pay
+from stripe.error import CardError
 
 
 @pytest.fixture
@@ -133,13 +134,8 @@ def test_do_checkout(test_dao, app_routes, client, sample_data):
         assert not reg.active
 
 
-@patch('salty_tickets.registration_process.stripe_charge')
-def test_do_pay_success(mock_stripe_charge, test_dao, app_routes, client, sample_data):
-    # mock stripe_charge to return success
-    def _stripe_charge(_payment):
-        _payment.status = SUCCESSFUL
-        return True
-    mock_stripe_charge.side_effect = _stripe_charge
+def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
 
     client.post('/checkout', data=sample_data.form_data)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
@@ -157,5 +153,23 @@ def test_do_pay_success(mock_stripe_charge, test_dao, app_routes, client, sample
     res = client.post('/pay', data=post_data)
     assert not res.json['success']
     assert res.json['error_message']
+
+
+def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_routes, client, sample_data):
+    mock_stripe.Charge.create.side_effect = sample_stripe_card_error
+
+    client.post('/checkout', data=sample_data.form_data)
+    last_payment = PaymentDocument.objects().order_by('-_id').first()
+
+    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
+    res = client.post('/pay', data=post_data)
+
+    assert {'success': False, 'error_message': 'Sample card error', 'payee_id': None} == res.json
+    payment = test_dao.get_payment_by_id(str(last_payment.id))
+    assert FAILED == payment.status
+    assert sample_stripe_card_error.json_body == payment.stripe.charge
+    for reg in payment.registrations:
+        assert not reg.active
+
 
 
