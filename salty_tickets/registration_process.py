@@ -7,8 +7,7 @@ from flask import jsonify
 from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_payment_status_email
-from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, \
-    create_event_form, StripeCheckoutForm
+from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct
 from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails
@@ -54,8 +53,9 @@ class StripeData(DataClassJsonMixin):
 
     @classmethod
     def from_payment(cls, payment: Payment):
-        amount = int(payment.total_amount * 100)
-        return cls(amount=amount, email=payment.paid_by.email)
+        if len(payment.registrations):
+            amount = int(payment.total_amount * 100)
+            return cls(amount=amount, email=payment.paid_by.email)
 
 
 @dataclass
@@ -69,16 +69,22 @@ class PricingResult(DataClassJsonMixin):
     payment_id: str = ''
 
     @classmethod
-    def from_payment(cls, payment: Payment, form):
+    def from_payment(cls, payment: Payment, form: DanceSignupForm):
         return cls(
             stripe=StripeData.from_payment(payment),
             order_summary=OrderSummary.from_payment(payment),
+            errors=form.errors,
         )
+
+    def __post_init__(self):
+        if not self.errors and len(self.order_summary.items) > 0:
+            self.disable_checkout = False
 
 
 @dataclass
 class PaymentResult(DataClassJsonMixin):
     success: bool
+    complete: bool = True
     error_message: str = None
     payee_id: str = None
     payment_id: str = None
@@ -88,9 +94,11 @@ class PaymentResult(DataClassJsonMixin):
         payment_result = PaymentResult(
             success=(paid_payment.status == SUCCESSFUL),
             payment_id=str(paid_payment.id),
+            complete=(paid_payment.status != NEW)
         )
         if not payment_result.success:
-            payment_result.error_message = paid_payment.stripe.charge.get('message')
+            if paid_payment.stripe and paid_payment.stripe.charge:
+                payment_result.error_message = paid_payment.stripe.charge.get('message')
         else:
             payment_result.payee_id = str(paid_payment.paid_by.id)
         return payment_result
@@ -108,7 +116,7 @@ def get_payment_from_form(event: Event, form):
     total_price = sum([r.price for r in registrations])
     payment = Payment(
         price=total_price,
-        paid_by=registrations[0].registered_by,
+        paid_by=registrations[0].registered_by if len(registrations) else None,
         transaction_fee=transaction_fee(total_price),
         registrations=registrations,
         status=NEW,
@@ -120,30 +128,25 @@ def get_payment_from_form(event: Event, form):
 def do_price(dao: TicketsDAO, event_key: str):
     event = dao.get_event_by_key(event_key)
     form = create_event_form(event)()
-    if form.validate_on_submit():
-        payment = get_payment_from_form(event, form)
-        if payment:
-            pricing_result_json = PricingResult.from_payment(payment, form).to_json()
-            return jsonify(json.loads(pricing_result_json))
-    else:
-        #TODO
-        pass
+    valid = form.validate_on_submit()
+
+    payment = get_payment_from_form(event, form)
+    if payment:
+        return PricingResult.from_payment(payment, form)
 
 
 def do_checkout(dao: TicketsDAO, event_key: str):
     event = dao.get_event_by_key(event_key)
     form = create_event_form(event)()
-    if form.validate_on_submit():
-        payment = get_payment_from_form(event, form)
-        if payment:
+    valid = form.validate_on_submit()
+    payment = get_payment_from_form(event, form)
+    if payment:
+        pricing_result = PricingResult.from_payment(payment, form)
+        if valid and not pricing_result.disable_checkout:
             dao.add_payment(payment, event, register=True)
-            pricing_result = PricingResult.from_payment(payment, form)
             pricing_result.payment_id = str(payment.id)
-            pricing_result_json = pricing_result.to_json()
-            return jsonify(json.loads(pricing_result_json))
-    else:
-        #TODO
-        pass
+            pricing_result.checkout_success = not pricing_result.disable_checkout
+        return pricing_result
 
 
 def do_pay(dao: TicketsDAO):
@@ -151,7 +154,8 @@ def do_pay(dao: TicketsDAO):
     if form.validate_on_submit():
         payment = dao.get_payment_by_id(form.payment_id.data)
         if payment is None or payment.status not in [NEW, FAILED]:
-            payment_result = PaymentResult(success=False, error_message='Invalid payment id')
+            return PaymentResult(success=False, error_message='Invalid payment id')
+
         else:
             payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
             dao.update_payment(payment)
@@ -165,9 +169,24 @@ def do_pay(dao: TicketsDAO):
 
                     registration_post_process(dao, payment)
 
-            payment_result = PaymentResult.from_paid_payment(payment)
+            return PaymentResult.from_paid_payment(payment)
 
-        return jsonify(json.loads(payment_result.to_json()))
+    return PaymentResult(success=False, error_message='Invalid payment id')
+
+
+def do_get_payment_status(dao: TicketsDAO):
+    form = StripeCheckoutForm()
+    if form.validate_on_submit():
+        payment = dao.get_payment_by_id(form.payment_id.data)
+        if payment.stripe is None or payment.stripe.source is None:
+            return PaymentResult(success=False, complete=False, error_message='Payment not initiated yet')
+        elif payment.stripe.source == form.stripe_token.data:
+            return PaymentResult.from_paid_payment(payment)
+
+        print(payment.stripe.source, form.stripe_token.data)
+
+    print(form.errors)
+    return PaymentResult(success=False, error_message='Access denied to see payment status')
 
 
 def balance_event_waiting_lists(dao: TicketsDAO, event: Event):

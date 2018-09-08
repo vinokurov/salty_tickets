@@ -4,7 +4,8 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.forms import create_event_form
-from salty_tickets.registration_process import do_price, do_checkout, do_pay
+from salty_tickets.registration_process import do_price, do_checkout, do_pay, do_get_payment_status
+from salty_tickets.utils.utils import jsonify_dataclass
 from werkzeug.utils import redirect
 
 __author__ = 'vnkrv'
@@ -21,19 +22,25 @@ def register_index():
 @app.route('/price/<string:event_key>', methods=['POST'])
 def register_get_price(event_key):
     dao = TicketsDAO()
-    return do_price(dao, event_key)
+    return jsonify_dataclass(do_price(dao, event_key))
 
 
 @app.route('/checkout/<string:event_key>', methods=['POST'])
 def register_checkout(event_key):
     dao = TicketsDAO()
-    return do_checkout(dao, event_key)
+    return jsonify_dataclass(do_checkout(dao, event_key))
 
 
 @app.route('/pay/', methods=['POST'])
 def register_pay():
     dao = TicketsDAO()
-    return do_pay(dao)
+    return jsonify_dataclass(do_pay(dao))
+
+
+@app.route('/payment_status', methods=['POST'])
+def payment_status():
+    dao = TicketsDAO()
+    return jsonify_dataclass(do_get_payment_status(dao))
 
 
 @app.route('/register/<string:event_key>', methods=['GET'])

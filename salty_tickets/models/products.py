@@ -93,7 +93,13 @@ class PartnerProduct(BaseProduct):
         return []
 
     def item_info(self, registration: ProductRegistration) -> str:
-        return f'{self.name} / {registration.dance_role.title()} / {registration.person.full_name}'
+        info_list = [self.name]
+        if registration.dance_role:
+            info_list.append(registration.dance_role.title())
+        if registration.person:
+            info_list.append(registration.person.full_name)
+
+        return ' / '.join(info_list)
 
 
 @dataclass

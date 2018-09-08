@@ -11,10 +11,11 @@ class RegistrationStats:
 
 
 def flip_role(role):
-    return {
-        LEADER: FOLLOWER,
-        FOLLOWER: LEADER,
-    }[role]
+    if role:
+        return {
+            LEADER: FOLLOWER,
+            FOLLOWER: LEADER,
+        }[role]
 
 
 @dataclass
