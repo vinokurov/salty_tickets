@@ -4,7 +4,7 @@ from typing import Dict
 from dataclasses import dataclass, field
 from salty_tickets.models.products import BaseProduct
 from salty_tickets.pricers import BasePriceRule
-from salty_tickets.utils import string_to_key
+from salty_tickets.utils.utils import string_to_key
 
 
 @dataclass

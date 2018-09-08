@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import List, Dict
 
 from dataclasses import dataclass
-from salty_tickets.mongo_utils import fields_from_dataclass
+from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from mongoengine import fields
 
 

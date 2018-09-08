@@ -10,7 +10,7 @@ from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField
 from wtforms.validators import Optional
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE, ACCEPTED, WAITING
-from salty_tickets.utils import string_to_key
+from salty_tickets.utils.utils import string_to_key
 
 
 @dataclass

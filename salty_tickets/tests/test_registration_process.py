@@ -176,8 +176,8 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
         assert not reg.active
 
 
-def test_do_pay_failure_fixed(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
-                              test_dao, app_routes, client, sample_data):
+def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+                                     test_dao, app_routes, client, sample_data):
     # first CardError, then success
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
 

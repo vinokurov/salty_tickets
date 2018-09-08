@@ -10,7 +10,7 @@ from salty_tickets.constants import FOLLOWER, LEADER, REGISTRATION_STATUSES, NEW
 from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import Payment, PersonInfo, ProductRegistration, PaymentStripeDetails
 from salty_tickets.models.products import BaseProduct
-from salty_tickets.mongo_utils import fields_from_dataclass
+from salty_tickets.utils.mongo_utils import fields_from_dataclass
 
 
 @fields_from_dataclass(ProductRegistration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
