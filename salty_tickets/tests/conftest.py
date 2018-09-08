@@ -1,14 +1,21 @@
+import typing
+from unittest import mock
+from unittest.mock import Mock
+
 import mongomock_mate
 from datetime import datetime
 
 import pytest
+from dataclasses import dataclass
 from flask import Flask as _Flask
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, WAITING, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct
+from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
+from salty_tickets.models.registrations import PersonInfo
+from salty_tickets.waiting_lists import flip_role
 
 
 class TestTicketsDAO(TicketsDAO):
@@ -21,108 +28,161 @@ def test_dao():
     return TestTicketsDAO()
 
 
+@dataclass
+class RegistrationMeta:
+    product_key: str
+    dance_role: str = None
+    price: float = None
+    name: str = None
+    active: bool = None
+    status: str = ACCEPTED
+    paid: float = None
+
+
+@dataclass
+class CoupleRegistrationMeta(RegistrationMeta):
+    partner_name: str = None
+
+
+@dataclass
+class PaymentMeta:
+    name: str
+    registrations: typing.List[RegistrationMeta]
+    status: str = SUCCESSFUL
+
+
+@dataclass
+class EventMeta:
+    name: str
+    info: str
+    start_date: datetime
+    end_date: datetime
+    products: typing.List[BaseProduct]
+    payments: typing.List[PaymentMeta]
+
+
 @pytest.fixture
 def salty_recipes(test_dao):
-    event_meta = {
-        'name': 'Salty Recipes',
-        'info': 'Salty Recipes Shag Weekender with super duper teachers',
-        'start_date': datetime(2018, 7, 10),
-        'end_date': datetime(2018, 7, 11),
-        'products': [
+    event_meta = EventMeta(
+        name='Salty Recipes',
+        info='Salty Recipes Shag Weekender with super duper teachers',
+        start_date=datetime(2018, 7, 10),
+        end_date=datetime(2018, 7, 11),
+        products=[
             WorkshopProduct(name='Saturday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
             WorkshopProduct(name='Sunday', base_price=25.0, max_available=10, ratio=1.2, allow_first=2, tags={'full'}),
             PartyProduct('Party', base_price=10.0, max_available=50, tags={'full'}),
         ],
-        'registrations': {
-            'Chang Schultheis': {'saturday': (LEADER, ACCEPTED, 20, 20),
-                                 'sunday': (LEADER, ACCEPTED, 20, 20),
-                                 'party': (None, ACCEPTED, 5, 5)},
-            'Brianna Mudd': {'saturday': (FOLLOWER, ACCEPTED, 20, 20),
-                             'sunday': (FOLLOWER, ACCEPTED, 20, 20),
-                             'party': (None, ACCEPTED, 5, 5)},
-            'Zora Dawe': {'saturday': (FOLLOWER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-            'Sebrina Marler': {'saturday': (FOLLOWER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-            'Aliza Mathias': {'saturday': (FOLLOWER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-            'Yi Damon': {'saturday': (FOLLOWER, NEW, 25, 0), 'party': (None, ACCEPTED, 5, 5)},
-            'Berta Sadowski': {'saturday': (FOLLOWER, WAITING, 25, 10), 'party': (None, ACCEPTED, 5, 5)},
-            'Emerson Damiano': {'sunday': (LEADER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-            'Stevie Stumpf': {'sunday': (LEADER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-            'Albertine Segers': {'sunday': (FOLLOWER, ACCEPTED, 25, 25), 'party': (None, ACCEPTED, 5, 5)},
-        },
-        'couples': {
-            'sunday': ('Stevie Stumpf', 'Albertine Segers'),
-        },
-        'payments': {
-            'Chang Schultheis': [(50, 1.5, SUCCESSFUL)],
-            'Brianna Mudd': [(50, 1.5, SUCCESSFUL)],
-            'Zora Dawe': [(35, 0.7, SUCCESSFUL)],
-            'Sebrina Marler': [(35, 0.7, SUCCESSFUL)],
-            'Aliza Mathias': [(35, 0.7, SUCCESSFUL)],
-            'Yi Damon': [(25, 0.4, FAILED), (10, 0.3, SUCCESSFUL)],
-            'Berta Sadowski': [(15, 0.4, SUCCESSFUL)],
-            'Emerson Damiano': [(35, 0.7, SUCCESSFUL)],
-            'Stevie Stumpf': [(70, 2.0, SUCCESSFUL)],
-        },
-        'registered_by': {
-            'Albertine Segers': 'Stevie Stumpf',
-        }
-    }
+        payments=[
+            PaymentMeta('Chang Schultheis', registrations=[
+                RegistrationMeta('saturday', LEADER),
+                RegistrationMeta('sunday', LEADER),
+                RegistrationMeta('party'),
+            ]),
+            PaymentMeta('Brianna Mudd', registrations=[
+                RegistrationMeta('saturday', FOLLOWER),
+                RegistrationMeta('sunday', FOLLOWER),
+                RegistrationMeta('party'),
+            ]),
+            PaymentMeta('Zora Dawe', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')]),
+            PaymentMeta('Sebrina Marler', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')]),
+            PaymentMeta('Yi Damon', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')], FAILED),
+            PaymentMeta('Yi Damon', [RegistrationMeta('saturday', FOLLOWER), RegistrationMeta('party')], SUCCESSFUL),
+            PaymentMeta('Berta Sadowski', [
+                RegistrationMeta('saturday', FOLLOWER, status=WAITING),
+                RegistrationMeta('party')
+            ]),
+            PaymentMeta('Emerson Damiano', [RegistrationMeta('sunday', LEADER), RegistrationMeta('party')]),
+            PaymentMeta('Stevie Stumpf', [
+                CoupleRegistrationMeta(product_key='sunday', dance_role=LEADER, partner_name='Albertine Segers'),
+                RegistrationMeta('party'),
+                RegistrationMeta('party', name='Albertine Segers'),
+            ])
+        ]
+    )
     save_event_from_meta(event_meta)
     return event_meta
 
 
 def save_event_from_meta(event_meta):
     new_event = EventDocument.from_dataclass(Event(
-        name=event_meta['name'],
-        start_date=event_meta['start_date'],
-        end_date=event_meta['end_date'],
-        info=event_meta['info'],
-        products={p.key: p for p in event_meta['products']}
+        name=event_meta.name,
+        start_date=event_meta.start_date,
+        end_date=event_meta.end_date,
+        info=event_meta.info,
+        products={p.key: p for p in event_meta.products}
     ))
-    new_event.save()
+    new_event.save(force_insert=True)
 
-    registration_docs = {}
+    event_meta.registration_docs = {}
 
-    for full_name, products in event_meta['registrations'].items():
-        email = full_name.replace(' ', '.') + '@salty.co.uk'
-        reg = RegistrationDocument(full_name=full_name, email=email, event=new_event)
-        reg.save()
-        registration_docs[reg.full_name] = reg
-        # add to event.product
-        for p_key, details in products.items():
-            dance_role, status, price, paid = details
-            kwargs = {'product_key': p_key, 'status': status, 'price': price, 'paid': paid,
-                      'event': new_event, 'person': reg, 'registered_by': reg}
-            if dance_role:
-                kwargs['dance_role'] = dance_role
-            ProductRegistrationDocument(**kwargs).save()
+    def _person_from_name(name):
+        person_doc = RegistrationDocument(full_name=name, email=name.replace(' ', '.') + '@salty.co.uk')
+        person_doc.save(force_insert=True)
+        return person_doc
 
-    # couples
-    for prod_key, couples in event_meta['couples'].items():
-        partner_0 = RegistrationDocument.objects(event=new_event, full_name=couples[0]).first()
-        partner_1 = RegistrationDocument.objects(event=new_event, full_name=couples[1]).first()
+    persons = {}
+    for payment in event_meta.payments:
+        persons[payment.name] = _person_from_name(payment.name)
+        for reg in payment.registrations:
+            if reg.name and reg.name not in persons:
+                persons[reg.name] = _person_from_name(reg.name)
+            if isinstance(reg, CoupleRegistrationMeta) and reg.partner_name not in persons:
+                persons[reg.partner_name] = _person_from_name(reg.partner_name)
 
-        ProductRegistrationDocument.objects(event=new_event, product_key=prod_key, person=partner_0).update(
-            set__partner=partner_1)
+    for payment_meta in event_meta.payments:
+        registration_docs = []
 
-        ProductRegistrationDocument.objects(event=new_event, product_key=prod_key, person=partner_1).update(
-            set__partner=partner_0)
+        for reg_meta in payment_meta.registrations:
+            status = reg_meta.status or SUCCESSFUL
+            price = reg_meta.price or new_event.products[reg_meta.product_key].base_price
+            paid = reg_meta.paid or price
 
-    for person, registerer in event_meta['registered_by'].items():
-        registration_docs[person].registered_by = registration_docs[registerer]
-        registration_docs[person].save()
+            if reg_meta.active is not None:
+                active = reg_meta.active
+            else:
+                active = payment_meta.status == SUCCESSFUL
 
-    for full_name, payments in event_meta['payments'].items():
-        for price, fee, status in payments:
-            PaymentDocument(price=price, transaction_fee=fee, status=status,
-                            event=new_event, paid_by=registration_docs[full_name]).save()
+            if reg_meta.name is not None:
+                reg = persons[reg_meta.name]
+            else:
+                reg = persons[payment_meta.name]
 
-    event_meta['registration_ids'] = {name: reg.id for name, reg in registration_docs.items()}
+            kwargs = {'product_key': reg_meta.product_key, 'status': status, 'price': price, 'paid': paid,
+                      'event': new_event, 'person': reg, 'registered_by': reg, 'active': active}
+            if reg_meta.dance_role is not None:
+                kwargs['dance_role'] = reg_meta.dance_role
+
+            reg_doc = ProductRegistrationDocument(**kwargs)
+            reg_doc.save(force_insert=True)
+            registration_docs.append(reg_doc)
+
+            if isinstance(reg_meta, CoupleRegistrationMeta):
+                reg_doc.partner = persons[reg_meta.partner_name]
+                reg_doc.save()
+
+                #create a copy
+                reg_doc.id = None
+                reg_doc.person, reg_doc.partner = reg_doc.partner, reg_doc.person
+                if reg_doc.dance_role:
+                    reg_doc.dance_role = flip_role(reg_doc.dance_role)
+
+                reg_doc.save(force_insert=True)
+                registration_docs.append(reg_doc)
+
+        price = sum([r.price for r in registration_docs])
+        fee = price * 0.01
+        status = payment_meta.status or SUCCESSFUL
+        PaymentDocument(price=price, transaction_fee=fee, status=status,
+                        event=new_event, paid_by=persons[payment_meta.name],
+                        registrations=registration_docs).save(force_insert=True)
+
+        event_meta.registration_docs.update({(reg.person.full_name, reg.product_key, reg.active): reg
+                                             for reg in registration_docs})
 
 
 class Flask(_Flask):
     testing = True
-    # csrf_enabled = False
     secret_key = __name__
 
     def make_response(self, rv):
@@ -142,5 +202,13 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def mock_stripe():
+    with mock.patch('salty_tickets.payments.stripe_session') as mock_stripe_session:
+        mock_sp = Mock()
+        mock_stripe_session.return_value.__enter__.return_value = mock_sp
+        yield mock_sp
 
 

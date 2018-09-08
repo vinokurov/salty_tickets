@@ -24,3 +24,19 @@ def test_waiting_list_can_add():
     assert waiting_list.can_add(LEADER)
     assert waiting_list.can_add(FOLLOWER)
     assert waiting_list.can_add(COUPLE)
+
+
+def test_has_waiting_list():
+    waiting_list = AutoBalanceWaitingList(
+        max_available=10,
+        registration_stats={
+            LEADER: RegistrationStats(accepted=3),
+            FOLLOWER: RegistrationStats(accepted=5, waiting=1),
+            COUPLE: RegistrationStats(accepted=2),
+        },
+        ratio=1.5
+    )
+    assert waiting_list.has_waiting_list
+
+    waiting_list.registration_stats[FOLLOWER].waiting = 0
+    assert not waiting_list.has_waiting_list

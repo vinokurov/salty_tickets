@@ -48,6 +48,9 @@ class BaseProduct:
     def _create_base_registration(self) -> ProductRegistration:
         return ProductRegistration(product_key=self.key)
 
+    def item_info(self, registration: ProductRegistration) -> str:
+        return self.name
+
 
 @dataclass
 class PartnerProduct(BaseProduct):
@@ -60,7 +63,7 @@ class PartnerProduct(BaseProduct):
 
     def create_registration(self, person_info: PersonInfo, registered_by: PersonInfo, dance_role):
         registration = self._create_base_registration()
-        registration.info = f'{self.name} / {dance_role} / {person_info.full_name}'
+        # registration.info = f'{self.name} / {dance_role.title()} / {person_info.full_name}'
         registration.person = person_info
         registration.registered_by = registered_by
         registration.dance_role = dance_role
@@ -89,6 +92,9 @@ class PartnerProduct(BaseProduct):
                 return [registration]
         return []
 
+    def item_info(self, registration: ProductRegistration) -> str:
+        return f'{self.name} / {registration.dance_role.title()} / {registration.person.full_name}'
+
 
 @dataclass
 class WaitListedPartnerProduct(PartnerProduct):
@@ -109,9 +115,9 @@ class WaitListedPartnerProduct(PartnerProduct):
 
     def _get_registration_stats_for_role(self, option):
         if option == COUPLE:
-            registered = [r for r in self.registrations if r.as_couple]
+            registered = [r for r in self.registrations if r.as_couple and r.active]
         else:
-            registered = [r for r in self.registrations if r.dance_role == option]
+            registered = [r for r in self.registrations if r.dance_role == option and r.active]
         return RegistrationStats(
             accepted=len([r for r in registered if r.status == ACCEPTED]),
             waiting=len([r for r in registered if r.status == WAITING]),
@@ -127,6 +133,42 @@ class WaitListedPartnerProduct(PartnerProduct):
         total_accepted = self.waiting_list.registration_stats[LEADER].accepted \
                          + self.waiting_list.registration_stats[FOLLOWER].accepted
         return self.max_available - total_accepted
+
+    def balance_waiting_list(self) -> typing.List[ProductRegistration]:
+        balanced_registrations = []
+        while self.waiting_list.needs_balancing():
+            if self.waiting_list.needs_balancing(COUPLE):
+                regs = self._get_first_waiting_couple()
+                if not regs:
+                    continue
+                for r in regs:
+                    r.status = ACCEPTED
+                balanced_registrations += regs
+
+            for role in [LEADER, FOLLOWER]:
+                if self.waiting_list.needs_balancing(role):
+                    reg = self._get_first_waiting(role)
+                    reg.status = ACCEPTED
+                    balanced_registrations += [reg]
+
+        return balanced_registrations
+
+    def _get_first_waiting_couple(self) -> typing.List[ProductRegistration]:
+        for r1 in self.registrations:
+            if r1.as_couple and (r1.status == WAITING) and r1.active:
+                r2_list = [r for r in self.registrations if r.person == r1.partner and r.active]
+                if r2_list:
+                    r2 = r2_list[0]
+                    if r2.status is WAITING:
+                        return [r1, r2]
+                return [r1]
+        return []
+
+    def _get_first_waiting(self, role: str) -> ProductRegistration:
+        for r in self.registrations:
+            if r.active and (r.dance_role == role) and (r.status == WAITING):
+                return r
+
 
 
 @dataclass

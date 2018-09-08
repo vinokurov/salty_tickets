@@ -13,6 +13,11 @@ class SignupForm(FlaskForm):
     # submit = SubmitField(u'Signup')
 
 
+class StripeCheckoutForm(FlaskForm):
+    stripe_token = HiddenField(validators=[DataRequired()])
+    payment_id = HiddenField(validators=[DataRequired()])
+
+
 class FormWithProducts:
     product_keys = []
 

@@ -4,6 +4,7 @@ import pytest
 from salty_tickets.constants import LEADER, FOLLOWER, ACCEPTED, NEW, SUCCESSFUL, COUPLE
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
     PaymentDocument
+from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct
 from salty_tickets.models.registrations import PersonInfo, ProductRegistration, Payment
 from salty_tickets.waiting_lists import RegistrationStats
@@ -11,14 +12,13 @@ from salty_tickets.waiting_lists import RegistrationStats
 
 def test_dao_get_event(test_dao, salty_recipes):
     event = test_dao.get_event_by_key('salty_recipes')
-    assert event.name == salty_recipes['name']
-    assert list(event.products.keys()) == [p.key for p in salty_recipes['products']]
-    assert event.products['saturday'].name == salty_recipes['products'][0].name
+    assert event.name == salty_recipes.name
+    assert list(event.products.keys()) == [p.key for p in salty_recipes.products]
+    assert event.products['saturday'].name == salty_recipes.products[0].name
 
     assert isinstance(event.products['saturday'], WorkshopProduct)
     assert isinstance(event.products['party'], PartyProduct)
 
-    print(event.products['sunday'].registrations)
     assert event.id is not None
     for prod_key, product in event.products.items():
         for reg in product.registrations:
@@ -41,8 +41,8 @@ def test_dao_get_event(test_dao, salty_recipes):
 def test_dao_get_registrations_for_product(test_dao, salty_recipes):
     registrations = test_dao.get_registrations_for_product('salty_recipes', 'saturday')
 
-    saturday_names = [name for name, det in salty_recipes['registrations'].items() if 'saturday' in det]
-    assert [r.person.full_name for r in registrations] == saturday_names
+    saturday_names = [key[0] for key in salty_recipes.registration_docs.keys() if key[1] == 'saturday']
+    assert saturday_names == [r.person.full_name for r in registrations]
 
     LEN = len(registrations)
     event = test_dao.get_event_by_key('salty_recipes')
@@ -60,7 +60,7 @@ def test_add_person(test_dao, salty_recipes):
     person_doc = RegistrationDocument.objects(id=person.id).first()
     assert person.full_name == person_doc.full_name
     assert person.email == person_doc.email
-    assert person_doc.event.name == salty_recipes['name']
+    assert person_doc.event.name == salty_recipes.name
 
 
 def test_add_registration(test_dao, salty_recipes):
@@ -117,13 +117,13 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
 
 def test_dao_get_doc(test_dao, salty_recipes):
     event = test_dao._get_doc(EventDocument, 'salty_recipes')
-    assert event.name == salty_recipes['name']
+    assert event.name == salty_recipes.name
 
     event = test_dao._get_doc(EventDocument, event.id)
-    assert event.name == salty_recipes['name']
+    assert event.name == salty_recipes.name
 
     event = test_dao._get_doc(EventDocument, event.to_dataclass())
-    assert event.name == salty_recipes['name']
+    assert event.name == salty_recipes.name
 
     assert event == test_dao._get_doc(EventDocument, event)
 
@@ -155,9 +155,7 @@ def test_add_retrieve_payments(test_dao, salty_recipes):
 
     test_dao.add_payment(payment, 'salty_recipes')
     assert payment.id
-    print(payment.id)
     doc = PaymentDocument.objects(id=payment.id).first()
-    print(doc, doc.event, doc.paid_by)
 
     mr_x_payments = test_dao.get_payments_by_person('salty_recipes', mr_x)
     assert payment.id == mr_x_payments[0].id
@@ -226,7 +224,6 @@ def test_update_statuses(test_dao, salty_recipes):
 
     # payment has been successful -> update payment status
     saved_payment.status = SUCCESSFUL
-    print(saved_payment.id)
     test_dao.update_payment(saved_payment)
     assert test_dao.get_payments_by_person('salty_recipes', mr_x)[0].status == SUCCESSFUL
 
@@ -272,3 +269,11 @@ def test_dao_query_registrations(test_dao, salty_recipes):
     registrations = test_dao.query_registrations('salty_recipes', person=person_0, product='saturday')
     assert [(r.person.full_name, r.product_key) for r in registrations] == [('Chang Schultheis', 'saturday')]
 
+
+def test_get_payment_event(test_dao, salty_recipes):
+    payment = PaymentDocument.objects().order_by('-_id').first().to_dataclass()
+    assert test_dao.get_event_by_key('salty_recipes') == test_dao.get_payment_event(payment)
+
+    assert test_dao.get_event_by_key('salty_recipes',
+                                     get_registrations=False) == test_dao.get_payment_event(payment,
+                                                                                            get_registrations=False)

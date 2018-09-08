@@ -7,7 +7,7 @@ __author__ = 'vnkrv'
 
 app = Flask('salty')
 Bootstrap(app)
-db = SQLAlchemy(app)
+# db = SQLAlchemy(app)
 app.secret_key = 'devtest'
 
 # from salty_tickets import views

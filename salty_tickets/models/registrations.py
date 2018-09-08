@@ -19,32 +19,42 @@ class ProductRegistration:
     person: PersonInfo = None
     partner: PersonInfo = None
     dance_role: str = None
-    as_couple: bool = False
     status: str = NEW
     details: Dict = field(default_factory=dict)
     price: float = None
     paid: float = None
     date: datetime = None
     product_key: str = None
-    info: str = None
+    active: bool = False
 
-    def __post_init__(self):
-        if self.partner:
-            self.as_couple = True
+    @property
+    def as_couple(self):
+        return bool(self.partner)
+
+
+@dataclass
+class PaymentStripeDetails:
+    source: str = None
+    charge_id: str = None
+    charge: Dict = None
 
 
 @dataclass
 class Payment:
     price: float
     paid_by: PersonInfo
+    description: str = ''
     transaction_fee: float = 0
     registrations: List[ProductRegistration] = field(default_factory=list)
 
     status: str = NEW
-    stripe_details: Dict = field(default_factory=dict)
+    stripe: PaymentStripeDetails = field(default_factory=PaymentStripeDetails)
     date: datetime = field(default_factory=datetime.utcnow)
     info_items: List = field(default_factory=list)
 
     @property
     def total_amount(self):
-        return self.price + self.transaction_fee
+        if self.price > 0:
+            return self.price + self.transaction_fee
+        else:
+            return 0

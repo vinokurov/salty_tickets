@@ -5,6 +5,9 @@ from flask import render_template
 from salty_tickets import config
 from premailer import Premailer
 from salty_tickets.config import EMAIL_FROM
+from salty_tickets.dao import TicketsDAO
+from salty_tickets.models.event import Event
+from salty_tickets.models.registrations import Payment, PersonInfo
 from salty_tickets.to_delete.controllers import OrderSummaryController, OrderProductController
 
 
@@ -111,3 +114,11 @@ def send_remaining_payment_confirmation(remaining_payment):
     subj = '{} - Payment received'.format(user_order.event.name)
 
     return send_email(EMAIL_FROM, user_order.registration.email, subj, body_text, body_html)
+
+
+def send_payment_status_email(dao:TicketsDAO, payment: Payment, event: Event):
+    pass
+
+
+def send_waiting_list_accept_email(dao, person: PersonInfo, event: Event):
+    pass

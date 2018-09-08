@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from dataclasses import dataclass, field
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
@@ -33,10 +33,28 @@ class AutoBalanceWaitingList:
                 self.registration_stats[o] = RegistrationStats()
 
     @property
-    def waiting_stats(self):
+    def waiting_stats(self) -> Dict[str, RegistrationStats]:
         return {o: self.waiting_list_for_option(o) for o in [LEADER, FOLLOWER, COUPLE]}
 
-    def can_add(self, option):
+    @property
+    def has_waiting_list(self) -> bool:
+        stats = self.registration_stats
+        return stats[LEADER].waiting > 0 or stats[FOLLOWER].waiting > 0
+
+    @property
+    def current_ratio(self):
+        round_digits = 3
+        ratio = max(self.registration_stats[LEADER].accepted / self.registration_stats[FOLLOWER].accepted,
+                    self.registration_stats[FOLLOWER].accepted / self.registration_stats[LEADER].accepted)
+        return round(ratio, round_digits)
+
+    def needs_balancing(self, option: str = None) -> bool:
+        if option is None:
+            return any([self.needs_balancing(o) for o in [LEADER, FOLLOWER, COUPLE]])
+        else:
+            return self.can_add(option) and self.registration_stats[option].waiting > 0
+
+    def can_add(self, option) -> bool:
         if option == COUPLE:
             total_accepted = self.registration_stats[LEADER].accepted \
                              + self.registration_stats[FOLLOWER].accepted
@@ -55,7 +73,7 @@ class AutoBalanceWaitingList:
 
             return False
 
-    def waiting_list_for_option(self, option):
+    def waiting_list_for_option(self, option) -> Optional[int]:
         already_waiting = self.registration_stats[option].waiting
         if already_waiting:
             return already_waiting

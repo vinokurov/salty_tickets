@@ -5,21 +5,21 @@ from salty_tickets import config
 
 __author__ = 'vnkrv'
 
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://{username}:{password}@{hostname}/{databasename}".format(
-            username=config.DATABASE_USERNAME,
-            password=config.DATABASE_PASSWORD,
-            hostname=config.DATABASE_HOSTNAME,
-            databasename=config.DATABASE_DBNAME,
-)
-
+# SQLALCHEMY_DATABASE_URI = "mysql+pymysql://{username}:{password}@{hostname}/{databasename}".format(
+#             username=config.DATABASE_USERNAME,
+#             password=config.DATABASE_PASSWORD,
+#             hostname=config.DATABASE_HOSTNAME,
+#             databasename=config.DATABASE_DBNAME,
+# )
+#
 engine = create_engine('sqlite:///C:\\temp\\test.db', convert_unicode=True)
-# engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, pool_size=100, pool_recycle=280)
-
+# # engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, pool_size=100, pool_recycle=280)
+#
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))
 Base = declarative_base()
-Base.query = db_session.query_property()
+# Base.query = db_session.query_property()
 
 # def init_db():
 #     # import all modules here that might define models so that
