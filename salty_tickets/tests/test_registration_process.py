@@ -143,7 +143,9 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
     post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
     res = client.post('/pay', data=post_data)
 
-    assert {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id)} == res.json
+    expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
+           'payment_id': str(last_payment.id)}
+    assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert SUCCESSFUL == payment.status
     for reg in payment.registrations:
@@ -164,12 +166,39 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
     post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
     res = client.post('/pay', data=post_data)
 
-    assert {'success': False, 'error_message': 'Sample card error', 'payee_id': None} == res.json
+    expected = {'success': False, 'error_message': 'Sample card error',
+                'payee_id': None, 'payment_id': str(last_payment.id)}
+    assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert FAILED == payment.status
     assert sample_stripe_card_error.json_body == payment.stripe.charge
     for reg in payment.registrations:
         assert not reg.active
 
+
+def test_do_pay_failure_fixed(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+                              test_dao, app_routes, client, sample_data):
+    # first CardError, then success
+    mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
+
+    client.post('/checkout', data=sample_data.form_data)
+    last_payment = PaymentDocument.objects().order_by('-_id').first()
+
+    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
+    res = client.post('/pay', data=post_data)
+
+    payment = test_dao.get_payment_by_id(str(last_payment.id))
+    assert FAILED == payment.status
+
+    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
+    res = client.post('/pay', data=post_data)
+
+    expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
+                'payment_id': str(last_payment.id)}
+    assert expected == res.json
+    payment = test_dao.get_payment_by_id(str(last_payment.id))
+    assert SUCCESSFUL == payment.status
+    for reg in payment.registrations:
+        assert reg.active
 
 

@@ -4,7 +4,7 @@ from typing import Dict, List
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from flask import jsonify
-from salty_tickets.constants import NEW, SUCCESSFUL
+from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_payment_status_email
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, \
@@ -81,10 +81,14 @@ class PaymentResult(DataClassJsonMixin):
     success: bool
     error_message: str = None
     payee_id: str = None
+    payment_id: str = None
 
     @classmethod
     def from_paid_payment(cls, paid_payment: Payment):
-        payment_result = PaymentResult(success=(paid_payment.status == SUCCESSFUL))
+        payment_result = PaymentResult(
+            success=(paid_payment.status == SUCCESSFUL),
+            payment_id=str(paid_payment.id),
+        )
         if not payment_result.success:
             payment_result.error_message = paid_payment.stripe.charge.get('message')
         else:
@@ -146,7 +150,7 @@ def do_pay(dao: TicketsDAO):
     form = StripeCheckoutForm()
     if form.validate_on_submit():
         payment = dao.get_payment_by_id(form.payment_id.data)
-        if payment is None or payment.status is not NEW:
+        if payment is None or payment.status not in [NEW, FAILED]:
             payment_result = PaymentResult(success=False, error_message='Invalid payment id')
         else:
             payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
