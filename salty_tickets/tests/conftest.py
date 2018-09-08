@@ -2,7 +2,7 @@ import typing
 from unittest import mock
 from unittest.mock import Mock
 
-import mongomock_mate
+import mongomock_mate # mongomock_mate import is required to run update() queries to mongomock
 from datetime import datetime
 
 import pytest
@@ -21,17 +21,14 @@ from stripe.error import CardError
 
 class TestTicketsDAO(TicketsDAO):
     def __init__(self):
-        connection = connect(host='mongomock://localhost')
+        db = connect(host='mongomock://localhost', db='salty_tickets')
+        db.drop_database('salty_tickets')
 
 
 @pytest.fixture
 def test_dao():
     dao = TestTicketsDAO()
-    EventDocument.drop_collection()
-    RegistrationDocument.drop_collection()
-    PaymentDocument.drop_collection()
     return dao
-
 
 
 @dataclass
