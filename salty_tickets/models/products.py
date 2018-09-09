@@ -184,6 +184,20 @@ class WaitListedPartnerProduct(PartnerProduct):
                    r.wait_listed = True
         return regs
 
+    def apply_extra_partner(self, this_registration: ProductRegistration,
+                            extra_registrations: typing.List[ProductRegistration]):
+        if self.waiting_list.can_add(COUPLE):
+            available_extra_regs = [r for r in extra_registrations
+                                    if r.product_key == self.key and r.active and not r.partner
+                                    and r.dance_role == flip_role(this_registration.dance_role)]
+            if available_extra_regs:
+                extra_reg = available_extra_regs[0]
+                this_registration.partner = extra_reg.person
+                this_registration.wait_listed = False
+                extra_reg.partner = this_registration.person
+                extra_reg.wait_listed = False
+                return extra_reg
+
     def item_info(self, registration: ProductRegistration) -> str:
         info = super(WaitListedPartnerProduct, self).item_info(registration)
         if registration.wait_listed:

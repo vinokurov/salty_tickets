@@ -1,7 +1,12 @@
+from flask import Flask as _Flask
+import pytest
 from dataclasses import dataclass
-from salty_tickets.constants import LEADER, FOLLOWER
+from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
+from salty_tickets.forms import create_event_form
+from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct
 from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.tokens import PartnerToken
 
 LEADER_NAMES = [
     'Dallas',
@@ -200,3 +205,119 @@ def test_wait_listed_partner_product_balance_waiting_list_real_scenario():
     product.registrations += util_generate_registrations([CoupleRegistrationMeta()])
     balanced = product.balance_waiting_list()
     assert_registrations_eq([product.registrations[6]], balanced)
+
+
+class Flask(_Flask):
+    testing = True
+    secret_key = __name__
+
+    def make_response(self, rv):
+        if rv is None:
+            rv = ''
+
+        return super(Flask, self).make_response(rv)
+
+
+@pytest.fixture
+def app():
+    app = Flask(__name__)
+    app.config['WTF_CSRF_ENABLED'] = False
+    return app
+
+
+def test_wait_listed_parse_form(app):
+    product = WaitListedPartnerProduct(ratio=1.5, allow_first=1, name='Test', max_available=10)
+    product.ratio = 1.5
+    product.allow_first = 1
+    product.registrations = util_generate_registrations([
+        CoupleRegistrationMeta(),   # 1/1 = 1
+        CoupleRegistrationMeta(),   # 2/2 = 1
+        RegistrationMeta(FOLLOWER),  # 3/2 = 1.5
+    ])
+    event = Event(name='Test Event', products={'test': product})
+
+    # will accept leader
+    form = create_event_form(event)()
+    form.get_product_by_key('test').add.data = LEADER
+    regs = product.parse_form(form)
+    assert not regs[0].wait_listed
+
+    # follower will be wait listed
+    form.get_product_by_key('test').add.data = FOLLOWER
+    regs = product.parse_form(form)
+    assert regs[0].wait_listed
+
+    # will accept couple event if there's waiting list for followers
+    product.registrations = util_generate_registrations([
+        CoupleRegistrationMeta(),   # 1/1 = 1
+        CoupleRegistrationMeta(),   # 2/2 = 1
+        RegistrationMeta(FOLLOWER),  # 3/2 = 1.5
+        RegistrationMeta(FOLLOWER),  # 4/2 = 2.0
+    ])
+    form.get_product_by_key('test').add.data = COUPLE
+    regs = product.parse_form(form)
+    assert not any([r.wait_listed for r in regs])
+
+    # now that we have a couple in a waiting list -> will put a new couple in the wait list
+    product.registrations = util_generate_registrations([
+        CoupleRegistrationMeta(),   # 1/1 = 1
+        CoupleRegistrationMeta(wait_listed=True),
+    ])
+    assert not product.waiting_list.can_add(COUPLE)
+    regs = product.parse_form(form)
+    assert all([r.wait_listed for r in regs])
+
+
+def test_wait_listed_apply_extra_partner(app):
+    product = WaitListedPartnerProduct(ratio=1.5, allow_first=1, name='Test', max_available=10)
+
+    me = PersonInfo('Mr X', 'mr.x@xx.com')
+    another_one = PersonInfo('Mr Z', 'mr.z@zz.com')
+
+    names = FOLLOWER_NAMES.copy()
+
+    def pop_person():
+        _name = names.pop()
+        return PersonInfo(_name, _name.replace(' ', '.') + '@yy.com')
+
+    # none of the extra registrations is available for me
+    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    extra_registrations = [
+        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
+        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=LEADER, product_key='test'),
+        ProductRegistration(person=pop_person(), partner=another_one, wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
+        ProductRegistration(person=pop_person(), wait_listed=False, active=False, dance_role=FOLLOWER, product_key='test'),
+    ]
+    regs = product.apply_extra_partner(my_registration, extra_registrations)
+    assert not regs
+    assert my_registration.wait_listed
+
+    # I am wait listed, partner is wait listed, we both get off the wait list
+    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    extra_registrations = [
+        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
+        ProductRegistration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
+        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
+    ]
+    applied_reg = product.apply_extra_partner(my_registration, extra_registrations)
+    assert extra_registrations[1] == applied_reg
+    assert not applied_reg.wait_listed
+    assert me == applied_reg.partner
+    assert applied_reg.person == my_registration.partner
+    assert not my_registration.wait_listed
+
+    # too many people, can't add couple
+    product = WaitListedPartnerProduct(ratio=1.5, allow_first=1, name='Test', max_available=5)
+    product.registrations = util_generate_registrations([
+        CoupleRegistrationMeta(),
+        CoupleRegistrationMeta(wait_listed=True),
+    ])
+    assert not product.waiting_list.can_add(COUPLE)
+
+    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    extra_registrations = [
+        ProductRegistration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
+    ]
+    applied_reg = product.apply_extra_partner(my_registration, extra_registrations)
+    assert not applied_reg
+    assert my_registration.wait_listed

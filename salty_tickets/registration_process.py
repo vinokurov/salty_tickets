@@ -33,16 +33,37 @@ Checkout:
 
 
 @dataclass
+class OrderItem(DataClassJsonMixin):
+    name: str
+    price: float
+    dance_role: str = None
+    wait_listed: bool = False
+    person: str = None
+    partner: str = None
+
+
+@dataclass
 class OrderSummary(DataClassJsonMixin):
     total_price: float = 0
     transaction_fee: float = 0
     total: float = 0
-    items: List[List] = field(default_factory=list)
+    items: List[OrderItem] = field(default_factory=list)
 
     @classmethod
-    def from_payment(cls, payment: Payment):
+    def from_payment(cls, event: Event, payment: Payment):
+        items = []
+        for reg in payment.registrations:
+            items.append(OrderItem(
+                name=event.products[reg.product_key].name,
+                price=reg.price,
+                person=reg.person.full_name,
+                partner=reg.partner.full_name if reg.partner else None,
+                dance_role=reg.dance_role,
+                wait_listed=reg.wait_listed
+            ))
+
         return cls(total_price=payment.price, transaction_fee=payment.transaction_fee,
-                   total=payment.total_amount, items=payment.info_items)
+                   total=payment.total_amount, items=items)
 
 
 @dataclass
@@ -68,10 +89,10 @@ class PricingResult(DataClassJsonMixin):
     payment_id: str = ''
 
     @classmethod
-    def from_payment(cls, payment: Payment, form: DanceSignupForm):
+    def from_payment(cls, event: Event, payment: Payment, form: DanceSignupForm):
         return cls(
             stripe=StripeData.from_payment(payment),
-            order_summary=OrderSummary.from_payment(payment),
+            order_summary=OrderSummary.from_payment(event, payment),
             errors=form.errors,
         )
 
@@ -120,11 +141,20 @@ class PartnerTokenCheckResult(DataClassJsonMixin):
                    roles={r.product_key: r.dance_role for r in active_registrations})
 
 
-def get_payment_from_form(event: Event, form):
+def get_payment_from_form(event: Event, form, extra_registrations=None):
     registrations = []
     for prod_key, prod in event.products.items():
         registrations += prod.parse_form(form)
-    print(registrations)
+
+    # apply extra registrations
+    if extra_registrations is not None:
+        applied_registrations = []
+        for reg in [r for r in registrations if not r.partner]:
+            product = event.products[reg.product_key]
+            if isinstance(product, WaitListedPartnerProduct):
+                applied_reg = product.apply_extra_partner(reg, extra_registrations)
+                if applied_reg:
+                    applied_registrations.append(applied_reg)
 
     # add prices
     pricer = ProductPricer.from_event(event)
@@ -139,7 +169,17 @@ def get_payment_from_form(event: Event, form):
         status=NEW,
         info_items=[(event.products[r.product_key].item_info(r), r.price) for r in registrations]
     )
+
+    if extra_registrations is not None:
+        payment.extra_registrations = applied_registrations
+
     return payment
+
+
+def get_extra_registrations_from_partner_token(dao: TicketsDAO, event: Event, form):
+    if form.partner_token.data:
+        partner = PartnerToken().deserialize(dao, form.partner_token.data)
+        return dao.query_registrations(event.key, partner)
 
 
 def do_price(dao: TicketsDAO, event_key: str):
@@ -147,18 +187,29 @@ def do_price(dao: TicketsDAO, event_key: str):
     form = create_event_form(event)()
     valid = form.validate_on_submit()
 
-    payment = get_payment_from_form(event, form)
+    extra_registrations = get_extra_registrations_from_partner_token(dao, event, form)
+    if extra_registrations:
+        payment = get_payment_from_form(event, form, extra_registrations)
+    else:
+        payment = get_payment_from_form(event, form)
+
     if payment:
-        return PricingResult.from_payment(payment, form)
+        return PricingResult.from_payment(event, payment, form)
 
 
 def do_checkout(dao: TicketsDAO, event_key: str):
     event = dao.get_event_by_key(event_key)
     form = create_event_form(event)()
     valid = form.validate_on_submit()
-    payment = get_payment_from_form(event, form)
+
+    extra_registrations = get_extra_registrations_from_partner_token(dao, event, form)
+    if extra_registrations:
+        payment = get_payment_from_form(event, form, extra_registrations)
+    else:
+        payment = get_payment_from_form(event, form)
+
     if payment:
-        pricing_result = PricingResult.from_payment(payment, form)
+        pricing_result = PricingResult.from_payment(event, payment, form)
         if valid and not pricing_result.disable_checkout:
             dao.add_payment(payment, event, register=True)
             pricing_result.payment_id = str(payment.id)
@@ -183,6 +234,17 @@ def do_pay(dao: TicketsDAO):
                 for reg in payment.registrations:
                     reg.active = True
                     dao.update_registration(reg)
+
+                    # TODO: make it nicer - with emails, etc.
+                    if payment.extra_registrations:
+                        for extra_reg in payment.extra_registrations:
+                            if not extra_reg.partner and extra_reg.active:
+                                print('***EXTRA**')
+                                print(extra_reg)
+                                extra_reg.partner = reg.registered_by
+                                extra_reg.wait_listed = reg.wait_listed
+                                dao.update_registration(extra_reg)
+                                print(extra_reg)
 
                     registration_post_process(dao, payment)
 

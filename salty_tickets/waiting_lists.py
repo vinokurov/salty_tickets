@@ -49,22 +49,28 @@ class AutoBalanceWaitingList:
                     self.registration_stats[FOLLOWER].accepted / self.registration_stats[LEADER].accepted)
         return round(ratio, round_digits)
 
+    @property
+    def total_accepted(self):
+        return self.registration_stats[LEADER].accepted + self.registration_stats[FOLLOWER].accepted
+
     def needs_balancing(self, option: str = None) -> bool:
         if option is None:
             return any([self.needs_balancing(o) for o in [LEADER, FOLLOWER, COUPLE]])
         else:
-            return self.can_add(option) and self.registration_stats[option].waiting > 0
+            return self.can_add(option, consider_waiting_list=False) \
+                   and self.registration_stats[option].waiting > 0
 
-    def can_add(self, option) -> bool:
+    def can_add(self, option, consider_waiting_list=True) -> bool:
+        if consider_waiting_list and self.registration_stats[option].waiting:
+            return False
+
         if option == COUPLE:
-            total_accepted = self.registration_stats[LEADER].accepted \
-                             + self.registration_stats[FOLLOWER].accepted
-            return total_accepted + 2 <= self.max_available
+            return self.total_accepted + 2 <= self.max_available
         else:
             other_role = flip_role(option)
             this_role_accepted = self.registration_stats[option].accepted
             other_role_accepted = self.registration_stats[other_role].accepted
-            total_accepted = this_role_accepted + other_role_accepted
+            total_accepted = self.total_accepted
 
             if total_accepted + 1 <= self.max_available:
                 if other_role_accepted == 0 and total_accepted < self.allow_first:

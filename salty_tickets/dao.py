@@ -118,7 +118,7 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations'])
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'extra_registrations'])
 class PaymentDocument(fields.Document):
     __meta__ = {
         'collection': 'payments'
@@ -127,12 +127,14 @@ class PaymentDocument(fields.Document):
     paid_by = fields.ReferenceField(RegistrationDocument)
     event = fields.ReferenceField(EventDocument)
     registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
+    extra_registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
 
     def to_dataclass(self) -> Payment:
         model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
         model.registrations = [r.to_dataclass() for r in self.registrations]
+        model.extra_registrations = [r.to_dataclass() for r in self.extra_registrations]
         if self.stripe:
             model.stripe = self.stripe.to_dataclass()
         # model.int_id = self.int_id
@@ -220,6 +222,7 @@ class TicketsDAO:
     def add_payment(self, payment: Payment, event, register=False):
         if hasattr(payment, 'id'):
             raise ValueError(f'Payment already exists: {payment}')
+        print(payment)
         payment_doc = PaymentDocument.from_dataclass(payment)
         payment_doc.event = self._get_event_doc(event)
         payment_doc.paid_by = self._get_or_create_new_person(payment.paid_by, event)
@@ -230,6 +233,8 @@ class TicketsDAO:
                 else:
                     self.add_registration(reg, event)
             payment_doc.registrations.append(reg.id)
+
+        payment_doc.extra_registrations = [r.id for r in payment.extra_registrations]
 
         payment_doc.save()
         payment.id = payment_doc.id
@@ -267,7 +272,7 @@ class TicketsDAO:
 
         return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).all()]
 
-    def _update_doc(self, doc_class, model):
+    def _update_doc(self, doc_class, model, **kwargs):
         saved_model_doc = self._get_doc(doc_class, model)
         saved_model = saved_model_doc.to_dataclass()
         need_save = False
@@ -284,6 +289,9 @@ class TicketsDAO:
                     need_save = True
             # else:
             #     print(f'{self._update_doc}: skipping field: {field.name} = {field}')
+        for k, v in kwargs.items():
+            setattr(saved_model_doc, k, v)
+            need_save = True
         if need_save:
             saved_model_doc.save()
             model = saved_model_doc.to_dataclass()
@@ -292,7 +300,17 @@ class TicketsDAO:
         self._update_doc(RegistrationDocument, person)
 
     def update_registration(self, registration: ProductRegistration):
-        self._update_doc(ProductRegistrationDocument, registration)
+        registration_0 = self.get_product_registration_by_id(registration.id)
+        extra_updates = {}
+        event = ProductRegistrationDocument.objects(id=registration.id).first().event.key
+        if registration.person != registration_0.person:
+            extra_updates['person'] = self._get_or_create_new_person(registration.person, event)
+        if registration.registered_by != registration_0.registered_by:
+            extra_updates['registered_by'] = self._get_or_create_new_person(registration.registered_by, event)
+        if registration.partner != registration_0.partner:
+            extra_updates['partner'] = self._get_or_create_new_person(registration.partner, event)
+
+        self._update_doc(ProductRegistrationDocument, registration, **extra_updates)
 
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)

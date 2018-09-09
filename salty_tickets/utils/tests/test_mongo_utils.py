@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Dict
 
+import dataclasses
 from dataclasses import dataclass
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from mongoengine import fields
@@ -72,6 +73,8 @@ def test_fields_from_dataclass_extra_fields():
     assert doc.to_json() == MyMongoDoc.from_dataclass(dc).to_json()
     assert doc.to_dataclass() == dc
 
+    assert dataclasses.asdict(doc.to_dataclass())
+
 
 # def test_list():
 #     @dataclass
@@ -113,3 +116,5 @@ def test_simple_dict_list():
     assert doc.li_li == dtcl.li_li
     assert MyMongoDoc.from_dataclass(dtcl).to_json() == doc.to_json()
     assert doc.to_dataclass() == dtcl
+
+    assert dataclasses.asdict(doc.to_dataclass())

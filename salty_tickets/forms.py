@@ -52,6 +52,7 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     partner_state = StringField('Partner\'s State')
     partner_city = StringField('Partner\'s City')
     registration_token = StringField('Registration Code')
+    partner_token = StringField('Registration Code')
 
 
 def create_event_form(event):

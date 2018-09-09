@@ -51,6 +51,7 @@ class Payment:
     stripe: PaymentStripeDetails = None
     date: datetime = field(default_factory=datetime.utcnow)
     info_items: List = field(default_factory=list)
+    extra_registrations: List[ProductRegistration] = field(default_factory=list)
 
     @property
     def total_amount(self):

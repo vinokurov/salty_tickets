@@ -4,6 +4,7 @@ from typing import List, Dict, Set
 
 import dataclasses
 from mongoengine import fields
+from mongoengine.base import BaseDict, BaseList
 
 
 def mongo_to_dataclass(mongo_model, dataclass_class, skip_fields=None, **kwargs):
@@ -11,7 +12,15 @@ def mongo_to_dataclass(mongo_model, dataclass_class, skip_fields=None, **kwargs)
         skip_fields = []
 
     model_fields = [f.name for f in dataclasses.fields(dataclass_class) if f.name not in skip_fields]
-    kwargs.update({f: mongo_model[f] for f in model_fields if f not in kwargs})
+    mongo_model_as_dict = mongo_model.to_mongo()
+    for f in model_fields:
+        if f not in kwargs:
+            value = mongo_model[f]
+            if isinstance(value, BaseDict):
+                value = mongo_model_as_dict[f]
+            elif isinstance(value, BaseList):
+                value = mongo_model_as_dict[f]
+            kwargs[f] = value
     dtcl = dataclass_class(**kwargs)
     if isinstance(mongo_model, fields.Document):
         dtcl.id = mongo_model.id
