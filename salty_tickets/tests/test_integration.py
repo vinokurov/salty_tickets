@@ -1,4 +1,4 @@
-from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL
+from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.registrations import Payment
 from salty_tickets.registration_process import PricingResult
@@ -198,3 +198,45 @@ def test_e2e_leader_uses_waiting_folowers_token(e2e_vars):
     assert 25 == follower_payment.registrations[0].price
     assert not follower_payment.registrations[0].wait_listed
     assert leader_payment.paid_by == follower_payment.registrations[0].partner
+
+
+def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
+    # stripe will return success, then card error
+    e2e_vars.mock_stripe.Charge.create.side_effect = [e2e_vars.sample_stripe_successful_charge,
+                                                      e2e_vars.sample_stripe_card_error]
+
+    # make sure we have waiting lsit
+    event = e2e_vars.dao.get_event_by_key('salty_recipes')
+    assert event.products['saturday'].waiting_list.has_waiting_list
+
+    # FOLLOWER
+    follower = e2e_vars.person_factory.pop()
+    form_data = {'name': follower.full_name, 'email': follower.email, 'saturday-add': FOLLOWER}
+    follower_payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    assert follower_payment.registrations[0].wait_listed
+    assert follower_payment.registrations[0].active
+    assert not follower_payment.registrations[0].partner
+    assert 25 == follower_payment.registrations[0].price
+
+    # LEADER
+    leader = e2e_vars.person_factory.pop()
+    form_data = {'name': leader.full_name, 'email': leader.email, 'saturday-add': LEADER}
+
+    # TODO get token via api
+    ptn_token = PartnerToken().serialize(follower_payment.paid_by)
+    token_res = e2e_vars.client.post('/check_partner_token', data={'partner_token': ptn_token, 'event_key': event.key})
+    assert token_res.json['success']
+    assert {'saturday': FOLLOWER} == token_res.json['roles']
+    form_data['partner_token'] = ptn_token
+
+    # check leader is registered ok
+    leader_payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data, assert_pay_success=False)
+    assert FAILED == leader_payment.status
+    assert not leader_payment.registrations[0].active
+    assert not leader_payment.registrations[0].wait_listed
+    assert 25 == leader_payment.registrations[0].price
+    assert follower_payment.paid_by == leader_payment.registrations[0].partner
+
+    # refresh follower and check that nothing is changed
+    follower_payment1 = e2e_vars.dao.get_payment_by_id(follower_payment.id)
+    assert follower_payment.registrations == follower_payment1.registrations
