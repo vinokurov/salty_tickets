@@ -1,13 +1,13 @@
 import pytest
-from flask import jsonify
 from mock import patch
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import PaymentDocument, ProductRegistrationDocument
 from salty_tickets.forms import create_event_form
+from salty_tickets.models.registrations import ProductRegistration
 from salty_tickets.registration_process import get_payment_from_form, do_checkout, do_price, do_pay, \
-    do_get_payment_status
+    do_get_payment_status, PartnerTokenCheckResult, do_check_partner_token
+from salty_tickets.tokens import PartnerToken
 from salty_tickets.utils.utils import jsonify_dataclass
-from stripe.error import CardError
 
 
 @pytest.fixture
@@ -42,23 +42,29 @@ def sample_data(salty_recipes):
     return SampleData()
 
 
-@pytest.fixture
-def app_routes(app, test_dao):
-    @app.route('/price', methods=['POST'])
-    def _price():
-        return jsonify_dataclass(do_price(test_dao, 'salty_recipes'))
+def test_PartnerTokenCheckResult(test_dao, person_factory):
+    p1 = person_factory.pop()
+    p2 = person_factory.pop()
 
-    @app.route('/checkout', methods=['POST'])
-    def _checkout():
-        return jsonify_dataclass(do_checkout(test_dao, 'salty_recipes'))
+    expected = PartnerTokenCheckResult(success=False, error='Token is not valid for this event')
+    assert expected == PartnerTokenCheckResult.from_registration_list([])
 
-    @app.route('/pay', methods=['POST'])
-    def _pay():
-        return jsonify_dataclass(do_pay(test_dao))
+    registrations = [
+        ProductRegistration(person=p1, dance_role=LEADER, product_key='k1', active=False),
+        ProductRegistration(person=p1, product_key='k2', active=True),
+        ProductRegistration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
+    ]
+    expected = PartnerTokenCheckResult(success=False, error='Token is not valid for this event')
+    assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
 
-    @app.route('/payment_status', methods=['POST'])
-    def _payment_status():
-        return jsonify_dataclass(do_get_payment_status(test_dao))
+    registrations = [
+        ProductRegistration(person=p1, dance_role=LEADER, product_key='k1', active=True),
+        ProductRegistration(person=p1, dance_role=FOLLOWER, product_key='k2', active=True),
+        ProductRegistration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
+        ProductRegistration(person=p1, dance_role=LEADER, product_key='k4', active=False),
+    ]
+    expected = PartnerTokenCheckResult(success=True, error='', name=p1.full_name, roles={'k1': LEADER, 'k2': FOLLOWER})
+    assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
 
 
 def test_register_one(test_dao, app, client, salty_recipes):
@@ -315,8 +321,11 @@ def test_registration_process_balance(mock_stripe, sample_stripe_successful_char
     leaders_number = saturday_reg_stat[LEADER].accepted
     ratio = event.products['saturday'].ratio
 
-    assert (followers_number + 1) / (leaders_number + 3) > ratio, 'Will still not be able to balance after 2 leads'
-    assert (followers_number + 1) / (leaders_number + 4) <= ratio, 'Will be able to balance 1 follow after 3 leads'
+    leads_to_add = 3
+    # check the event set up. After adding {leads_to_add} leaders the auto balancing should get triggered
+    assert (followers_number + 1) / (leaders_number + leads_to_add - 1) > ratio
+    assert (followers_number + 1) / (leaders_number + leads_to_add) <= ratio
+    assert (leaders_number + leads_to_add) / followers_number <= ratio
 
     first_waiting_follower = [doc for key, doc in salty_recipes.registration_docs.items()
                               if doc.wait_listed and doc.dance_role == FOLLOWER and doc.active][0]
@@ -325,7 +334,7 @@ def test_registration_process_balance(mock_stripe, sample_stripe_successful_char
     names = ['Antwan', 'Otto', 'Cruz', 'Genaro', 'Adalberto']
 
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
-    for leader_name in names[:4]:
+    for leader_name in names[:leads_to_add]:
         first_waiting_follower.reload()
         assert first_waiting_follower.wait_listed
 
@@ -409,3 +418,21 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
     }
     assert expected == res.json
 
+
+def test_do_check_partner_token(salty_recipes, test_dao, app_routes, client):
+    partner = test_dao.get_registrations_for_product('salty_recipes', 'saturday')[0].person
+    ptn_token = PartnerToken().serialize(partner)
+    post_data = {'partner_token': ptn_token, 'event_key': 'salty_recipes'}
+    res = client.post('/check_partner_token', data=post_data)
+
+    expected = {'success': True, 'error': '', 'name': partner.full_name,
+                'roles': {'saturday': LEADER, 'sunday': LEADER}}
+    assert expected == res.json
+
+    partner = salty_recipes.registration_docs[('Stevie Stumpf', 'sunday', True)].to_dataclass().person
+    ptn_token = PartnerToken().serialize(partner)
+    post_data = {'partner_token': ptn_token, 'event_key': 'salty_recipes'}
+    res = client.post('/check_partner_token', data=post_data)
+    assert res.json['error']
+    assert not res.json['roles']
+    assert not res.json['success']

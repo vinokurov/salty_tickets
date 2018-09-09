@@ -82,7 +82,6 @@ class PartnerProduct(BaseProduct):
 
                 registration_1.partner = person_2
                 registration_2.partner = person_1
-
                 return [registration_1, registration_2]
 
             elif product_data.add.data in [LEADER, FOLLOWER]:
@@ -174,6 +173,23 @@ class WaitListedPartnerProduct(PartnerProduct):
         for r in self.registrations:
             if r.active and (r.dance_role == role) and r.wait_listed:
                 return r
+
+    def parse_form(self, event_form) -> typing.List[ProductRegistration]:
+        regs = super(WaitListedPartnerProduct, self).parse_form(event_form)
+        product_data = event_form.get_product_by_key(self.key)
+        if self.added(product_data):
+            role = product_data.add.data
+            if not self.waiting_list.can_add(role):
+                for r in regs:
+                   r.wait_listed = True
+        return regs
+
+    def item_info(self, registration: ProductRegistration) -> str:
+        info = super(WaitListedPartnerProduct, self).item_info(registration)
+        if registration.wait_listed:
+            info = f'Waiting List: {info}'
+
+        return info
 
 
 @dataclass

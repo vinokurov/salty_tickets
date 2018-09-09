@@ -4,7 +4,8 @@ from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.forms import create_event_form
-from salty_tickets.registration_process import do_price, do_checkout, do_pay, do_get_payment_status
+from salty_tickets.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
+    do_check_partner_token
 from salty_tickets.utils.utils import jsonify_dataclass
 from werkzeug.utils import redirect
 
@@ -41,6 +42,12 @@ def register_pay():
 def payment_status():
     dao = TicketsDAO()
     return jsonify_dataclass(do_get_payment_status(dao))
+
+
+@app.route('/check_partner_token', methods=['POST'])
+def check_partner_token():
+    dao = TicketsDAO()
+    return jsonify_dataclass(do_check_partner_token(dao))
 
 
 @app.route('/register/<string:event_key>', methods=['GET'])

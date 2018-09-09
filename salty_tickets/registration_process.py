@@ -1,18 +1,17 @@
-import json
 from typing import Dict, List
 
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
-from flask import jsonify
 from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_payment_status_email
-from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm
+from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct
 from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails
 from salty_tickets.payments import transaction_fee, stripe_charge
 from salty_tickets.pricers import ProductPricer
+from salty_tickets.tokens import PartnerToken
 
 """
 Before chackout:
@@ -104,10 +103,28 @@ class PaymentResult(DataClassJsonMixin):
         return payment_result
 
 
+@dataclass
+class PartnerTokenCheckResult(DataClassJsonMixin):
+    success: bool
+    error: str = ''
+    name: str = ''
+    roles: Dict = None
+
+    @classmethod
+    def from_registration_list(cls, registrations):
+        active_registrations = [r for r in registrations if r.active and not r.partner and r.dance_role]
+        if not active_registrations:
+            return cls(success=False, error='Token is not valid for this event')
+
+        return cls(success=True, name=active_registrations[0].person.full_name,
+                   roles={r.product_key: r.dance_role for r in active_registrations})
+
+
 def get_payment_from_form(event: Event, form):
     registrations = []
     for prod_key, prod in event.products.items():
         registrations += prod.parse_form(form)
+    print(registrations)
 
     # add prices
     pricer = ProductPricer.from_event(event)
@@ -210,3 +227,17 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     event = dao.get_payment_event(payment)
     send_payment_status_email(dao, payment, event)
     balance_event_waiting_lists(dao, event)
+
+
+def do_check_partner_token(dao: TicketsDAO):
+    form = PartnerTokenCheck()
+    if form.validate_on_submit():
+        try:
+            partner = PartnerToken().deserialize(dao, form.partner_token.data)
+        except Exception as e:
+            return PartnerTokenCheckResult(success=False, error='Invalid token')
+        if partner:
+            partner_registrations = dao.query_registrations(event=form.event_key.data, person=partner)
+            return PartnerTokenCheckResult.from_registration_list(partner_registrations)
+    return PartnerTokenCheckResult.from_registration_list([])
+

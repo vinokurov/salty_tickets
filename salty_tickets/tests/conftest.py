@@ -8,6 +8,7 @@ from datetime import datetime
 import pytest
 from dataclasses import dataclass
 from flask import Flask as _Flask
+from flask.testing import FlaskClient
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
@@ -15,6 +16,9 @@ from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegist
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
 from salty_tickets.models.registrations import PersonInfo
+from salty_tickets.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
+    do_price
+from salty_tickets.utils.utils import jsonify_dataclass
 from salty_tickets.waiting_lists import flip_role
 from stripe.error import CardError
 
@@ -72,8 +76,8 @@ def salty_recipes(test_dao):
         start_date=datetime(2018, 7, 10),
         end_date=datetime(2018, 7, 11),
         products=[
-            WorkshopProduct(name='Saturday', base_price=25.0, max_available=15, ratio=1.2, allow_first=2, tags={'full'}),
-            WorkshopProduct(name='Sunday', base_price=25.0, max_available=15, ratio=1.2, allow_first=2, tags={'full'}),
+            WorkshopProduct(name='Saturday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
+            WorkshopProduct(name='Sunday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
             PartyProduct('Party', base_price=10.0, max_available=50, tags={'full'}),
         ],
         payments=[
@@ -165,7 +169,8 @@ def save_event_from_meta(event_meta):
                 reg_doc.save()
 
                 #create a copy
-                reg_doc.id = None
+                reg_doc = ProductRegistrationDocument(**kwargs)
+                reg_doc.partner = persons[reg_meta.partner_name]
                 reg_doc.person, reg_doc.partner = reg_doc.partner, reg_doc.person
                 if reg_doc.dance_role:
                     reg_doc.dance_role = flip_role(reg_doc.dance_role)
@@ -208,6 +213,29 @@ def client(app):
 
 
 @pytest.fixture
+def app_routes(app, test_dao):
+    @app.route('/price', methods=['POST'])
+    def _price():
+        return jsonify_dataclass(do_price(test_dao, 'salty_recipes'))
+
+    @app.route('/checkout', methods=['POST'])
+    def _checkout():
+        return jsonify_dataclass(do_checkout(test_dao, 'salty_recipes'))
+
+    @app.route('/pay', methods=['POST'])
+    def _pay():
+        return jsonify_dataclass(do_pay(test_dao))
+
+    @app.route('/payment_status', methods=['POST'])
+    def _payment_status():
+        return jsonify_dataclass(do_get_payment_status(test_dao))
+
+    @app.route('/check_partner_token', methods=['POST'])
+    def _check_partner_token():
+        return jsonify_dataclass(do_check_partner_token(test_dao))
+
+
+@pytest.fixture
 def mock_stripe():
     with mock.patch('salty_tickets.payments.stripe_session') as mock_stripe_session:
         mock_sp = Mock()
@@ -224,3 +252,93 @@ def sample_stripe_card_error():
 @pytest.fixture
 def sample_stripe_successful_charge():
     return {'id': 'ch_123', 'charge': 'CHARGE'}
+
+
+NAMES = [
+    'Simonne Smithson',
+    'Gregg Defoor',
+    'Darrel Harting',
+    'Guy Newquist',
+    'Jimmy Beesley',
+    'Hal Nogueira',
+    'Shaunta Kaul',
+    'Gaylene Guillaume',
+    'Hobert Weatherholtz',
+    'Sari Sasson',
+    'Terrell Moorehead',
+    'Jina Knarr',
+    'Brain Marse',
+    'Sammie Le',
+    'Tamera Clymer',
+    'Granville Bien',
+    'Lakesha Carreno',
+    'Kittie Pal',
+    'Sung Edgell',
+    'Frederic Mcgehee',
+    'Sharie Sack',
+    'Kacie Sheley',
+    'Marketta Gehl',
+    'Tamie Mcpeak',
+    'Reita Ealy',
+    'Annamaria Yamada',
+    'Andres Bastarache',
+    'Anisha Balzer',
+    'Camellia Barren',
+    'Elizabet Madera',
+    'Stephen Bosse',
+    'Mason Shofner',
+    'Dudley Blake',
+    'Garland Grosso',
+    'Richie Germano',
+    'Al Mckoy',
+    'Elida Leary',
+    'Trish Scipio',
+    'Gema Lang',
+    'Carlo Gaddis',
+    'Joleen Batey',
+    'Heike Onorato',
+    'Elroy Durrant',
+    'Tabetha Manus',
+    'Jani Attaway',
+    'Windy Holle',
+    'Janise Desilva',
+    'Keli Wiley',
+    'Princess Sande',
+    'Tammi Speier',
+]
+
+
+class PersonFactory:
+    _names: typing.List[str]
+
+    def __init__(self):
+        self._names = NAMES.copy()
+
+    def pop(self, location=None):
+        name = self._names.pop()
+        email = name.replace(' ', '.') + '@mail.com'
+        return PersonInfo(full_name=name, email=email)
+
+
+@pytest.fixture
+def person_factory():
+    return PersonFactory()
+
+
+@dataclass
+class AllVars:
+    dao: TicketsDAO
+    app: Flask
+    client: FlaskClient
+    person_factory: PersonFactory
+    mock_stripe: Mock
+    sample_stripe_card_error: CardError
+    sample_stripe_successful_charge: typing.Dict
+
+
+@pytest.fixture
+def e2e_vars(test_dao, salty_recipes, app, app_routes, client, person_factory,
+             mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge):
+
+    return AllVars(test_dao, app, client, person_factory,
+                   mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge)

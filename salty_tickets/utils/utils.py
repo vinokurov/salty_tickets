@@ -1,6 +1,7 @@
 import json
 import re
 
+from dataclasses_json import DataClassJsonMixin
 from flask import jsonify
 
 
@@ -12,5 +13,5 @@ def string_to_key(str_var):
     return key
 
 
-def jsonify_dataclass(dataclass_inst):
+def jsonify_dataclass(dataclass_inst: DataClassJsonMixin):
     return jsonify(json.loads(dataclass_inst.to_json()))

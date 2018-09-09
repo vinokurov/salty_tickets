@@ -1,8 +1,10 @@
 from datetime import datetime
 
+from dataclasses import dataclass
 from itsdangerous import URLSafeSerializer, BadSignature
 from salty_tickets.config import SECRET_KEY, SALT_EMAIL, SALT_ORDER_PRODUCT, SALT_ORDER, SALT_GROUP_TOKEN, \
     SALT_PARTNER_TOKEN, SALT_REGISTRATION_TOKEN
+from salty_tickets.dao import TicketsDAO
 from salty_tickets.to_delete.sql_models import OrderProduct, Order, RegistrationGroup, Registration
 from hashids import Hashids
 
@@ -67,9 +69,9 @@ def order_deserialize(order_token):
 
 
 class Token:
-    prefix = 'tok'
-    min_length = 5
-    salt = 'default'
+    prefix: str = 'tok'
+    min_length: int = 5
+    salt: str = 'default'
 
     @property
     def _serializer(self):
@@ -82,18 +84,18 @@ class Token:
         raise NotImplementedError()
 
     def serialize(self, obj):
-        return self.code_to_str(self._encode(obj.id))
+        return self.code_to_str(self._encode(obj.int_id))
 
-    def deserialize(self, token_str):
+    def deserialize(self, dao: TicketsDAO, token_str):
         token_code = self.code_from_str(token_str)
         decode_res = self._decode(token_code)
         if decode_res:
             id = decode_res
-            return self._retrieve_object(id)
+            return self._retrieve_object(dao, id)
         else:
             raise BadSignature('Invalid token')
 
-    def _retrieve_object(self, object_id):
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
         raise NotImplementedError()
 
     def code_to_str(self, code):
@@ -141,36 +143,33 @@ class GroupToken(HashidsMixin, Token):
     prefix = 'grp'
     salt = SALT_GROUP_TOKEN
 
-    def _retrieve_object(self, object_id):
-        return RegistrationGroup.query.filter_by(id=object_id).one()
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
+        raise NotImplementedError()
 
 
 class PartnerToken(HashidsMixin, Token):
+    """Serialise person id"""
     prefix = 'ptn'
     salt = SALT_PARTNER_TOKEN
 
-    def _retrieve_object(self, object_id):
-        return Registration.query.filter_by(id=object_id).one()
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
+        return dao.get_person_by_id(object_id)
 
 
 class RegistrationToken(ItsdangerousMixin, Token):
+    """Serialise 'registered_by' person id"""
     prefix = 'reg'
     salt = SALT_REGISTRATION_TOKEN
 
-    def _retrieve_object(self, object_id):
-        return Registration.query.filter_by(id=object_id).one()
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
+        return dao.get_person_by_id(object_id)
 
 
-class MtsTicketToken(HashidsMixin, Token):
-    prefix = ''
+class PaymentId(ItsdangerousMixin, Token):
+    """Serialise payment id"""
+    prefix = 'pmt'
     salt = SALT_REGISTRATION_TOKEN
-    min_length = 8
 
-    def _retrieve_object(self, object_id):
-        return Registration.query.filter_by(id=object_id).one()
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
+        return dao.get_payment_by_id(object_id)
 
-    def code_to_str(self, code):
-        return str(code)
-
-    def code_from_str(self, token_str):
-        return token_str

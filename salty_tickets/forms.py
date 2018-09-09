@@ -18,6 +18,11 @@ class StripeCheckoutForm(FlaskForm):
     payment_id = HiddenField(validators=[DataRequired()])
 
 
+class PartnerTokenCheck(FlaskForm):
+    partner_token = StringField(validators=[DataRequired()])
+    event_key = StringField(validators=[DataRequired()])
+
+
 class FormWithProducts:
     product_keys = []
 

@@ -92,14 +92,25 @@ class EventDocument(fields.Document):
 #     }
 #     type = fields.StringField()
 #     parameters = fields.DictField()
-
+#     int_id = fields.SequenceField()
+#
+#     def to_dataclass(self):
+#         model = self._to_dataclass()
+#         model.int_id = self.int_id
+#         return model
 
 @fields_from_dataclass(PersonInfo, skip=['event'])
 class RegistrationDocument(fields.Document):
     __meta__ = {
-        'collection': 'person_registrations'
+        'collection': 'person_registrations',
     }
     event = fields.ReferenceField(EventDocument)
+    int_id = fields.SequenceField()
+
+    def to_dataclass(self):
+        model = self._to_dataclass()
+        model.int_id = self.int_id
+        return model
 
 
 @fields_from_dataclass(PaymentStripeDetails)
@@ -117,12 +128,14 @@ class PaymentDocument(fields.Document):
     event = fields.ReferenceField(EventDocument)
     registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
+    # int_id = fields.SequenceField()
 
     def to_dataclass(self) -> Payment:
         model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
         model.registrations = [r.to_dataclass() for r in self.registrations]
         if self.stripe:
             model.stripe = self.stripe.to_dataclass()
+        # model.int_id = self.int_id
         return model
 
     @classmethod
@@ -292,8 +305,8 @@ class TicketsDAO:
         self.update_registration(registration_1)
         self.update_registration(registration_2)
 
-    def get_payment_by_id(self, payment_id: str) -> Payment:
-        doc = PaymentDocument.objects(id=ObjectId(payment_id)).first()
+    def get_payment_by_id(self, payment_id) -> Payment:
+        doc = PaymentDocument.objects(**id_filter(payment_id)).first()
         if doc:
             return doc.to_dataclass()
 
@@ -301,3 +314,29 @@ class TicketsDAO:
         payment_doc = PaymentDocument.objects(id=payment.id).first()
         if payment_doc:
             return self.get_event_by_key(payment_doc.event.key, get_registrations=get_registrations)
+
+    def get_person_by_id(self, object_id) -> PersonInfo:
+        doc = RegistrationDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+    def get_payment_by_id(self, object_id) -> Payment:
+        doc = PaymentDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+    def get_product_registration_by_id(self, object_id) -> ProductRegistration:
+        doc = ProductRegistrationDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+
+def id_filter(object_id):
+    if isinstance(object_id, ObjectId):
+        return {'id': object_id}
+    elif isinstance(object_id, str):
+        return {'id': ObjectId(object_id)}
+    elif isinstance(object_id, int):
+        return {'int_id': object_id}
+    else:
+        raise ValueError(f'Unsupported id type: {object_id} {type(object_id)}')
