@@ -3,3 +3,6 @@ salty_tickets/static/events
 *.zip
 *.bak
 *.egg*
+web_js/dist
+web_js/node_modules
+web_js/public
