@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from mock import patch
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
@@ -245,8 +247,7 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
     client.post('/checkout', data=sample_data.form_data)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, str(last_payment.id))
 
     expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
                 'payment_id': str(last_payment.id), 'complete': True}
@@ -258,9 +259,15 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
         assert not reg.wait_listed
 
     # try do_pay on the same payment, make sure we receive an error
-    res = client.post('/pay', data=post_data)
+        res = post_pay(client, str(last_payment.id))
     assert not res.json['success']
     assert res.json['error_message']
+
+
+def post_pay(client, payment_id, stripe_token_id='ch_test', url='/pay'):
+    post_data = {'payment_id': payment_id, 'stripe_token': {'id': stripe_token_id}}
+    res = client.post(url, data=json.dumps(post_data), content_type='application/json')
+    return res
 
 
 def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_routes, client, sample_data):
@@ -269,8 +276,7 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
     client.post('/checkout', data=sample_data.form_data)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, str(last_payment.id))
 
     expected = {'success': False, 'error_message': 'Sample card error',
                 'payee_id': None, 'payment_id': str(last_payment.id), 'complete': True}
@@ -291,14 +297,12 @@ def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, samp
     client.post('/checkout', data=sample_data.form_data)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, str(last_payment.id))
 
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert FAILED == payment.status
 
-    post_data = {'payment_id': str(last_payment.id), 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, str(last_payment.id))
 
     expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
                 'payment_id': str(last_payment.id), 'complete': True}
@@ -341,8 +345,7 @@ def test_registration_process_balance(mock_stripe, sample_stripe_successful_char
         form_data = {'name': leader_name, 'email': f'{leader_name}@email.com', 'saturday-add': LEADER}
         res = client.post('/checkout', data=form_data)
 
-        post_data = {'payment_id': res.json['payment_id'], 'stripe_token': 'ch_test'}
-        res = client.post('/pay', data=post_data)
+        res = post_pay(client, res.json['payment_id'])
         assert res.json['success']
 
     first_waiting_follower.reload()
@@ -370,14 +373,12 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
     # payment was failed
-    post_data = {'payment_id': payment_id, 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, payment_id, stripe_token_id='ch_test')
     assert not res.json['success']
     assert res.json['complete']
 
     # wrong stripe token
-    post_data = {'payment_id': payment_id, 'stripe_token': 'ch_test_aaaaa'}
-    res = client.post('/payment_status', data=post_data)
+    res = post_pay(client, payment_id, stripe_token_id='ch_test_aaaaa', url='/payment_status')
     expected = {
         'complete': True,
         'error_message': 'Access denied to see payment status',
@@ -388,8 +389,7 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
     assert expected == res.json
 
     # now get the failed payment details
-    post_data = {'payment_id': payment_id, 'stripe_token': 'ch_test'}
-    res = client.post('/payment_status', data=post_data)
+    res = post_pay(client, payment_id, stripe_token_id='ch_test', url='/payment_status')
     expected = {
         'complete': True,
         'error_message': 'Sample card error',
@@ -400,15 +400,13 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
     assert expected == res.json
 
     # complete payment
-    post_data = {'payment_id': payment_id, 'stripe_token': 'ch_test'}
-    res = client.post('/pay', data=post_data)
+    res = post_pay(client, payment_id, stripe_token_id='ch_test')
     assert res.json['success']
     assert res.json['complete']
     payee_id = res.json['payee_id']
 
     # now get the succeeded payment details
-    post_data = {'payment_id': payment_id, 'stripe_token': 'ch_test'}
-    res = client.post('/payment_status', data=post_data)
+    res = post_pay(client, payment_id, stripe_token_id='ch_test', url='/payment_status')
     expected = {
         'complete': True,
         'error_message': None,

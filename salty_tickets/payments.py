@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from salty_tickets import config
 # from salty_tickets.to_delete.database import db_session
 # from salty_tickets.to_delete.sql_models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID, Payment, PaymentItem
@@ -21,6 +23,7 @@ def process_payment(payment, stripe_token, stripe_sk=None):
     pass
 
 
+@contextmanager
 def stripe_session(stripe_sk):
     import stripe
     stripe.api_key = stripe_sk
@@ -37,14 +40,14 @@ def stripe_charge(payment: Payment, stripe_sk):
                 description=payment.description,
                 metadata=dict(
                     payment_id=str(payment.id),
-                    items=payment.info_items,
+                    # items=', '.join(payment.info_items),
                 ),
-                source=payment.stripe.source,
+                source=payment.stripe.source['id'],
                 receipt_email=payment.paid_by.email,
             )
         print(charge)
-        payment.stripe.charge = charge
-        payment.stripe.charge_id = charge.get('id')
+        payment.stripe.charge = charge.to_dict()
+        payment.stripe.charge_id = payment.stripe.charge.get('id')
         payment.status = SUCCESSFUL
         return True
     except CardError as e:

@@ -1,13 +1,15 @@
+from datetime import datetime
 from typing import Dict, List
 
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
+from salty_tickets import config
 from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_payment_status_email
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WaitListedPartnerProduct
+from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProduct
 from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails
 from salty_tickets.payments import transaction_fee, stripe_charge
 from salty_tickets.pricers import ProductPricer
@@ -30,6 +32,53 @@ Checkout:
     - if payment passed: update statuses, rebalance, send emails
     - user polls status - ready -> thank you, order details 
 """
+
+
+@dataclass
+class ProductInfo(DataClassJsonMixin):
+    key: str
+    title: str
+    start_datetime: str
+    end_datetime: str
+    time: str = None
+    level: str = None
+    teachers: str = None
+    available: int = None
+    price: float = None
+    info: str = None
+    choice: str = None
+
+    @classmethod
+    def from_workshop(cls, workshop: WorkshopProduct):
+        return cls(
+            key=workshop.key,
+            title=workshop.name,
+            start_datetime=str(workshop.start_datetime),
+            end_datetime=str(workshop.end_datetime),
+            level=workshop.level,
+            teachers=workshop.teachers,
+            available=workshop.max_available,
+            price=workshop.base_price,
+            info=workshop.info
+        )
+
+
+@dataclass
+class EventInfo(DataClassJsonMixin):
+    name: str
+    key: str
+    products: List
+    layout: Dict
+
+    @classmethod
+    def from_event(cls, event):
+        return cls(
+            name=event.name,
+            key=event.key,
+            products=[ProductInfo.from_workshop(p) for k, p in event.products.items()
+                      if isinstance(p, WorkshopProduct)],
+            layout=event.layout
+        )
 
 
 @dataclass
@@ -225,10 +274,12 @@ def do_pay(dao: TicketsDAO):
             return PaymentResult(success=False, error_message='Invalid payment id')
 
         else:
+            event = dao.get_payment_event(payment)
+            payment.description = event.name
             payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
             dao.update_payment(payment)
 
-            success = stripe_charge(payment, 'sk_123')
+            success = stripe_charge(payment, config.STRIPE_SK)
             dao.update_payment(payment)
             if success:
                 for reg in payment.registrations:
@@ -239,12 +290,9 @@ def do_pay(dao: TicketsDAO):
                     if payment.extra_registrations:
                         for extra_reg in payment.extra_registrations:
                             if not extra_reg.partner and extra_reg.active:
-                                print('***EXTRA**')
-                                print(extra_reg)
                                 extra_reg.partner = reg.registered_by
                                 extra_reg.wait_listed = reg.wait_listed
                                 dao.update_registration(extra_reg)
-                                print(extra_reg)
 
                     registration_post_process(dao, payment)
 
@@ -259,7 +307,7 @@ def do_get_payment_status(dao: TicketsDAO):
         payment = dao.get_payment_by_id(form.payment_id.data)
         if payment.stripe is None or payment.stripe.source is None:
             return PaymentResult(success=False, complete=False, error_message='Payment not initiated yet')
-        elif payment.stripe.source == form.stripe_token.data:
+        elif payment.stripe.source['id'] == form.stripe_token.data['id']:
             return PaymentResult.from_paid_payment(payment)
 
         print(payment.stripe.source, form.stripe_token.data)

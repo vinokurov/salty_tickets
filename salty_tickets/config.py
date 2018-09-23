@@ -1,6 +1,6 @@
 
-STRIPE_SK = 'sk'
-STRIPE_PK = 'pk'
+STRIPE_SK = 'sk_test_NEwiOsRtQbOCgjglKtiJN5R4'
+STRIPE_PK = 'pk_test_JINxJqXoY58hgW37stGd09hK'
 
 MODE_TESTING = STRIPE_SK.find('live') is -1 and STRIPE_PK.find('live') is -1
 
@@ -17,3 +17,6 @@ SALT_GROUP_TOKEN = ''
 SALT_PARTNER_TOKEN = ''
 SALT_REGISTRATION_TOKEN = ''
 EMAIL_FROM = ''
+
+MONGO = 'mongodb://localhost/salty_tickets'
+

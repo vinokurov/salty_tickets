@@ -34,7 +34,7 @@ class ProductRegistration:
 
 @dataclass
 class PaymentStripeDetails:
-    source: str = None
+    source: Dict = field(default_factory=dict)
     charge_id: str = None
     charge: Dict = field(default_factory=dict)
 

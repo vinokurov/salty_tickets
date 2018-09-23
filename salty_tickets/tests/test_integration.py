@@ -1,3 +1,5 @@
+import json
+
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.registrations import Payment
@@ -25,7 +27,10 @@ def price_checkout_pay(dao: TicketsDAO, client, form_data, assert_pay_success=Tr
     payment_id = res['payment_id']
 
     # pay
-    res = client.post('/pay', data={'payment_id': payment_id, 'stripe_token': 'ch_12_leader'})
+    res = client.post('/pay',
+                      data=json.dumps({'payment_id': payment_id,
+                                       'stripe_token': {'id': 'ch_12_leader'}}),
+                      content_type='application/json')
     if assert_pay_success:
         assert res.json['success']
 

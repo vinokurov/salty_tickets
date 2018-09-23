@@ -149,8 +149,13 @@ class PaymentDocument(fields.Document):
 
 
 class TicketsDAO:
-    def __init__(self):
-        connect(host='mongomock://localhost')
+    def __init__(self, host=None):
+        if host is None:
+            host = 'mongomock://localhost'
+
+        connect(host=host)
+        # from salty_tickets.utils.demo_db import salty_recipes
+        # salty_recipes(self)
 
     def get_event_by_key(self, key, get_registrations=True) -> typing.Optional[Event]:
         event_doc = EventDocument.objects(key=key).first()
@@ -177,6 +182,7 @@ class TicketsDAO:
     def create_event(self, event_model):
         event_doc = EventDocument.from_dataclass(event_model)
         event_doc.save()
+        print(event_doc.id)
 
     def _get_event_doc(self, event) -> EventDocument:
         if isinstance(event, str):

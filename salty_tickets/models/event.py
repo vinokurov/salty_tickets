@@ -17,6 +17,7 @@ class Event:
     active: bool = False
     products: Dict[str, BaseProduct] = field(default_factory=dict)
     pricing_rules: Dict = field(default_factory=dict)
+    layout: Dict = None
 
     def __post_init__(self):
         if self.key is None:
