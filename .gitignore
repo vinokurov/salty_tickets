@@ -6,3 +6,4 @@ salty_tickets/static/events
 web_js/dist
 web_js/node_modules
 web_js/public
+web_js/package-loc.json
