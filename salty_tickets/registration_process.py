@@ -1,3 +1,4 @@
+import pickle
 from datetime import datetime
 from typing import Dict, List
 
@@ -14,6 +15,7 @@ from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStrip
 from salty_tickets.payments import transaction_fee, stripe_charge
 from salty_tickets.pricers import ProductPricer
 from salty_tickets.tokens import PartnerToken
+from salty_tickets.validators import validate_registrations
 
 """
 Before chackout:
@@ -138,11 +140,11 @@ class PricingResult(DataClassJsonMixin):
     payment_id: str = ''
 
     @classmethod
-    def from_payment(cls, event: Event, payment: Payment, form: DanceSignupForm):
+    def from_payment(cls, event: Event, payment: Payment, errors: List):
         return cls(
             stripe=StripeData.from_payment(payment),
             order_summary=OrderSummary.from_payment(event, payment),
-            errors=form.errors,
+            errors=errors,
         )
 
     def __post_init__(self):
@@ -209,11 +211,17 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
     pricer = ProductPricer.from_event(event)
     pricer.price_all(registrations)
 
-    total_price = sum([r.price for r in registrations])
+    prices = [r.price for r in registrations if r.price is not None]
+    if prices:
+        total_price = sum(prices)
+        fee = transaction_fee(total_price)
+    else:
+        total_price = 0.0
+        fee = 0.0
     payment = Payment(
         price=total_price,
         paid_by=registrations[0].registered_by if len(registrations) else None,
-        transaction_fee=transaction_fee(total_price),
+        transaction_fee=fee,
         registrations=registrations,
         status=NEW,
         info_items=[(event.products[r.product_key].item_info(r), r.price) for r in registrations]
@@ -243,7 +251,10 @@ def do_price(dao: TicketsDAO, event_key: str):
         payment = get_payment_from_form(event, form)
 
     if payment:
-        return PricingResult.from_payment(event, payment, form)
+        errors = {}
+        errors.update(validate_registrations(event, payment.registrations))
+        errors.update(form.errors)
+        return PricingResult.from_payment(event, payment, errors)
 
 
 def do_checkout(dao: TicketsDAO, event_key: str):
@@ -258,11 +269,16 @@ def do_checkout(dao: TicketsDAO, event_key: str):
         payment = get_payment_from_form(event, form)
 
     if payment:
-        pricing_result = PricingResult.from_payment(event, payment, form)
-        if valid and not pricing_result.disable_checkout:
+        errors = {}
+        errors.update(validate_registrations(event, payment.registrations))
+        errors.update(form.errors)
+        pricing_result = PricingResult.from_payment(event, payment, errors)
+        if valid and not errors and not pricing_result.disable_checkout:
             dao.add_payment(payment, event, register=True)
             pricing_result.payment_id = str(payment.id)
             pricing_result.checkout_success = not pricing_result.disable_checkout
+            pickle_str = pickle.dumps(pricing_result)
+            print(pickle_str)
         return pricing_result
 
 

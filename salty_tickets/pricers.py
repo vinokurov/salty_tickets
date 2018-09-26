@@ -13,7 +13,8 @@ class ProductPricer:
     price_rules: list = field(default_factory=list)
 
     def __post_init__(self):
-        self.price_rules.append(BasePriceRule())
+        if not self.price_rules:
+            self.price_rules.append(BasePriceRule())
 
     def price_all(self, registrations: List[ProductRegistration]):
         for reg in registrations:
@@ -23,12 +24,14 @@ class ProductPricer:
                       registration_list: List[ProductRegistration]) -> float:
         possible_prices = [rule.price(registration, registration_list, self.event_products)
                            for rule in self.price_rules]
-        price = min([p for p in possible_prices if p is not None])
-        return price
+        possible_prices = [p for p in possible_prices if p is not None]
+        if possible_prices:
+            price = min(possible_prices)
+            return price
 
     @classmethod
     def from_event(cls, event):
-        pricing_rules = [PRICING_RULES[k](**kwargs) for k, kwargs in event.pricing_rules.items()]
+        pricing_rules = [PRICING_RULES[k['name']](**k['kwargs']) for k in event.pricing_rules]
         return cls(event.products, pricing_rules)
 
 
@@ -59,6 +62,28 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
                 return self.special_price
 
 
+@dataclass
+class CombinationsPriceRule(BasePriceRule):
+    tag: str
+    count_prices: Dict[int, float]
+
+    def price(self, registration, registration_list, event_products) -> float:
+        applicable_product_keys = [k for k, p in event_products.items()
+                                   if self.tag in p.tags]
+        if registration.product_key in applicable_product_keys:
+            # make sure we count only purchase items for one person
+            person = registration.person
+            if person:
+                counted_regs = [r for r in registration_list
+                                if r.product_key in applicable_product_keys
+                                and r.person == person]
+                count = len(counted_regs)
+                if str(count) in self.count_prices:
+                    return self.count_prices[str(count)] / count
+
+
+
 PRICING_RULES = {
     'special_price_if_more_than': SpecialPriceIfMoreThanPriceRule,
+    'combination': CombinationsPriceRule,
 }

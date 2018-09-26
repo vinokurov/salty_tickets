@@ -31,7 +31,7 @@
           <!-- <h3><font-awesome icon="shopping-cart"/> Order Summary</h3> -->
           <b-list-group>
             <b-list-group-item v-for="item in cart.items" class="d-flex justify-content-between align-items-center">
-              {{itemFormat(item)}}<div>£{{item.price.toFixed(2)}}</div>
+              {{itemFormat(item)}}<div v-if="item.price">£{{item.price.toFixed(2)}}</div>
             </b-list-group-item>
             <b-list-group-item class="d-flex justify-content-between align-items-center small font-italic font-weight-light">
               Transaction fee <div>£{{cart.transaction_fee.toFixed(2)}}</div>

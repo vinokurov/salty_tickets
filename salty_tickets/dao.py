@@ -61,7 +61,7 @@ class EventProductDocument(fields.EmbeddedDocument):
         return product_model
 
 
-@fields_from_dataclass(Event, skip=['products', 'pricing_rules'])
+@fields_from_dataclass(Event, skip=['products'])
 class EventDocument(fields.Document):
     __meta__ = {
         'collection': 'events',

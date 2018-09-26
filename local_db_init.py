@@ -29,6 +29,36 @@ event = Event(
     start_date=SAT_MORNING_START,
     end_date=datetime(2018, 11, 18, 17, 0),
     info='Salty Breezle Weekender',
+    pricing_rules=[
+        {
+            "name": "combination",
+            "kwargs": {
+                "tag": "workshop",
+                "count_prices": {
+                    "2": 55.0,
+                    "3": 75.0,
+                    "4": 90.0,
+                }
+            }
+        }
+    ],
+    validation_rules=[
+        {
+            "name": "at_least_any_with_tag",
+            "kwargs": {
+                "tag": "workshop",
+                "count": 2,
+                "error_text": "Please select at least 2 workshops per person."
+            }
+        },
+        {
+            "name": "non_overlapping",
+            "kwargs": {
+                "tag": "workshop",
+                "error_text": "Workshops shouldn't overlap in time."
+            }
+        }
+    ],
 )
 
 kwargs = dict(
@@ -36,6 +66,7 @@ kwargs = dict(
     allow_first=5,
     max_available=30,
     base_price=27.5,
+    tags={'workshop'}
 )
 
 products = [
