@@ -24,15 +24,15 @@ def checkout(client, form_data, assert_success=True) -> dict:
 def price_checkout_pay(dao: TicketsDAO, client, form_data, assert_pay_success=True) -> Payment:
     price(client, form_data)
     res = checkout(client, form_data)
-    payment_id = res['payment_id']
 
     # pay
     res = client.post('/pay',
-                      data=json.dumps({'payment_id': payment_id,
-                                       'stripe_token': {'id': 'ch_12_leader'}}),
+                      data=json.dumps({'stripe_token': {'id': 'ch_12_leader'}}),
                       content_type='application/json')
     if assert_pay_success:
         assert res.json['success']
+
+    payment_id = res.json['payment_id']
 
     return dao.get_payment_by_id(payment_id)
 
@@ -112,12 +112,13 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     assert event.products['saturday'].waiting_list.has_waiting_list
 
     # FOLLOWER
+    new_client = e2e_vars.app.test_client()
     follower = e2e_vars.person_factory.pop()
 
     # try without partner, make sure get wait listed
     # price
     form_data = {'name': follower.full_name, 'email': follower.email, 'saturday-add': FOLLOWER}
-    res = e2e_vars.client.post('/price', data=form_data)
+    res = new_client.post('/price', data=form_data)
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
@@ -132,13 +133,13 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     ptn_token = PartnerToken().serialize(leader)
 
     # check token
-    res = e2e_vars.client.post('/check_partner_token', data={'partner_token': ptn_token, 'event_key': event.key})
+    res = new_client.post('/check_partner_token', data={'partner_token': ptn_token, 'event_key': event.key})
     assert res.json['success']
     assert {'saturday': LEADER} == res.json['roles']
     form_data['partner_token'] = ptn_token
 
     # checkout with token
-    res = e2e_vars.client.post('/price', data=form_data)
+    res = new_client.post('/price', data=form_data)
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
@@ -149,7 +150,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     assert expected == res.json['order_summary']['items']
 
     # check that follower gets signed up without waiting list with the token
-    follower_payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    follower_payment = price_checkout_pay(e2e_vars.dao, new_client, form_data)
     assert not follower_payment.registrations[0].wait_listed
     assert follower_payment.registrations[0].active
     assert leader_payment.paid_by == follower_payment.registrations[0].partner

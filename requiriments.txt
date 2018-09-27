@@ -2,6 +2,7 @@ flask
 flask-bootstrap
 flask-sqlalchemy
 flask-wtf
+flask-session
 stripe
 premailer
 hashids

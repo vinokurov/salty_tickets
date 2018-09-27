@@ -18,37 +18,39 @@ def validate_registrations(event: Event, registrations: List[ProductRegistration
 def errors_at_least_any_with_tag(registrations: List[ProductRegistration],
                                  products: Dict[str, BaseProduct],
                                  tag, count=1, error_text=None):
-    primary = registrations[0].registered_by
-    matching_products = [products[r.product_key] for r in registrations
-                         if tag in products[r.product_key].tags
-                         and r.person == primary]
-    if 0 < len(matching_products) < count:
-        return error_text
+    if registrations:
+        primary = registrations[0].registered_by
+        matching_products = [products[r.product_key] for r in registrations
+                             if tag in products[r.product_key].tags
+                             and r.person == primary]
+        if 0 < len(matching_products) < count:
+            return error_text
 
-    partner_products = [products[r.product_key] for r in registrations
-                         if tag in products[r.product_key].tags
-                         and r.person != primary]
-    if 0 < len(partner_products) < count:
-        return error_text
+        partner_products = [products[r.product_key] for r in registrations
+                             if tag in products[r.product_key].tags
+                             and r.person != primary]
+        if 0 < len(partner_products) < count:
+            return error_text
 
 
 def errors_if_overlapping(registrations: List[ProductRegistration],
                           products: Dict[str, BaseProduct],
                           tag, error_text=None):
-    primary = registrations[0].registered_by
-    matching_products = [products[r.product_key] for r in registrations
-                         if tag in products[r.product_key].tags
-                         and r.person == primary]
-    start_times = [p.start_datetime for p in matching_products if hasattr(p, 'start_datetime')]
-    if len(start_times) > len(set(start_times)):
-        return error_text
+    if registrations:
+        primary = registrations[0].registered_by
+        matching_products = [products[r.product_key] for r in registrations
+                             if tag in products[r.product_key].tags
+                             and r.person == primary]
+        start_times = [p.start_datetime for p in matching_products if hasattr(p, 'start_datetime')]
+        if len(start_times) > len(set(start_times)):
+            return error_text
 
-    partner_products = [products[r.product_key] for r in registrations
-                         if tag in products[r.product_key].tags
-                         and r.person != primary]
-    start_times = [p.start_datetime for p in partner_products if hasattr(p, 'start_datetime')]
-    if len(start_times) > len(set(start_times)):
-        return error_text
+        partner_products = [products[r.product_key] for r in registrations
+                             if tag in products[r.product_key].tags
+                             and r.person != primary]
+        start_times = [p.start_datetime for p in partner_products if hasattr(p, 'start_datetime')]
+        if len(start_times) > len(set(start_times)):
+            return error_text
 
 
 VALIDATION_RULES = {

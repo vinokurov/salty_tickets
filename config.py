@@ -1,3 +1,4 @@
+import pymongo
 
 STRIPE_SK = 'sk_test_NEwiOsRtQbOCgjglKtiJN5R4'
 STRIPE_PK = 'pk_test_JINxJqXoY58hgW37stGd09hK'
@@ -21,5 +22,6 @@ EMAIL_FROM = ''
 MONGO = 'mongodb://localhost/salty_tickets'
 
 SESSION_TYPE = 'mongodb'
-SESSION_MONGODB = 'mongodb://localhost'
+SESSION_MONGODB = pymongo.MongoClient('mongodb://localhost')
+SESSION_MONGODB_DB = 'salty_tickets'
 

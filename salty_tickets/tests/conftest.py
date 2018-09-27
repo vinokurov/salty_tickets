@@ -1,3 +1,4 @@
+import pymongo
 import typing
 from unittest import mock
 from unittest.mock import Mock
@@ -9,6 +10,7 @@ import pytest
 from dataclasses import dataclass
 from flask import Flask as _Flask
 from flask.testing import FlaskClient
+from flask_session import Session
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
@@ -205,6 +207,10 @@ class Flask(_Flask):
 def app():
     app = Flask(__name__)
     app.config['WTF_CSRF_ENABLED'] = False
+    app.config['SESSION_TYPE'] = 'mongodb'
+    app.config['SESSION_MONGODB'] = pymongo.MongoClient()
+    Session(app)
+
     return app
 
 

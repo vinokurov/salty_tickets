@@ -150,7 +150,6 @@ export default new Vuex.Store({
           console.log('STRIPE RECEIVED')
           console.log(token)
           const data = {
-            payment_id: state.pricing_details.payment_id,
             stripe_token: token,
             csrf_token: getters.getCSRF,
           }

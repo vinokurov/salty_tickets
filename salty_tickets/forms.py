@@ -15,7 +15,7 @@ class SignupForm(FlaskForm):
 
 class StripeCheckoutForm(FlaskForm):
     stripe_token = HiddenField(validators=[DataRequired()])
-    payment_id = HiddenField(validators=[DataRequired()])
+    payment_id = HiddenField()
 
 
 class PartnerTokenCheck(FlaskForm):
