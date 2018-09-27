@@ -293,12 +293,11 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
     res = post_pay(client)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    expected = {'success': False, 'error_message': 'Sample card error',
+    expected = {'success': False, 'error_message': 'Payment failed',
                 'payee_id': None, 'payment_id': str(last_payment.id), 'complete': True}
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert FAILED == payment.status
-    assert sample_stripe_card_error.json_body == payment.stripe.charge
     for reg in payment.registrations:
         assert not reg.active
         assert not reg.wait_listed
@@ -409,7 +408,7 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
 
     expected = {
         'complete': True,
-        'error_message': 'Sample card error',
+        'error_message': 'Payment failed',
         'payee_id': None,
         'payment_id': payment_id,
         'success': False

@@ -141,7 +141,7 @@ class PricingResult(DataClassJsonMixin):
     payment_id: str = ''
 
     @classmethod
-    def from_payment(cls, event: Event, payment: Payment, errors: List):
+    def from_payment(cls, event: Event, payment: Payment, errors: Dict):
         return cls(
             stripe=StripeData.from_payment(payment),
             order_summary=OrderSummary.from_payment(event, payment),
@@ -169,8 +169,7 @@ class PaymentResult(DataClassJsonMixin):
             complete=(paid_payment.status != NEW)
         )
         if not payment_result.success:
-            if paid_payment.stripe and paid_payment.stripe.charge:
-                payment_result.error_message = paid_payment.stripe.charge.get('message')
+            payment_result.error_message = 'Payment failed'
         else:
             payment_result.payee_id = str(paid_payment.paid_by.id)
         return payment_result
@@ -275,63 +274,52 @@ def do_checkout(dao: TicketsDAO, event_key: str):
         errors.update(form.errors)
         pricing_result = PricingResult.from_payment(event, payment, errors)
         if valid and not errors and not pricing_result.disable_checkout:
-            # dao.add_payment(payment, event, register=True)
-            # pricing_result.payment_id = str(payment.id)
             session['payment'] = payment
             session['event_key'] = event_key
-            print(session)
-            print(session.keys())
-            print(session.sid)
             pricing_result.checkout_success = not pricing_result.disable_checkout
-            # pickle_str = pickle.dumps(pricing_result)
-            # session['pricing_result'] = pickle_str
         return pricing_result
 
 
 def do_pay(dao: TicketsDAO):
     form = StripeCheckoutForm()
-    # if form.validate_on_submit():
+    if form.validate_on_submit():
+        payment = session.get('payment')
+        event_key = session.get('event_key')
+        if payment and event_key:
+            if payment is None or payment.status not in [NEW, FAILED]:
+                return PaymentResult(success=False, error_message='Invalid payment id')
 
-    # print(session)
-    # print(session.keys())
-    # print(session.sid)
-    payment = session.get('payment')
-    event_key = session.get('event_key')
-    if payment and event_key:
-        # payment = dao.get_payment_by_id(form.payment_id.data)
-        if payment is None or payment.status not in [NEW, FAILED]:
-            return PaymentResult(success=False, error_message='Invalid payment id')
+            event = dao.get_event_by_key(event_key)
+            payment.description = event.name
+            stripe_token_id = form.stripe_token.data.get('id')
+            payment.stripe = PaymentStripeDetails(token_id=stripe_token_id)
 
-        event = dao.get_event_by_key(event_key)
-        payment.description = event.name
-        payment.stripe = PaymentStripeDetails(source=form.stripe_token.data)
+            if hasattr(payment, 'id') and payment.id:
+                dao.update_payment(payment)
+            else:
+                dao.add_payment(payment, event, register=True)
 
-        if hasattr(payment, 'id') and payment.id:
+            success = stripe_charge(payment, config.STRIPE_SK)
             dao.update_payment(payment)
-        else:
-            dao.add_payment(payment, event, register=True)
-
-        success = stripe_charge(payment, config.STRIPE_SK)
-        dao.update_payment(payment)
-        if success:
-            session.pop('payment')
-            session.pop('event_key')
-            for reg in payment.registrations:
-                reg.active = True
-                dao.update_registration(reg)
-
-            # TODO: make it nicer - with emails, etc.
-            if payment.extra_registrations:
+            if success:
+                session.pop('payment')
+                session.pop('event_key')
                 for reg in payment.registrations:
-                    for extra_reg in payment.extra_registrations:
-                        if extra_reg.active and (reg.product_key == extra_reg.product_key):
-                            extra_reg.partner = reg.registered_by
-                            extra_reg.wait_listed = reg.wait_listed
-                            dao.update_registration(extra_reg)
+                    reg.active = True
+                    dao.update_registration(reg)
 
-            registration_post_process(dao, payment)
+                # TODO: make it nicer - with emails, etc.
+                if payment.extra_registrations:
+                    for reg in payment.registrations:
+                        for extra_reg in payment.extra_registrations:
+                            if extra_reg.active and (reg.product_key == extra_reg.product_key):
+                                extra_reg.partner = reg.registered_by
+                                extra_reg.wait_listed = reg.wait_listed
+                                dao.update_registration(extra_reg)
 
-        return PaymentResult.from_paid_payment(payment)
+                registration_post_process(dao, payment)
+
+            return PaymentResult.from_paid_payment(payment)
 
     return PaymentResult(success=False, error_message='Invalid payment id')
 
@@ -340,12 +328,10 @@ def do_get_payment_status(dao: TicketsDAO):
     form = StripeCheckoutForm()
     if form.validate_on_submit():
         payment = dao.get_payment_by_id(form.payment_id.data)
-        if payment.stripe is None or payment.stripe.source is None:
+        if payment.stripe is None or payment.stripe.token_id is None:
             return PaymentResult(success=False, complete=False, error_message='Payment not initiated yet')
-        elif payment.stripe.source['id'] == form.stripe_token.data['id']:
+        elif payment.stripe.token_id == form.stripe_token.data['id']:
             return PaymentResult.from_paid_payment(payment)
-
-        print(payment.stripe.source, form.stripe_token.data)
 
     print(form.errors)
     return PaymentResult(success=False, error_message='Access denied to see payment status')

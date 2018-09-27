@@ -42,12 +42,10 @@ def stripe_charge(payment: Payment, stripe_sk):
                     payment_id=str(payment.id),
                     # items=', '.join(payment.info_items),
                 ),
-                source=payment.stripe.source['id'],
+                source=payment.stripe.token_id,
                 receipt_email=payment.paid_by.email,
             )
-        print(charge)
-        payment.stripe.charge = charge.to_dict()
-        payment.stripe.charge_id = payment.stripe.charge.get('id')
+        payment.stripe.charge_id = charge.get('id')
         payment.status = SUCCESSFUL
         return True
     except CardError as e:
