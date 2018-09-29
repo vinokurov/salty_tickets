@@ -9,6 +9,10 @@ class RegistrationStats:
     accepted: int = 0
     waiting: int = 0
 
+    @property
+    def total(self):
+        return self.accepted + self.waiting
+
 
 def flip_role(role):
     if role:
@@ -45,9 +49,12 @@ class AutoBalanceWaitingList:
     @property
     def current_ratio(self):
         round_digits = 3
-        ratio = max(self.registration_stats[LEADER].accepted / self.registration_stats[FOLLOWER].accepted,
-                    self.registration_stats[FOLLOWER].accepted / self.registration_stats[LEADER].accepted)
-        return round(ratio, round_digits)
+        try:
+            ratio = max(self.registration_stats[LEADER].accepted / self.registration_stats[FOLLOWER].accepted,
+                        self.registration_stats[FOLLOWER].accepted / self.registration_stats[LEADER].accepted)
+            return round(ratio, round_digits)
+        except ZeroDivisionError:
+            return None
 
     @property
     def total_accepted(self):
@@ -70,12 +77,15 @@ class AutoBalanceWaitingList:
             other_role = flip_role(option)
             this_role_accepted = self.registration_stats[option].accepted
             other_role_accepted = self.registration_stats[other_role].accepted
+            other_role_total = self.registration_stats[other_role].total
             total_accepted = self.total_accepted
 
             if total_accepted + 1 <= self.max_available:
-                if other_role_accepted == 0 and total_accepted < self.allow_first:
+                if total_accepted < self.allow_first:
                     return True
-                elif (this_role_accepted + 1) / other_role_accepted <= self.ratio:
+                elif other_role_accepted == 0 and total_accepted >= self.allow_first:
+                    return False
+                elif (this_role_accepted + 1) / other_role_total <= self.ratio:
                     return True
 
             return False

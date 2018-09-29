@@ -5,9 +5,9 @@ from mock import patch
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import PaymentDocument, ProductRegistrationDocument
 from salty_tickets.forms import create_event_form
-from salty_tickets.models.registrations import ProductRegistration
+from salty_tickets.models.registrations import ProductRegistration, Payment, PaymentStripeDetails
 from salty_tickets.registration_process import get_payment_from_form, do_checkout, do_price, do_pay, \
-    do_get_payment_status, PartnerTokenCheckResult, do_check_partner_token
+    do_get_payment_status, PartnerTokenCheckResult, do_check_partner_token, process_first_payment
 from salty_tickets.tokens import PartnerToken
 from salty_tickets.utils.utils import jsonify_dataclass
 
@@ -23,11 +23,16 @@ def sample_data(salty_recipes):
             'partner_email': 'Ms.Y@email.com',
             'saturday-add': COUPLE,
             'sunday-add': COUPLE,
+            'pay_all': 'y',
         }
         pricing_results = {
             'errors': {},
             'stripe': {'amount': 10170, 'email': 'Mr.X@email.com'},
             'order_summary': {
+                'pay_all_now': True,
+                'pay_now': 100.0,
+                'pay_now_fee': 1.7,
+                'pay_now_total': 101.7,
                 'total_price': 100.0,
                 'transaction_fee': 1.7,
                 'total': 101.7,
@@ -81,7 +86,7 @@ def test_register_one(test_dao, app, client, salty_recipes):
         assert [('saturday', LEADER)] == [(r.product_key, r.dance_role) for r in payment.registrations]
         assert [('Saturday / Leader / Mr X', 25.0)] == payment.info_items
         assert 25 == payment.price
-        assert 0.575 == payment.transaction_fee
+        assert 0.57 == payment.transaction_fee
         assert 'Mr X' == payment.paid_by.full_name
         assert NEW == payment.status
         assert not payment.registrations[0].active
@@ -139,6 +144,7 @@ def test_do_price(test_dao, app_routes, client, sample_data):
     expected = sample_data.pricing_results.copy()
     expected['checkout_success'] = False
     expected['disable_checkout'] = False
+    print(res.json)
     assert expected == res.json
 
 
@@ -259,6 +265,8 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert SUCCESSFUL == payment.status
+    assert payment.price == payment.paid_price
+
     for reg in payment.registrations:
         assert reg.active
         assert not reg.wait_listed
@@ -337,42 +345,51 @@ def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, samp
         assert sess.get('event_key') is None
 
 
-def test_registration_process_balance(mock_stripe, sample_stripe_successful_charge,
-                                     test_dao, app_routes, client, sample_data, salty_recipes):
-
-    event = test_dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
-    saturday_reg_stat = event.products['saturday'].waiting_list.registration_stats
-
-    followers_number = saturday_reg_stat[FOLLOWER].accepted
-    leaders_number = saturday_reg_stat[LEADER].accepted
-    ratio = event.products['saturday'].ratio
-
-    leads_to_add = 3
-    # check the event set up. After adding {leads_to_add} leaders the auto balancing should get triggered
-    assert (followers_number + 1) / (leaders_number + leads_to_add - 1) > ratio
-    assert (followers_number + 1) / (leaders_number + leads_to_add) <= ratio
-    assert (leaders_number + leads_to_add) / followers_number <= ratio
-
-    first_waiting_follower = [doc for key, doc in salty_recipes.registration_docs.items()
-                              if doc.wait_listed and doc.dance_role == FOLLOWER and doc.active][0]
-    assert first_waiting_follower
-
-    names = ['Antwan', 'Otto', 'Cruz', 'Genaro', 'Adalberto']
+def test_registration_process_balance(mock_stripe, sample_stripe_successful_charge, sample_stripe_customer,
+                                     test_dao, app_routes, client, sample_data, salty_recipes, person_factory):
 
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
-    for leader_name in names[:leads_to_add]:
-        first_waiting_follower.reload()
-        assert first_waiting_follower.wait_listed
+    mock_stripe.Customer.create.return_value = sample_stripe_customer
 
-        form_data = {'name': leader_name, 'email': f'{leader_name}@email.com', 'saturday-add': LEADER}
-        res = client.post('/checkout', data=form_data)
+    event = test_dao.get_event_by_key('salty_recipes')
+    assert not event.products['sunday'].waiting_list.has_waiting_list
 
+    def _register_one(role):
+        person = person_factory.pop()
+        form_data = {'name': person.full_name, 'email': person.email, 'sunday-add': role}
+        client.post('/checkout', data=form_data)
         res = post_pay(client)
         assert res.json['success']
+        return res
 
-    first_waiting_follower.reload()
+    # add followers so that we have a waiting list
+    while not event.products['sunday'].waiting_list.has_waiting_list:
+        res = _register_one(FOLLOWER)
+        event = test_dao.get_event_by_key('salty_recipes')
+
+    first_waiting_follower_payment_id = res.json['payment_id']
+    first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
+    assert not first_waiting_follower.paid_price
+
+    # now create leaders until we can balance
+    waiting_list = event.products['sunday'].waiting_list
+    while waiting_list.registration_stats[FOLLOWER].accepted / (waiting_list.registration_stats[LEADER].accepted + 1) > waiting_list.ratio:
+        _register_one(LEADER)
+        first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
+        assert first_waiting_follower.wait_listed
+
+        event = test_dao.get_event_by_key('salty_recipes')
+        waiting_list = event.products['sunday'].waiting_list
+
+    # now add one more leader and make sure that waiting list gets balanced
+    _register_one(LEADER)
+    event = test_dao.get_event_by_key('salty_recipes')
+    waiting_list = event.products['sunday'].waiting_list
+
+    assert waiting_list.current_ratio <= waiting_list.ratio
+    first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
     assert not first_waiting_follower.wait_listed
+    assert 25 == first_waiting_follower.paid_price
 
 
 def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
@@ -450,3 +467,126 @@ def test_do_check_partner_token(salty_recipes, test_dao, app_routes, client):
     assert res.json['error']
     assert not res.json['roles']
     assert not res.json['success']
+
+
+def test_process_first_payment(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+                               sample_stripe_customer, person_factory):
+    psn = person_factory.pop()
+
+    def _payment_from_registrations(registrations, pay_all_now=True):
+        price = sum([r.price or 0 for r in registrations] or [0])
+        if pay_all_now:
+            first_pay = price
+        else:
+            first_pay = sum([r.price or 0 for r in registrations if not r.wait_listed] or [0])
+        payment = Payment(paid_by=psn, registrations=registrations, price=price,
+                          pay_all_now=pay_all_now, first_pay_amount=first_pay,
+                          stripe=PaymentStripeDetails(token_id='tok_123'))
+        payment.id = 'abc123'
+        return payment
+
+    # Pay now, all accepted, stripe - OK
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn),
+    ], pay_all_now=True)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    assert process_first_payment(payment)
+    assert 50 == payment.paid_price
+    assert [25, 25, None] == [r.paid_price for r in payment.registrations]
+    assert SUCCESSFUL == payment.status
+
+    # Pay now, all accepted, stripe - charge ERROR
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+    ], pay_all_now=True)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_card_error]
+    assert not process_first_payment(payment)
+    assert not payment.paid_price
+    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert FAILED == payment.status
+
+    # Pay later, but all accepted, stripe - OK
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+    ], pay_all_now=False)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
+    assert process_first_payment(payment)
+    assert 50 == payment.paid_price
+    assert [25, 25] == [r.paid_price for r in payment.registrations]
+    assert SUCCESSFUL == payment.status
+
+    # Pay now, one wait listed, stripe - OK
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        ProductRegistration(registered_by=psn, person=psn),
+    ], pay_all_now=True)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
+    assert process_first_payment(payment)
+    assert 50 == payment.paid_price
+    assert [25, 25, None] == [r.paid_price for r in payment.registrations]
+    assert SUCCESSFUL == payment.status
+
+    # Pay later, one wait listed, stripe - OK
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25),
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        ProductRegistration(registered_by=psn, person=psn),
+    ], pay_all_now=False)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
+    assert process_first_payment(payment)
+    assert 25 == payment.paid_price
+    assert [25, None, None] == [r.paid_price for r in payment.registrations]
+    assert SUCCESSFUL == payment.status
+
+    # Pay later, all wait listed, stripe - OK
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+    ], pay_all_now=False)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
+    assert process_first_payment(payment)
+    assert 0 == payment.paid_price
+    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert SUCCESSFUL == payment.status
+
+    # Pay later, one wait listed, stripe - charge failure
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=False),
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+    ], pay_all_now=False)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_card_error]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
+    assert not process_first_payment(payment)
+    assert not payment.paid_price
+    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert FAILED == payment.status
+
+    # Pay later, one wait listed, stripe - customer failure
+    payment = _payment_from_registrations([
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+    ], pay_all_now=False)
+
+    mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
+    mock_stripe.Customer.create.side_effect = [sample_stripe_card_error]
+    assert not process_first_payment(payment)
+    assert not payment.paid_price
+    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert FAILED == payment.status
+

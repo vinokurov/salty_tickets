@@ -115,7 +115,8 @@ class WaitListedPartnerProduct(PartnerProduct):
                 LEADER: self._get_registration_stats_for_role(LEADER),
                 FOLLOWER: self._get_registration_stats_for_role(FOLLOWER),
                 COUPLE: self._get_registration_stats_for_role(COUPLE),
-            }
+            },
+            allow_first=self.allow_first,
         )
 
     def _get_registration_stats_for_role(self, option):

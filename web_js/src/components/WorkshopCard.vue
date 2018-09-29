@@ -69,36 +69,22 @@ export default {
     level: function() { return this.product.level },
     choice: function() { return this.product.choice },
     lines: function() { return this.product.lines || '' },
-    waitingListLeader: function() { return  0 },
-    waitingListFollower: function() { return 0 },
-    waitingListLeaderWithPartner: function() { return 0 },
-    waitingListFollowerWithPartner: function() { return 0 },
     partnerMode: function() { return  null },
     editable: function() { return this.product.editable || true },
 
     cardStyle: function () {
       if (this.soldOut) {
         return {bg: 'secondary', border: '', text: 'black'}
-      } else if (this.workshopChoice) {
-        return {bg: 'success', border: '', text: 'light'}
+      } else if (this.workshopChoice ) {
+        let wl = this.product.waiting_list[this.workshopChoice]
+        if (wl == null) {
+          return {bg: 'success', border: '', text: 'light'}
+        } else {
+          return {bg: 'warning', border: '', text: 'light'}
+        }
       } else {
         return {bg: 'light', border:'', text: 'black'}
       }
-    },
-    lineBadges: function () {
-      const linesArr = this.lines.split(',')
-      let badges = []
-      const mapping = {
-        'Jitterbug': 'success',
-        'Collegiate': 'warning',
-        'Collegiate Super': 'warning',
-        'Collegiate Light': 'warning',
-        'St.Louis': 'primary'
-      }
-      for (let i = 0; i < linesArr.length; i++) {
-        badges.push({ name: linesArr[i], variant: mapping[linesArr[i]] })
-      }
-      return badges
     },
     availableWarningStyle: function () {
       if (this.available <= 0) {
@@ -146,13 +132,13 @@ export default {
         }
       }
 
-      if (this.waitingListLeader) {
+      if (this.product.waiting_list.leader != null) {
         buttons[0].variant = 'warning'
       }
-      if (this.waitingListFollower) {
+      if (this.product.waiting_list.follower != null) {
         buttons[1].variant = 'warning'
       }
-      if (this.waitingListLeaderWithPartner + this.waitingListFollowerWithPartner) {
+      if (this.product.waiting_list.couple != null) {
         buttons[2].variant = 'warning'
       }
 

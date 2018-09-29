@@ -31,11 +31,13 @@ def stripe_session(stripe_sk):
     stripe.api_key = None
 
 
-def stripe_charge(payment: Payment, stripe_sk):
+def stripe_charge(payment: Payment, stripe_sk, amount=None):
+    if amount is None:
+        amount = payment.first_pay_total
     try:
         with stripe_session(stripe_sk) as sp:
             charge = sp.Charge.create(
-                amount=stripe_amount(payment),
+                amount=stripe_amount(amount),
                 currency='gbp',
                 description=payment.description,
                 metadata=dict(
@@ -45,11 +47,62 @@ def stripe_charge(payment: Payment, stripe_sk):
                 source=payment.stripe.token_id,
                 receipt_email=payment.paid_by.email,
             )
-        payment.stripe.charge_id = charge.get('id')
+        payment.stripe.charges.append(charge.get('id'))
         payment.status = SUCCESSFUL
         return True
     except CardError as e:
-        payment.stripe.charge = e.json_body
+        payment.stripe.error_response = e.json_body
+        payment.status = FAILED
+        return False
+
+
+def stripe_create_customer(payment: Payment, stripe_sk):
+    try:
+        with stripe_session(stripe_sk) as sp:
+            customer = sp.Customer.create(
+                source=payment.stripe.token_id,
+                email=payment.paid_by.email,
+                description=payment.paid_by.full_name,
+                metadata=dict(
+                    payment_id=str(payment.id),
+                    full_name=payment.paid_by.full_name,
+                    info=payment.description,
+                )
+            )
+
+            payment.stripe.customer_id = customer.get('id')
+            # payment.stripe.customer_source_id = customer['sources']['data'][0]['id']
+
+        return True
+    except CardError as e:
+        payment.stripe.error_response = e.json_body
+        payment.status = FAILED
+        return False
+
+
+def stripe_charge_customer(payment: Payment, stripe_sk, amount=None):
+    if amount is None:
+        amount = payment.first_pay_total
+    try:
+        with stripe_session(stripe_sk) as sp:
+            charge = sp.Charge.create(
+                amount=stripe_amount(amount),
+                currency='gbp',
+                description=payment.description,
+                metadata=dict(
+                    payment_id=str(payment.id),
+                    # items=', '.join(payment.info_items),
+                ),
+                customer=payment.stripe.customer_id,
+                # source=payment.stripe.customer_source_id,
+                receipt_email=payment.paid_by.email,
+            )
+
+        payment.stripe.charges.append(charge.get('id'))
+        payment.status = SUCCESSFUL
+        return True
+    except CardError as e:
+        payment.stripe.error_response = e.json_body
         payment.status = FAILED
         return False
 
@@ -60,8 +113,12 @@ def update_payment_total(payment):
     pass
 
 
-def stripe_amount(payment: Payment):
-    return int(payment.total_amount * 100)
+# def stripe_amount(payment: Payment):
+#     return int(payment.total_amount * 100)
+
+
+def stripe_amount(amount):
+    return int(amount * 100)
 
 
 def update_order(user_order):
@@ -74,11 +131,13 @@ def update_order(user_order):
     pass
 
 
-def transaction_fee(price):
-    if price > 0:
-        return price * 0.015 + 0.2
-    else:
-        return 0
+def transaction_fee(*prices):
+    total_fee = 0
+    for price in prices:
+        if price > 0:
+            fee = price * 0.015 + 0.2
+            total_fee += round(fee, 2)
+    return round(total_fee, 2)
 
 
 def get_remaining_payment(amount):

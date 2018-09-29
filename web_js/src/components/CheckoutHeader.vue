@@ -30,16 +30,43 @@
         </b-list-group>
           <!-- <h3><font-awesome icon="shopping-cart"/> Order Summary</h3> -->
           <b-list-group>
-            <b-list-group-item v-for="item in cart.items" class="d-flex justify-content-between align-items-center">
+            <!-- accepted products -->
+            <b-list-group-item v-for="item in cart.items" v-if="!item.wait_listed" class="d-flex justify-content-between align-items-center">
               {{itemFormat(item)}}<div v-if="item.price">£{{item.price.toFixed(2)}}</div>
             </b-list-group-item>
+
+            <!-- wait-listed items -->
+            <b-list-group-item v-for="item in cart.items" v-if="item.wait_listed" class="d-flex justify-content-between align-items-center" variant="warning">
+              {{itemFormat(item)}}<div v-if="item.price">£{{item.price.toFixed(2)}}</div>
+            </b-list-group-item>
+
+            <!-- transaction fee -->
             <b-list-group-item class="d-flex justify-content-between align-items-center small font-italic font-weight-light">
               Transaction fee <div>£{{cart.transaction_fee.toFixed(2)}}</div>
             </b-list-group-item>
+
+            <!-- TOTAL -->
             <b-list-group-item variant="primary" class="d-flex justify-content-between align-items-center font-weight-bold">
               Total <div>£{{(cart.transaction_fee + cart.total).toFixed(2)}}</div>
             </b-list-group-item>
+
+            <!-- TOTALs now and later -->
+            <b-list-group-item v-if="pay_all != 'y'" variant="primary" class="d-flex justify-content-between align-items-center">
+              Total now <div>£{{cart.pay_now_total.toFixed(2)}}</div>
+            </b-list-group-item>
+            <b-list-group-item v-if="pay_all != 'y'" variant="primary" class="d-flex justify-content-between align-items-center">
+              Total later <div>£{{(cart.transaction_fee + cart.total - cart.pay_now_total).toFixed(2)}}</div>
+            </b-list-group-item>
+
           </b-list-group>
+          <div v-if="has_waiting">
+            <b-form-group label="Radios using <code>options</code>">
+              <b-form-radio-group v-model="pay_all" @input="requestCheckout">
+                <b-form-radio value="y">Pay 100% in advance</b-form-radio>
+                <b-form-radio value="">Let us process payment as soon as the place is available</b-form-radio>
+              </b-form-radio-group>
+            </b-form-group>
+          </div>
           <button class="btn btn-success my-4" @click="stripeCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
           </button>
@@ -50,12 +77,19 @@
 
 <script>
 import { mapState, mapActions,mapGetters } from 'vuex'
+import { sync } from 'vuex-pathify';
 import FontAwesome from './FontAwesome.vue'
 
 export default {
   components: {FontAwesome},
   computed: {
     ...mapState(['cart', 'errors']),
+    has_waiting: function() {
+      return this.cart.items.filter((i) => i.wait_listed).length > 0
+    },
+    ...sync({
+      pay_all:'registration@pay_all',
+    }),
   },
   methods: {
     itemFormat(item) {

@@ -15,8 +15,16 @@ const my_state = {
               dance_role:null, comments:null},
     partner: {name:null, email:null, location: null},
     partner_token:null,
+    pay_all: 'y',
   },
-  cart: {checkout_enabled: false, checkout_success: null, items:[], total: 0, transaction_fee:0},
+  cart: {
+    checkout_enabled: false,
+    checkout_success: null,
+    items:[],
+    total: 0,
+    transaction_fee:0,
+    pay_now_total: 0,
+  },
   stripe: {},
   errors: {},
   throttled_calls: {},
@@ -54,6 +62,8 @@ export default new Vuex.Store({
       state.cart.transaction_fee = pricing_details.order_summary.transaction_fee;
       state.cart.items = pricing_details.order_summary.items;
       state.cart.checkout_enabled = !pricing_details.disable_checkout
+
+      state.cart.pay_now_total = pricing_details.order_summary.pay_now_total
 
       state.errors = pricing_details.errors;
       if('csrf_token' in state.errors){window.location.reload();}
@@ -183,6 +193,7 @@ export default new Vuex.Store({
         partner_email: state.registration.partner_email || '',
         partner_location: state.registration.partner.location || '',
         csrf_token: getters.getCSRF,
+        pay_all: state.registration.pay_all,
       }
       // ...state.products.filter((p) => p.choice).map((p) => ({key:p.key, choice:p.choice}))
       const selected = getters.getSelectedProducts

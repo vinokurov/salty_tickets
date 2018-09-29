@@ -264,6 +264,12 @@ class TicketsDAO:
         payment_docs = PaymentDocument.objects(event=event_doc, paid_by=person_doc).all()
         return [p.to_dataclass() for p in payment_docs]
 
+    def get_payment_by_registration(self, registration):
+        if hasattr(registration, 'id'):
+            payment_doc = PaymentDocument.objects.filter(registrations__contains=registration.id).first()
+            if payment_doc:
+                return payment_doc.to_dataclass()
+
     def query_registrations(self, event, person: PersonInfo=None, paid_by: PersonInfo=None,
                             partner: PersonInfo=None, product=None) -> List[ProductRegistration]:
         filters = {'event': self._get_doc(EventDocument, event)}

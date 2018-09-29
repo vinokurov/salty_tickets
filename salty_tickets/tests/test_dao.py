@@ -292,7 +292,7 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
 
     assert test_dao.get_payment_by_id(payment.id).stripe is None
 
-    stripe_details = PaymentStripeDetails(token_id='toc_123', charge_id='ch_123')
+    stripe_details = PaymentStripeDetails(token_id='toc_123', charges=['ch_123'])
     payment.stripe = stripe_details
     test_dao.update_payment(payment)
 

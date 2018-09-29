@@ -22,7 +22,7 @@ from salty_tickets.registration_process import do_check_partner_token, do_get_pa
     do_price
 from salty_tickets.utils.utils import jsonify_dataclass
 from salty_tickets.waiting_lists import flip_role
-from stripe import Charge
+from stripe import Charge, Customer
 from stripe.error import CardError
 
 
@@ -263,6 +263,13 @@ def sample_stripe_successful_charge():
     return charge
 
 
+@pytest.fixture
+def sample_stripe_customer():
+    charge = Customer(id='cus_123')
+    # return {'id': 'ch_123', 'charge': 'CHARGE'}
+    return charge
+
+
 NAMES = [
     'Simonne Smithson',
     'Gregg Defoor',
@@ -343,11 +350,12 @@ class AllVars:
     mock_stripe: Mock
     sample_stripe_card_error: CardError
     sample_stripe_successful_charge: typing.Dict
+    sample_stripe_customer: typing.Dict
 
 
 @pytest.fixture
 def e2e_vars(test_dao, salty_recipes, app, app_routes, client, person_factory,
-             mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge):
+             mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge, sample_stripe_customer):
 
     return AllVars(test_dao, app, client, person_factory,
-                   mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge)
+                   mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge, sample_stripe_customer)

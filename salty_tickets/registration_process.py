@@ -1,6 +1,6 @@
 import pickle
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
@@ -12,8 +12,8 @@ from salty_tickets.emails import send_waiting_list_accept_email, send_payment_st
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProduct
-from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails
-from salty_tickets.payments import transaction_fee, stripe_charge
+from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails, ProductRegistration
+from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import ProductPricer
 from salty_tickets.tokens import PartnerToken
 from salty_tickets.validators import validate_registrations
@@ -38,6 +38,13 @@ Checkout:
 
 
 @dataclass
+class ProductWaitingListInfo(DataClassJsonMixin):
+    leader: Optional[int] = None
+    follower: Optional[int] = None
+    couple: Optional[int] = None
+
+
+@dataclass
 class ProductInfo(DataClassJsonMixin):
     key: str
     title: str
@@ -50,9 +57,12 @@ class ProductInfo(DataClassJsonMixin):
     price: float = None
     info: str = None
     choice: str = None
+    waiting_list: Optional[ProductWaitingListInfo] = None
 
     @classmethod
     def from_workshop(cls, workshop: WorkshopProduct):
+        available = workshop.max_available - workshop.waiting_list.total_accepted
+        print(workshop.waiting_list)
         return cls(
             key=workshop.key,
             title=workshop.name,
@@ -60,9 +70,10 @@ class ProductInfo(DataClassJsonMixin):
             end_datetime=str(workshop.end_datetime),
             level=workshop.level,
             teachers=workshop.teachers,
-            available=workshop.max_available,
+            available=available,
             price=workshop.base_price,
-            info=workshop.info
+            info=workshop.info,
+            waiting_list=ProductWaitingListInfo(**workshop.waiting_list.waiting_stats)
         )
 
 
@@ -101,6 +112,12 @@ class OrderSummary(DataClassJsonMixin):
     total: float = 0
     items: List[OrderItem] = field(default_factory=list)
 
+    pay_all_now: bool = True
+
+    pay_now: Optional[float] = None
+    pay_now_fee: Optional[float] = None
+    pay_now_total: Optional[float] = None
+
     @classmethod
     def from_payment(cls, event: Event, payment: Payment):
         items = []
@@ -114,8 +131,16 @@ class OrderSummary(DataClassJsonMixin):
                 wait_listed=reg.wait_listed
             ))
 
-        return cls(total_price=payment.price, transaction_fee=payment.transaction_fee,
-                   total=payment.total_amount, items=items)
+        return cls(
+            total_price=payment.price,
+            transaction_fee=payment.transaction_fee,
+            total=payment.total_amount,
+            pay_all_now=payment.pay_all_now,
+            pay_now=payment.first_pay_amount,
+            pay_now_fee=payment.first_pay_fee,
+            pay_now_total=payment.first_pay_total,
+            items=items,
+        )
 
 
 @dataclass
@@ -126,7 +151,7 @@ class StripeData(DataClassJsonMixin):
     @classmethod
     def from_payment(cls, payment: Payment):
         if len(payment.registrations):
-            amount = int(payment.total_amount * 100)
+            amount = int(payment.first_pay_total * 100)
             return cls(amount=amount, email=payment.paid_by.email)
 
 
@@ -211,21 +236,15 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
     pricer = ProductPricer.from_event(event)
     pricer.price_all(registrations)
 
-    prices = [r.price for r in registrations if r.price is not None]
-    if prices:
-        total_price = sum(prices)
-        fee = transaction_fee(total_price)
-    else:
-        total_price = 0.0
-        fee = 0.0
     payment = Payment(
-        price=total_price,
         paid_by=registrations[0].registered_by if len(registrations) else None,
-        transaction_fee=fee,
         registrations=registrations,
         status=NEW,
-        info_items=[(event.products[r.product_key].item_info(r), r.price) for r in registrations]
+        info_items=[(event.products[r.product_key].item_info(r), r.price) for r in registrations],
+        pay_all_now=form.pay_all.data,
     )
+
+    set_payment_totals(payment)
 
     if extra_registrations is not None:
         payment.extra_registrations = applied_registrations
@@ -299,8 +318,9 @@ def do_pay(dao: TicketsDAO):
             else:
                 dao.add_payment(payment, event, register=True)
 
-            success = stripe_charge(payment, config.STRIPE_SK)
+            success = process_first_payment(payment)
             dao.update_payment(payment)
+
             if success:
                 session.pop('payment')
                 session.pop('event_key')
@@ -313,15 +333,53 @@ def do_pay(dao: TicketsDAO):
                     for reg in payment.registrations:
                         for extra_reg in payment.extra_registrations:
                             if extra_reg.active and (reg.product_key == extra_reg.product_key):
-                                extra_reg.partner = reg.registered_by
-                                extra_reg.wait_listed = reg.wait_listed
-                                dao.update_registration(extra_reg)
+                                take_existing_registration_off_waiting_list(dao, extra_reg, reg.registered_by)
 
                 registration_post_process(dao, payment)
 
             return PaymentResult.from_paid_payment(payment)
 
     return PaymentResult(success=False, error_message='Invalid payment id')
+
+
+def process_first_payment(payment):
+    if payment.pay_all_now or (payment.first_pay_amount == payment.price):
+        if stripe_charge(payment, config.STRIPE_SK, payment.total_amount):
+            # update paid prices on all registrations
+            for reg in payment.registrations:
+                reg.paid_price = reg.price
+            return True
+    else:
+        if stripe_create_customer(payment, config.STRIPE_SK):
+            if payment.first_pay_amount > 0:
+                if stripe_charge_customer(payment, config.STRIPE_SK, payment.first_pay_total):
+                    # update paid prices on accepted registrations
+                    for reg in payment.registrations:
+                        if not reg.wait_listed:
+                            reg.paid_price = reg.price
+                    return True
+            else:
+                payment.status = SUCCESSFUL
+                return True
+
+
+def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: ProductRegistration,
+                                                new_partner: PersonInfo=None):
+    if (registration.paid_price or 0) < registration.price:
+        payment = dao.get_payment_by_registration(registration)
+        price = registration.price - (registration.paid_price or 0)
+        fee = transaction_fee(price)
+        if stripe_charge_customer(payment, config.STRIPE_SK, price + fee):
+            registration.paid_price = price
+            dao.update_payment(payment)
+        else:
+            # TODO: better notification
+            print('EXTRA PAYMENT FAILED')
+
+    if new_partner is not None:
+        registration.partner = new_partner
+    registration.wait_listed = False
+    dao.update_registration(registration)
 
 
 def do_get_payment_status(dao: TicketsDAO):
@@ -344,8 +402,8 @@ def balance_event_waiting_lists(dao: TicketsDAO, event: Event):
         if isinstance(product, WaitListedPartnerProduct):
             if product.waiting_list.has_waiting_list:
                 for registration in product.balance_waiting_list():
+                    take_existing_registration_off_waiting_list(dao, registration)
                     balanced_registrations.append(registration)
-                    dao.update_registration(registration)
     # send emails
     if balanced_registrations:
         unique_persons = set([r.person for r in balanced_registrations])
@@ -372,3 +430,28 @@ def do_check_partner_token(dao: TicketsDAO):
             return PartnerTokenCheckResult.from_registration_list(partner_registrations)
     return PartnerTokenCheckResult.from_registration_list([])
 
+
+# def get_pay_now(payment: Payment) -> float:
+#     accepted_prices = [r.price for r in payment.registrations if not r.wait_listed]
+#     return sum(accepted_prices)
+#
+#
+# def get_later_pay_amounts(payment: Payment) -> List[float]:
+#     return [r.price for r in payment.registrations if r.wait_listed]
+
+
+def set_payment_totals(payment: Payment):
+    payment.price = sum([r.price for r in payment.registrations if r.price] or [0])
+    if payment.pay_all_now:
+        payment.transaction_fee = transaction_fee(payment.price)
+        payment.first_pay_amount = payment.price
+    else:
+        accepted_prices = [r.price for r in payment.registrations if not r.wait_listed and r.price]
+        payment.first_pay_amount = sum(accepted_prices or [0])
+
+        # here we calculate sum of transaction fees for first payment and all waiting separately
+        wait_listed_prices = [r.price for r in payment.registrations if r.wait_listed and r.price]
+        all_payments = [payment.first_pay_amount] + wait_listed_prices
+        payment.transaction_fee = transaction_fee(*all_payments)
+
+    payment.first_pay_fee = transaction_fee(payment.first_pay_amount)

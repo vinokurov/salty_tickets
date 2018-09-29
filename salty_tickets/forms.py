@@ -53,6 +53,7 @@ class DanceSignupForm(FormWithProducts, SignupForm):
     partner_city = StringField('Partner\'s City')
     registration_token = StringField('Registration Code')
     partner_token = StringField('Registration Code')
+    pay_all = BooleanField(default="checked")
 
 
 def create_event_form(event):
