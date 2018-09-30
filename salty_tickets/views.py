@@ -98,6 +98,12 @@ def check_partner_token():
     return jsonify_dataclass(do_check_partner_token(dao))
 
 
+@app.route('/order/<string:order_token>', methods=['GET'])
+def user_order(order_token):
+    dao = TicketsDAO(MONGO)
+    return 'Hello'
+
+
 # @app.route('/register/<string:event_key>', methods=['GET'])
 # def register_form(event_key):
 #     dao = TicketsDAO()

@@ -15,7 +15,7 @@ from salty_tickets.utils.mongo_utils import fields_from_dataclass
 
 @fields_from_dataclass(ProductRegistration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
 class ProductRegistrationDocument(fields.Document):
-    __meta__ = {
+    meta = {
         'collection': 'product_registrations'
     }
     dance_role = fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
@@ -63,9 +63,8 @@ class EventProductDocument(fields.EmbeddedDocument):
 
 @fields_from_dataclass(Event, skip=['products'])
 class EventDocument(fields.Document):
-    __meta__ = {
+    meta = {
         'collection': 'events',
-        'indexes': ['key', 'start_date', 'active']
     }
     key = fields.StringField()
     products = fields.MapField(fields.EmbeddedDocumentField(EventProductDocument))
@@ -101,7 +100,7 @@ class EventDocument(fields.Document):
 
 @fields_from_dataclass(PersonInfo, skip=['event'])
 class RegistrationDocument(fields.Document):
-    __meta__ = {
+    meta = {
         'collection': 'person_registrations',
     }
     event = fields.ReferenceField(EventDocument)
@@ -120,7 +119,7 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
 
 @fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'extra_registrations'])
 class PaymentDocument(fields.Document):
-    __meta__ = {
+    meta = {
         'collection': 'payments'
     }
     date = fields.DateTimeField(null=False, default=datetime.datetime.utcnow)

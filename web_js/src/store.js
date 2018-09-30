@@ -10,6 +10,7 @@ Vue.use(Vuex);
 const my_state = {
   products: [],
   layout: {},
+  event_name: '',
   registration: {
     primary: {name:null, email:null, location: null,
               dance_role:null, comments:null},
@@ -29,6 +30,13 @@ const my_state = {
   errors: {},
   throttled_calls: {},
   strpe_handler: null,
+  payment_response: {
+    success: null,
+    complete: null,
+    payment_id: null,
+    payee_id: null,
+    error_message: null,
+  },
 }
 
 
@@ -74,6 +82,9 @@ export default new Vuex.Store({
         state.stripe = {}
       }
     },
+    setPaymentResponseDetails (state, payment_response) {
+      state.payment_response = payment_response
+    },
     queueThrottledRequest (state, {url, params}) {
       if (url in state.throttled_calls) {
           if (state.throttled_calls[url].params != params) {
@@ -105,6 +116,7 @@ export default new Vuex.Store({
       console.log(response.data)
       state.layout = response.data.layout
       state.products = response.data.products
+      state.event_name = response.data.name
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
@@ -146,16 +158,24 @@ export default new Vuex.Store({
         }, 1000)
       })
     },
-    stripeCheckout({state, getters}) {
+    stripeCheckout({state, getters, commit}) {
+      let panelLabel = 'Pay'
+      if(state.stripe.amount == 0) {
+        panelLabel = 'Save card details'
+      } else if (!state.registration.pay_all) {
+        panelLabel = 'Save card and pay'
+      }
+
       this._vm.$checkout.open({
         amount: state.stripe.amount,
         email: state.stripe.email,
         name: 'Salty Jitterbugs Ltd.',
-        description: 'Event name',
+        description: state.event_name,
         currency: 'gbp',
         zipCode: true,
         billingAddress: true,
         allowRememberMe: false,
+        panelLabel: panelLabel,
         token: async (token) => {
           console.log('STRIPE RECEIVED')
           console.log(token)
@@ -165,8 +185,17 @@ export default new Vuex.Store({
           }
           console.log(data)
           const url = '/pay/'
-          let response = await axios.post(url, data)
-          console.log(response)
+          try {
+            let response = await axios.post(url, data)
+            commit('setPaymentResponseDetails', response.data)
+            console.log(response)
+          } catch(err) {
+            commit('setPaymentResponseDetails', {
+              success:false,
+              error_message: 'Server error while processing payment',
+            })
+            console.log(err)
+          }
         }
       })
     },
@@ -190,7 +219,7 @@ export default new Vuex.Store({
         comment: state.registration.primary.comment || '',
         dance_role: state.registration.primary.dance_role || '',
         partner_name: state.registration.partner.name || '',
-        partner_email: state.registration.partner_email || '',
+        partner_email: state.registration.partner.email || '',
         partner_location: state.registration.partner.location || '',
         csrf_token: getters.getCSRF,
         pay_all: state.registration.pay_all,

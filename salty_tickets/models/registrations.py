@@ -12,6 +12,9 @@ class PersonInfo:
     location: Dict = field(default_factory=dict, hash=False)
     comment: str = None
 
+    def __bool__(self):
+        return bool(self.full_name) or bool(self.email)
+
 
 @dataclass
 class ProductRegistration:

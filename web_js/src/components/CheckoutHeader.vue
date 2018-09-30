@@ -21,7 +21,7 @@
           </div>
       </div>
 
-    <b-modal  size="lg" id="checkoutModal" hide-footer title="Checkout">
+    <b-modal  size="lg" id="checkoutModal" ref="checkoutModal" hide-footer title="Checkout">
       <div class="d-block">
         <b-list-group v-if="Object.keys(errors).length">
           <b-list-group-item v-for="(error, error_key) in errors" variant="danger">
@@ -67,11 +67,24 @@
               </b-form-radio-group>
             </b-form-group>
           </div>
-          <button class="btn btn-success my-4" @click="stripeCheckout()" v-if="cart.checkout_enabled">
+          <button class="btn btn-success my-4" @click="hideModal();stripeCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
           </button>
       </div>
     </b-modal>
+
+    <b-modal  size="lg" id="paymentErrorModal" ref="paymentErrorModal" hide-footer
+              title="Payment Error"
+              header-bg-variant="danger"
+              header-text-variant="light"
+              body-bg-variant="danger"
+              body-text-variant='light'>
+      <div class="d-block">
+        An error has occured during processing your payment. The money haven't been transfered.<br/>
+        {{payment_response.error_message}}
+      </div>
+    </b-modal>
+
   </div>
 </template>
 
@@ -83,7 +96,7 @@ import FontAwesome from './FontAwesome.vue'
 export default {
   components: {FontAwesome},
   computed: {
-    ...mapState(['cart', 'errors']),
+    ...mapState(['cart', 'errors', 'payment_response']),
     has_waiting: function() {
       return this.cart.items.filter((i) => i.wait_listed).length > 0
     },
@@ -99,7 +112,17 @@ export default {
       console.log(values, values.join(' / '))
       return values.join(' / ')
     },
+    hideModal() {
+      this.$refs.checkoutModal.hide()
+    },
     ...mapActions(['requestPrice', 'requestCheckout', 'stripeCheckout'])
   },
+  watch: {
+    payment_response: function() {
+      if (!this.payment_response.success) {
+        this.$refs.paymentErrorModal.show()
+      }
+    },
+  }
 }
 </script>

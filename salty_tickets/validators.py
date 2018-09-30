@@ -38,19 +38,21 @@ def errors_if_overlapping(registrations: List[ProductRegistration],
                           tag, error_text=None):
     if registrations:
         primary = registrations[0].registered_by
-        matching_products = [products[r.product_key] for r in registrations
-                             if tag in products[r.product_key].tags
-                             and r.person == primary]
-        start_times = [p.start_datetime for p in matching_products if hasattr(p, 'start_datetime')]
-        if len(start_times) > len(set(start_times)):
-            return error_text
+        if primary:
+            print(registrations)
+            matching_products = [products[r.product_key] for r in registrations
+                                 if tag in products[r.product_key].tags
+                                 and r.person == primary]
+            start_times = [p.start_datetime for p in matching_products if hasattr(p, 'start_datetime')]
+            if len(start_times) > len(set(start_times)):
+                return error_text
 
-        partner_products = [products[r.product_key] for r in registrations
-                             if tag in products[r.product_key].tags
-                             and r.person != primary]
-        start_times = [p.start_datetime for p in partner_products if hasattr(p, 'start_datetime')]
-        if len(start_times) > len(set(start_times)):
-            return error_text
+            partner_products = [products[r.product_key] for r in registrations
+                                 if tag in products[r.product_key].tags
+                                 and r.person != primary]
+            start_times = [p.start_datetime for p in partner_products if hasattr(p, 'start_datetime')]
+            if len(start_times) > len(set(start_times)):
+                return error_text
 
 
 VALIDATION_RULES = {
