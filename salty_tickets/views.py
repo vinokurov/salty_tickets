@@ -7,6 +7,7 @@ from salty_tickets.dao import TicketsDAO
 from salty_tickets.forms import create_event_form
 from salty_tickets.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
     do_check_partner_token, EventInfo
+from salty_tickets.user_order import do_get_user_order_info
 from salty_tickets.utils.utils import jsonify_dataclass, crossdomain
 from werkzeug.utils import redirect
 
@@ -98,10 +99,16 @@ def check_partner_token():
     return jsonify_dataclass(do_check_partner_token(dao))
 
 
-@app.route('/order/<string:order_token>', methods=['GET'])
-def user_order(order_token):
+@app.route('/order/<string:pmt_token>', methods=['GET'])
+def user_order_index(pmt_token):
     dao = TicketsDAO(MONGO)
-    return 'Hello'
+    return render_template("user_order.html", pmt_token=pmt_token, stripe_pk=config.STRIPE_PK)
+
+
+@app.route('/order_info/<string:pmt_token>', methods=['POST', 'GET'])
+def user_order_info(pmt_token):
+    dao = TicketsDAO(MONGO)
+    return jsonify_dataclass(do_get_user_order_info(dao, pmt_token))
 
 
 # @app.route('/register/<string:event_key>', methods=['GET'])

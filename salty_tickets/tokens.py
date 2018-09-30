@@ -84,7 +84,10 @@ class Token:
         raise NotImplementedError()
 
     def serialize(self, obj):
-        return self.code_to_str(self._encode(obj.int_id))
+        return self.code_to_str(self._encode(self._get_obj_id(obj)))
+
+    def _get_obj_id(self, obj):
+        return obj.id
 
     def deserialize(self, dao: TicketsDAO, token_str):
         token_code = self.code_from_str(token_str)
@@ -121,10 +124,16 @@ class ItsdangerousMixin:
     def _decode(self, encoded_data):
         return self._serializer.loads(encoded_data)
 
+    def _get_obj_id(self, obj):
+        return str(obj.id)
+
 
 class HashidsMixin:
     min_length = 5
     salt = 'default'
+
+    def _get_obj_id(self, obj):
+        return obj.int_id
 
     @property
     def _serializer(self):
