@@ -5,7 +5,7 @@
          <div class="container">
 
 
-            <b-card no-body>
+            <b-card no-body class="mb-4"  bg-variant="light">
               <h4 slot="header">Registration Details</h4>
               <table class="table">
                 <tbody>
@@ -17,7 +17,7 @@
            </b-card>
 
           <h2>Registrations</h2>
-          <b-card no-body v-for="product in user_order_info.products">
+          <b-card no-body v-for="product in user_order_info.products" bg-variant="light" class="mb-4">
             <h4 slot="header">{{product.title}} / {{product.person}}</h4>
             <b-card-body>
               <p class="card-text">{{product.info}}</p>

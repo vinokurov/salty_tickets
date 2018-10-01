@@ -349,10 +349,10 @@ class TicketsDAO:
         if doc:
             return doc.to_dataclass()
 
-    def get_payment_by_id(self, object_id) -> Payment:
-        doc = PaymentDocument.objects(**id_filter(object_id)).first()
-        if doc:
-            return doc.to_dataclass()
+    def get_payments_by_event(self, event: Event) -> List[Payment]:
+        docs = PaymentDocument.objects(event=event.id).all()
+        if docs:
+            return [d.to_dataclass() for d in docs]
 
     def get_product_registration_by_id(self, object_id) -> ProductRegistration:
         doc = ProductRegistrationDocument.objects(**id_filter(object_id)).first()

@@ -1,15 +1,12 @@
 import json
 
 import pytest
-from mock import patch
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
-from salty_tickets.dao import PaymentDocument, ProductRegistrationDocument
+from salty_tickets.dao import PaymentDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import ProductRegistration, Payment, PaymentStripeDetails
-from salty_tickets.registration_process import get_payment_from_form, do_checkout, do_price, do_pay, \
-    do_get_payment_status, PartnerTokenCheckResult, do_check_partner_token, process_first_payment
+from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
 from salty_tickets.tokens import PartnerToken
-from salty_tickets.utils.utils import jsonify_dataclass
 
 
 @pytest.fixture

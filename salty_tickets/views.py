@@ -1,21 +1,16 @@
 from flask import render_template
-from flask import url_for
 from salty_tickets import app
 from salty_tickets import config
+from salty_tickets.api.admin import do_get_event_stats
 from salty_tickets.config import MONGO
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.forms import create_event_form
-from salty_tickets.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
+from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
     do_check_partner_token, EventInfo
-from salty_tickets.user_order import do_get_user_order_info
-from salty_tickets.utils.utils import jsonify_dataclass, crossdomain
-from werkzeug.utils import redirect
+from salty_tickets.api.user_order import do_get_user_order_info
+from salty_tickets.utils.utils import jsonify_dataclass
 
 __author__ = 'vnkrv'
-
-
-from flask import request
-
 
 # @app.after_request
 # def add_cors_headers(response):
@@ -109,6 +104,21 @@ def user_order_index(pmt_token):
 def user_order_info(pmt_token):
     dao = TicketsDAO(MONGO)
     return jsonify_dataclass(do_get_user_order_info(dao, pmt_token))
+
+#####################################################################
+#########                A D M I N                   ################
+#####################################################################
+
+
+@app.route('/admin/event/<string:event_key>', methods=['GET'])
+def admin_event_index(event_key):
+    return render_template('admin_event.html', event_key=event_key)
+
+
+@app.route('/admin/event_info/<string:event_key>', methods=['GET'])
+def admin_event_info(event_key):
+    dao = TicketsDAO(MONGO)
+    return jsonify_dataclass(do_get_event_stats(dao, event_key))
 
 
 # @app.route('/register/<string:event_key>', methods=['GET'])

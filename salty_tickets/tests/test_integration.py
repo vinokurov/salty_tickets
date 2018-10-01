@@ -3,7 +3,6 @@ import json
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.registrations import Payment
-from salty_tickets.registration_process import PricingResult
 from salty_tickets.tokens import PartnerToken
 
 

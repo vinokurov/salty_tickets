@@ -3,7 +3,6 @@ import typing
 from unittest import mock
 from unittest.mock import Mock
 
-import mongomock_mate # mongomock_mate import is required to run update() queries to mongomock
 from datetime import datetime
 
 import pytest
@@ -18,7 +17,7 @@ from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegist
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
 from salty_tickets.models.registrations import PersonInfo
-from salty_tickets.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
+from salty_tickets.api.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
     do_price
 from salty_tickets.utils.utils import jsonify_dataclass
 from salty_tickets.waiting_lists import flip_role
