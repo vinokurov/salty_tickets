@@ -14,7 +14,16 @@ glob.sync('./src/pages/**/app.js').forEach(path => {
 })
 module.exports = {
   pages,
-  chainWebpack: config => config.plugins.delete('named-chunks'),
+  chainWebpack: config => {
+    config.plugins.delete('named-chunks')
+    if(config.plugins.has('extract-css')) {
+      const extractCSSPlugin = config.plugin('extract-css')
+      extractCSSPlugin && extractCSSPlugin.tap(() => [{
+        filename: '[name].css',
+        chunkFilename: '[name].css'
+      }])
+    }
+  },
   devServer: {
     proxy: {
       '/api': {
@@ -22,6 +31,12 @@ module.exports = {
         changeOrigin: true,
         pathRewrite: { '^/api': '' }
       }
+    }
+  },
+  configureWebpack: {
+    output: {
+      filename: '[name].js',
+      chunkFilename: '[name].js'
     }
   }
 }
