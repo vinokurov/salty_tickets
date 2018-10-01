@@ -1,15 +1,11 @@
 <template>
-  <div id="checkout" class="sticky-top bg-dark py-1 mb-1 align-middle">
-      <div class="container align-middle">
-          <div class="row align-middle">
-              <div class="col-3 align-middle">
-                <h3 class="display-5 align-middle">
-                  <a class="text-white align-middle">
-                     Total: £{{cart.total.toFixed(0)}}
-                   </a>
-                 </h3>
-               </div>
-              <div class="col">
+  <div id="checkout" class="sticky-top bg-dark py-1 mb-1 ">
+      <div class="container">
+          <div class="row">
+              <div class="col-auto mr-auto">
+                <h3 class="display-5 text-white">Total: £{{cart.total.toFixed(0)}}</h3>
+              </div>
+              <div class="col-auto">
                   <button type="button"
                           class="btn btn-dark btn-outline-light"
                           @click="requestCheckout"

@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <checkout-header/>
+    <registration-jumbotron/>
     <registration-form/>
     <products-form/>
   </div>
@@ -10,6 +11,7 @@
 import ProductsForm from '../../components/ProductsForm.vue';
 import CheckoutHeader from '../../components/CheckoutHeader.vue';
 import RegistrationForm from '../../components/RegistrationForm.vue';
+import RegistrationJumbotron from '../../components/RegistrationJumbotron.vue';
 
 export default {
   name: 'app',
@@ -17,6 +19,7 @@ export default {
     ProductsForm,
     CheckoutHeader,
     RegistrationForm,
+    RegistrationJumbotron,
   },
   methods: {
   },

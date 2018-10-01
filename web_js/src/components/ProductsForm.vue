@@ -5,6 +5,12 @@
         <div class="container my-4" v-for="(dayWorkshops, day) in layout['workshops']">
             <h3 >Workshops: {{day}}</h3>
             <table class="table">
+              <thead>
+                <th v-for="(productKey, level) in dayWorkshops[0]" style="border:none">
+                  <b-card :header="level" class="text-center" no-body bg-variant="dark" text-variant='light'/>
+                  <!-- <center><h4>{{level}}</h4></center> -->
+                </th>
+              </thead>
                 <tbody>
                 <tr v-for="row in dayWorkshops">
                     <td v-for="(productKey, level) in row" style="border:none">

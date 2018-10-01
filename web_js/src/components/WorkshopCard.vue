@@ -64,7 +64,11 @@ export default {
     title: function() { return this.product.title },
     price: function() { return this.product.price },
     available: function() { return this.product['available'] || 'plenty'},
-    time: function() { return this.product.time },
+    time: function() {
+      let dt0 = new Date(this.product.start_datetime)
+      let dt1 = new Date(this.product.end_datetime)
+      return dt0.toLocaleTimeString().replace(':00', '') + ' - ' + dt1.toLocaleTimeString().replace(':00', '')
+    },
     teachers: function() { return this.product.teachers },
     level: function() { return this.product.level },
     choice: function() { return this.product.choice },
