@@ -15,7 +15,7 @@ from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProd
 from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails, ProductRegistration
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import ProductPricer
-from salty_tickets.tokens import PartnerToken
+from salty_tickets.tokens import PartnerToken, PaymentId
 from salty_tickets.validators import validate_registrations
 
 """
@@ -185,6 +185,7 @@ class PaymentResult(DataClassJsonMixin):
     error_message: str = None
     payee_id: str = None
     payment_id: str = None
+    pmt_token: str = None
 
     @classmethod
     def from_paid_payment(cls, paid_payment: Payment):
@@ -197,6 +198,7 @@ class PaymentResult(DataClassJsonMixin):
             payment_result.error_message = 'Payment failed'
         else:
             payment_result.payee_id = str(paid_payment.paid_by.id)
+            payment_result.pmt_token = PaymentId().serialize(paid_payment)
         return payment_result
 
 

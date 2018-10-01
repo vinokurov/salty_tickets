@@ -121,6 +121,8 @@ export default {
     payment_response: function() {
       if (!this.payment_response.success) {
         this.$refs.paymentErrorModal.show()
+      } else if (this.payment_response.pmt_token) {
+        window.location = '/order/' + this.payment_response.pmt_token
       }
     },
   }
