@@ -1,4 +1,4 @@
-from flask import render_template
+from flask import render_template, redirect
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.api.admin import do_get_event_stats
@@ -9,6 +9,7 @@ from salty_tickets.api.registration_process import do_price, do_checkout, do_pay
     do_check_partner_token, EventInfo
 from salty_tickets.api.user_order import do_get_user_order_info
 from salty_tickets.utils.utils import jsonify_dataclass
+
 
 __author__ = 'vnkrv'
 
@@ -30,14 +31,17 @@ __author__ = 'vnkrv'
 
 
 import requests
-
+import os
+from flask import send_from_directory
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def catch_all(path):
-    if app.debug:
-        print('PATH: '+path)
-        return requests.get('http://localhost:8080/{}'.format(path)).text
+def serve(path):
+    return send_from_directory('static', path)
+    # if path != "" and os.path.exists("/static/" + path):
+        # return send_from_directory('static', path)
+    # else:
+        # return "Hello"
 
 
 @app.route('/r')
