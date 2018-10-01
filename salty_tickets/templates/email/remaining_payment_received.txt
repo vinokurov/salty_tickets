@@ -1,9 +1,0 @@
-Dear, {{ order_summary_controller._order.registration.name }}
-
-Payment {{ order_summary_controller.total_to_pay | price }} has been received!
-
-Please use this link to see and manage your order: {{ order_summary_controller.order_status_url }}
-
-
-Lots of love,
-Salty Jitterbugs Team

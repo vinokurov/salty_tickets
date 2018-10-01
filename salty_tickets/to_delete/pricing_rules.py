@@ -1,5 +1,4 @@
 from salty_tickets.to_delete.database import db_session
-from salty_tickets.emails import send_acceptance_from_waiting_list, send_acceptance_from_waiting_partner
 from salty_tickets.to_delete.sql_models import Event, Order, SignupGroup, SIGNUP_GROUP_PARTNERS, \
     Product, Registration, OrderProduct, ORDER_PRODUCT_STATUS_WAITING, \
     ORDER_STATUS_PAID, Payment, RegistrationGroup
@@ -110,7 +109,8 @@ def balance_event_waiting_lists(event_model):
         if hasattr(product, 'balance_waiting_list'):
             results = product.balance_waiting_list(product_model)
             for order_product in results:
-                send_acceptance_from_waiting_list(order_product)
+                # send_acceptance_from_waiting_list(order_product)
+                pass
             return results
 
 
@@ -138,7 +138,7 @@ def process_partner_registrations(user_order, form):
                     partner_role = partner_order_product.details_as_dict['dance_role']
                     if not waiting_lists_couple[partner_role]:
                         partner_order_product.accept()
-                        send_acceptance_from_waiting_list(partner_order_product)
+                        # send_acceptance_from_waiting_list(partner_order_product)
             elif product_form.add.data == 'couple':
                 order_products = OrderProduct.query.filter_by(order_id=user_order.id). \
                     join(Product, aliased=True).filter_by(id=product_model.id).all()
@@ -153,7 +153,7 @@ def process_partner_registrations(user_order, form):
                 db_session.add(group)
 
                 partner_order_product.accept()
-                send_acceptance_from_waiting_partner(partner_order_product)
+                # send_acceptance_from_waiting_partner(partner_order_product)
             elif product_form.add.data == 'couple':
                 order_products = OrderProduct.query.filter_by(order_id=user_order.id). \
                                     join(Product, aliased=True).filter_by(id=product_model.id).all()

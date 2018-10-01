@@ -8,7 +8,7 @@ from flask import session
 from salty_tickets import config
 from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
 from salty_tickets.dao import TicketsDAO
-from salty_tickets.emails import send_waiting_list_accept_email, send_payment_status_email
+from salty_tickets.emails import send_waiting_list_accept_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProduct
@@ -382,6 +382,7 @@ def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: P
         registration.partner = new_partner
     registration.wait_listed = False
     dao.update_registration(registration)
+    send_waiting_list_accept_email(dao, registration)
 
 
 def do_get_payment_status(dao: TicketsDAO):
@@ -406,17 +407,12 @@ def balance_event_waiting_lists(dao: TicketsDAO, event: Event):
                 for registration in product.balance_waiting_list():
                     take_existing_registration_off_waiting_list(dao, registration)
                     balanced_registrations.append(registration)
-    # send emails
-    if balanced_registrations:
-        unique_persons = set([r.person for r in balanced_registrations])
-        for person in unique_persons:
-            send_waiting_list_accept_email(dao, person, event)
 
 
 def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, ballance waiting lists"""
     event = dao.get_payment_event(payment)
-    send_payment_status_email(dao, payment, event)
+    send_registration_confirmation(payment, event)
     balance_event_waiting_lists(dao, event)
 
 

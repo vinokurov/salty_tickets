@@ -1,12 +1,12 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from dataclasses import dataclass
 from dataclasses_json import DataClassJsonMixin
+from salty_tickets.api.registration_process import ProductWaitingListInfo
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct
 from salty_tickets.models.registrations import ProductRegistration, Payment
-from salty_tickets.api.registration_process import ProductInfo
 from salty_tickets.tokens import PaymentId, PartnerToken
 
 
@@ -73,6 +73,42 @@ class PaymentInfo(DataClassJsonMixin):
             status=payment.status,
             stripe=payment.stripe,
         )
+
+
+@dataclass
+class ProductInfo(DataClassJsonMixin):
+    key: str
+    title: str
+    start_datetime: str
+    end_datetime: str
+    time: str = None
+    level: str = None
+    teachers: str = None
+    available: int = None
+    price: float = None
+    info: str = None
+    waiting_list: Optional[ProductWaitingListInfo] = None
+    ratio: float = None
+
+    @classmethod
+    def from_workshop(cls, workshop: WorkshopProduct):
+        available = workshop.max_available - workshop.waiting_list.total_accepted
+        print(workshop.waiting_list)
+        return cls(
+            key=workshop.key,
+            title=workshop.name,
+            start_datetime=str(workshop.start_datetime),
+            end_datetime=str(workshop.end_datetime),
+            level=workshop.level,
+            teachers=workshop.teachers,
+            available=available,
+            price=workshop.base_price,
+            info=workshop.info,
+            waiting_list=ProductWaitingListInfo(**workshop.waiting_list.waiting_stats)
+        )
+
+
+
 
 
 @dataclass

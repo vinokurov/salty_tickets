@@ -1,8 +1,11 @@
-Dear, {{ order_product_controller._order_product.registration.name }}
+Dear, {{ registration.person.full_name }}
 
-With great pleasure we want to confirm that you are no longer on the waiting list for {{order_product_controller._order_product.order.event.name}} - {{order_product_controller._order_product.product.name}}!
+With great pleasure we want to confirm that you are no longer on the waiting list for {{event.name}} - {{event.products[registration.product_key].name}}!
 Your place is confirmed and we are looking forward to see you soon.
 
+{% if registration.partner %}Your partner is: {{ registration.partner.full_name }}
+{% endif %}
+You can see your order status following this link: {{order_status_url}}.
 
 Lots of love,
 Salty Jitterbugs Team

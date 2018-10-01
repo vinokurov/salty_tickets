@@ -38,7 +38,6 @@ def catch_all(path):
     if app.debug:
         print('PATH: '+path)
         return requests.get('http://localhost:8080/{}'.format(path)).text
-    return render_template("index.html")
 
 
 @app.route('/r')
@@ -121,14 +120,4 @@ def admin_event_info(event_key):
     return jsonify_dataclass(do_get_event_stats(dao, event_key))
 
 
-# @app.route('/register/<string:event_key>', methods=['GET'])
-# def register_form(event_key):
-#     dao = TicketsDAO()
-#     event = dao.get_event_by_key(event_key)
-#     # if not event:
-#     #     return redirect(url_for('register_index'))
-#
-#     form = create_event_form(event)()
-#     init_pricing_data = do_price(dao, event_key)
-#     return render_template(f'signup_vue.html', event=event, form=form, config=config,
-#                            init_pricing_data=init_pricing_data)
+

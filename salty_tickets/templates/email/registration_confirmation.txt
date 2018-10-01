@@ -4,29 +4,20 @@ Thank you for signing up for the {{event.name}}!
 
 Order Summary
 
-{% for registration in payment.registrations %}
-    {% if registration.wait_listed %}
+{% for registration in payment.registrations %}{% if registration.wait_listed %}
     ITEM: Waiting list: {{ event.products[registration.product_key].name }} / {{registration.person.full_name}}
     ROLE: {{registration.dance_role }}
     PRICE: {{ registration.price }}
-    PAID: {{ registration.paid_price }}
-
-    {% else %}
+    PAID: {{ registration.paid_price }}{% else %}
     ITEM: {{ event.products[registration.product_key].name }} / {{registration.person.full_name}}
     ROLE: {{registration.dance_role }}
-    PRICE: {{ registration.price }}
-
-    {% endif %}
+    PRICE: {{ registration.price }}{% endif %}
 {% endfor %}
 
     TOTAL: £{{ payment.price }}
-
 {% if payment.paid_price < payment.price %}
     TOTAL PAID: £{{payment.paid_price}}
-    REMAINING: £{{payment.price - payment.paid_price}}
-{%endif%}
-
-Your partner token: {{ptn_token}}.
+    REMAINING: £{{payment.price - payment.paid_price}}{%endif%}
 
 You can see your order status following this link: {{order_status_url}}.
 

@@ -58,6 +58,8 @@ class UserOrderInfo(DataClassJsonMixin):
     pmt_token: str = None
     event_name: str = None
     event_info: str = None
+    price: float = None
+    paid_price: float=None
     products: List[ProductRegistrationInfo] = field(default_factory=list)
 
     @classmethod
@@ -70,7 +72,9 @@ class UserOrderInfo(DataClassJsonMixin):
             products=[ProductRegistrationInfo.from_registration(r, event.products)
                       for r in payment.registrations],
             event_name=event.name,
-            event_info=event.info
+            event_info=event.info,
+            price=payment.price,
+            paid_price=payment.paid_price,
         )
 
 
