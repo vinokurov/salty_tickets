@@ -1,4 +1,5 @@
 import json
+import pickle
 
 import pytest
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
@@ -196,7 +197,7 @@ def test_do_checkout(test_dao, app_routes, client, sample_data):
 
     # payment is saved in the session
     with client.session_transaction() as sess:
-        payment = sess.get('payment')
+        payment = pickle.loads(sess.get('payment'))
         assert 'salty_recipes' == sess.get('event_key')
     assert payment is not None
     assert NEW == payment.status
@@ -405,7 +406,7 @@ def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_
     assert res.json['complete']
 
     with client.session_transaction() as sess:
-        payment = sess.get('payment')
+        payment = pickle.loads(sess.get('payment'))
         payment_id = str(payment.id)
 
     # wrong stripe token
@@ -454,7 +455,8 @@ def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_
 
 
 def test_do_check_partner_token(mock_send_email, salty_recipes, test_dao, app_routes, client):
-    partner = test_dao.get_registrations_for_product('salty_recipes', 'saturday')[0].person
+    event = test_dao.get_event_by_key('salty_recipes', False)
+    partner = test_dao.get_registrations_for_product(event, 'saturday')[0].person
     ptn_token = PartnerToken().serialize(partner)
     post_data = {'partner_token': ptn_token, 'event_key': 'salty_recipes'}
     res = client.post('/check_partner_token', data=post_data)

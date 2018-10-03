@@ -73,8 +73,8 @@ class PartnerProduct(BaseProduct):
         product_data = event_form.get_product_by_key(self.key)
         if self.added(product_data):
             if product_data.add.data == COUPLE:
-                person_1 = get_primary_personal_info_from_form(event_form)
-                person_2 = get_partner_personal_info_from_form(event_form)
+                person_1 = get_primary_personal_info_from_form(event_form) or PersonInfo('You', '')
+                person_2 = get_partner_personal_info_from_form(event_form) or PersonInfo('Partner', '')
 
                 dance_role = event_form.dance_role.data
                 registration_1 = self.create_registration(person_1, person_1, dance_role)
@@ -85,7 +85,7 @@ class PartnerProduct(BaseProduct):
                 return [registration_1, registration_2]
 
             elif product_data.add.data in [LEADER, FOLLOWER]:
-                person_1 = get_primary_personal_info_from_form(event_form)
+                person_1 = get_primary_personal_info_from_form(event_form) or PersonInfo('You', '')
                 dance_role = product_data.add.data
                 registration = self.create_registration(person_1, person_1, dance_role)
                 return [registration]

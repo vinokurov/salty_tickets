@@ -294,7 +294,7 @@ def do_checkout(dao: TicketsDAO, event_key: str):
         errors.update(form.errors)
         pricing_result = PricingResult.from_payment(event, payment, errors)
         if valid and not errors and not pricing_result.disable_checkout:
-            session['payment'] = payment
+            session['payment'] = pickle.dumps(payment)
             session['event_key'] = event_key
             pricing_result.checkout_success = not pricing_result.disable_checkout
         return pricing_result
@@ -303,7 +303,8 @@ def do_checkout(dao: TicketsDAO, event_key: str):
 def do_pay(dao: TicketsDAO):
     form = StripeCheckoutForm()
     if form.validate_on_submit():
-        payment = session.get('payment')
+        payment_pickle = session.get('payment')
+        payment = pickle.loads(payment_pickle) if payment_pickle else None
         event_key = session.get('event_key')
         if payment and event_key:
             if payment is None or payment.status not in [NEW, FAILED]:
@@ -321,6 +322,7 @@ def do_pay(dao: TicketsDAO):
 
             success = process_first_payment(payment)
             dao.update_payment(payment)
+            session['payment'] = pickle.dumps(payment)
 
             if success:
                 session.pop('payment')

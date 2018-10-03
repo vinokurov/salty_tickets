@@ -33,7 +33,8 @@
 
             <!-- wait-listed items -->
             <b-list-group-item v-for="item in cart.items" v-if="item.wait_listed" class="d-flex justify-content-between align-items-center" variant="warning">
-              {{itemFormat(item)}}<div v-if="item.price">£{{item.price.toFixed(2)}}</div>
+              {{itemFormat(item)}} <b-badge pill variant="warning">Waiting List</b-badge>
+              <div v-if="item.price">£{{item.price.toFixed(2)}}</div>
             </b-list-group-item>
 
             <!-- transaction fee -->
@@ -47,22 +48,22 @@
             </b-list-group-item>
 
             <!-- TOTALs now and later -->
-            <b-list-group-item v-if="pay_all != 'y'" variant="primary" class="d-flex justify-content-between align-items-center">
-              Total now <div>£{{cart.pay_now_total.toFixed(2)}}</div>
+            <b-list-group-item v-if="(pay_all != 'y') && has_waiting" variant="primary" class="d-flex justify-content-between align-items-center">
+              Amount due now <div>£{{cart.pay_now_total.toFixed(2)}}</div>
             </b-list-group-item>
-            <b-list-group-item v-if="pay_all != 'y'" variant="primary" class="d-flex justify-content-between align-items-center">
-              Total later <div>£{{(cart.transaction_fee + cart.total - cart.pay_now_total).toFixed(2)}}</div>
+            <b-list-group-item v-if="(pay_all != 'y') && has_waiting" variant="primary" class="d-flex justify-content-between align-items-center">
+              Amount due later <div>£{{(cart.transaction_fee + cart.total - cart.pay_now_total).toFixed(2)}}</div>
             </b-list-group-item>
 
           </b-list-group>
-          <div v-if="has_waiting">
-            <b-form-group label="Radios using <code>options</code>">
-              <b-form-radio-group v-model="pay_all" @input="requestCheckout">
-                <b-form-radio value="y">Pay 100% in advance</b-form-radio>
-                <b-form-radio value="">Let us process payment as soon as the place is available</b-form-radio>
+          <b-card v-if="has_waiting" bg-variant="warning" class="mb-4 my-4">
+            <b-form-group label="Some of the items are on the waiting list. You have the following options:">
+              <b-form-radio-group v-model="pay_all" @input="requestCheckout" stacked>
+                <b-form-radio value="y">Pay 100% in advance now (can be refunded on request)</b-form-radio>
+                <b-form-radio value="">Let us process payment automatically when the place is available</b-form-radio>
               </b-form-radio-group>
             </b-form-group>
-          </div>
+          </b-card>
           <button class="btn btn-success my-4" @click="hideModal();stripeCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
           </button>

@@ -163,18 +163,18 @@ class TicketsDAO:
         if event_doc is None:
             return None
 
-        event_model = event_doc.to_dataclass()
+        event = event_doc.to_dataclass()
         if get_registrations:
-            for product_key in event_model.products:
-                registrations = self.get_registrations_for_product(event_doc, product_key)
-                event_model.products[product_key].registrations = registrations
+            registrations = self.query_registrations(event)
+            for product_key in event.products:
+                event.products[product_key].registrations = [r for r in registrations if r.product_key == product_key]
 
-        return event_model
+        return event
 
-    def get_registrations_for_product(self, event, product) -> List[ProductRegistration]:
+    def get_registrations_for_product(self, event: Event, product) -> List[ProductRegistration]:
         filters = {
             'product_key': self._get_product_key(product),
-            'event': self._get_event_doc(event)
+            'event': event.id,
         }
 
         items = ProductRegistrationDocument.objects(**filters).all()
@@ -190,6 +190,14 @@ class TicketsDAO:
             return EventDocument.objects(key=event).first()
         elif hasattr(event, 'id') and event.id:
             return EventDocument.objects(id=event.id).first()
+        else:
+            raise ValueError(f'Invalid event argument: {event}')
+
+    def _get_event_id(self, event) -> EventDocument:
+        if isinstance(event, str):
+            return EventDocument.objects(key=event).first().id
+        elif hasattr(event, 'id') and event.id:
+            return event.id
         else:
             raise ValueError(f'Invalid event argument: {event}')
 
@@ -209,7 +217,7 @@ class TicketsDAO:
             raise ValueError(f'Person already exists: {person}')
         else:
             person_doc = RegistrationDocument.from_dataclass(person)
-            person_doc.event = self._get_event_doc(event)
+            person_doc.event = event.id
             person_doc.save()
             person.id = person_doc.id
 
@@ -218,7 +226,7 @@ class TicketsDAO:
             raise ValueError(f'Registration already exists: {registration}')
 
         registration_doc = ProductRegistrationDocument.from_dataclass(registration)
-        registration_doc.event = self._get_event_doc(event)
+        registration_doc.event = event.id
         registration_doc.person = self._get_or_create_new_person(registration.person, event)
         registration_doc.registered_by = self._get_or_create_new_person(registration.registered_by, event)
         if registration.partner:
@@ -226,12 +234,13 @@ class TicketsDAO:
         registration_doc.save()
         registration.id = registration_doc.id
 
-    def add_payment(self, payment: Payment, event, register=False):
+    @timeit
+    def add_payment(self, payment: Payment, event: Event, register=False):
         if hasattr(payment, 'id'):
             raise ValueError(f'Payment already exists: {payment}')
         print(payment)
         payment_doc = PaymentDocument.from_dataclass(payment)
-        payment_doc.event = self._get_event_doc(event)
+        payment_doc.event = event.id
         payment_doc.paid_by = self._get_or_create_new_person(payment.paid_by, event)
         for reg in payment.registrations:
             if not hasattr(reg, 'id'):
@@ -259,10 +268,9 @@ class TicketsDAO:
         else:
             raise ValueError(f'Can\'t find {doc_class} by {model}')
 
-    def get_payments_by_person(self, event, person: PersonInfo) -> List[Payment]:
-        event_doc = self._get_doc(EventDocument, event)
+    def get_payments_by_person(self, event: Event, person: PersonInfo) -> List[Payment]:
         person_doc = self._get_doc(RegistrationDocument, person)
-        payment_docs = PaymentDocument.objects(event=event_doc, paid_by=person_doc).all()
+        payment_docs = PaymentDocument.objects(event=event.id, paid_by=person_doc).all()
         return [p.to_dataclass() for p in payment_docs]
 
     def get_payment_by_registration(self, registration):
@@ -271,9 +279,9 @@ class TicketsDAO:
             if payment_doc:
                 return payment_doc.to_dataclass()
 
-    def query_registrations(self, event, person: PersonInfo=None, paid_by: PersonInfo=None,
+    def query_registrations(self, event: Event, person: PersonInfo=None, paid_by: PersonInfo=None,
                             partner: PersonInfo=None, product=None) -> List[ProductRegistration]:
-        filters = {'event': self._get_doc(EventDocument, event)}
+        filters = {'event': self._get_event_id(event)}
         if person is not None:
             filters['person'] = self._get_doc(RegistrationDocument, person)
         if paid_by is not None:
@@ -325,6 +333,7 @@ class TicketsDAO:
 
         self._update_doc(ProductRegistrationDocument, registration, **extra_updates)
 
+    @timeit
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)
 

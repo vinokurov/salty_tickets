@@ -16,7 +16,6 @@ __author__ = 'vnkrv'
 if app.debug:
     @app.route('/static/dist/<path:path>')
     def catch_all(path):
-        print('PATH: '+path)
         import requests
         return requests.get('http://localhost:8080/{}'.format(path)).text
 

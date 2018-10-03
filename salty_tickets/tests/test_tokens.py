@@ -4,7 +4,8 @@ from salty_tickets.tokens import PartnerToken, RegistrationToken
 
 @patch('salty_tickets.tokens.PartnerToken.salt', 'partner_salt')
 def test_partner_token(test_dao, salty_recipes):
-    reg = test_dao.get_registrations_for_product('salty_recipes', 'saturday')[0]
+    event = test_dao.get_event_by_key('salty_recipes', False)
+    reg = test_dao.get_registrations_for_product(event, 'saturday')[0]
     assert reg.person.int_id is not None
 
     ptn_token = PartnerToken()
@@ -14,7 +15,8 @@ def test_partner_token(test_dao, salty_recipes):
 
 @patch('salty_tickets.tokens.RegistrationToken.salt', 'registration_salt')
 def test_registration_token(test_dao, salty_recipes):
-    reg = test_dao.get_registrations_for_product('salty_recipes', 'saturday')[0]
+    event = test_dao.get_event_by_key('salty_recipes', False)
+    reg = test_dao.get_registrations_for_product(event, 'saturday')[0]
     assert reg.registered_by.int_id is not None
 
     ptn_token = RegistrationToken()

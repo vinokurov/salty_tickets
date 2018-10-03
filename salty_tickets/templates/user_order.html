@@ -14,7 +14,7 @@
     <!-- Material Design Bootstrap -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.5.10/css/mdb.min.css" rel="stylesheet">
 
-  <link href="/user_order.js" rel="preload" as="script"></head>
+  <link href="/static/dist/user_order.js" rel="preload" as="script"></head>
   <body>
   <input type="hidden" id="stripe_pk" value="{{ stripe_pk }}" />
   <input type="hidden" id="pmt_token" value="{{ pmt_token }}" />
@@ -22,7 +22,7 @@
       <strong>We're sorry but salty-tickets-web doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
-    <script src="/static/dist/chunk-vendors.js"></script>
+    <!--<script src="/static/dist/chunk-vendors.js"></script>-->
     <script src="/static/dist/user_order.js"></script>
   </body>
 </html>
