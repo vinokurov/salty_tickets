@@ -3,6 +3,7 @@ from datetime import datetime
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct
+from salty_tickets.config import MONGO
 
 
 SAT_MORNING_START = datetime(2018, 11, 17, 11, 0)
@@ -21,14 +22,14 @@ SUN_NOON_END = datetime(2018, 11, 18, 15, 45)
 NIAL_ANNABELLE = 'Nial & Annabelle'
 MICHAL_KASIA = "Michal & Kasia"
 
-dao = TicketsDAO(host=r'mongodb://localhost:27017/salty_tickets')
+dao = TicketsDAO(host=MONGO)
 
 event = Event(
-    name='Salty Breezle',
-    key='salty_breezle',
+    name='Salty Brizzle',
+    key='salty_brizzle',
     start_date=SAT_MORNING_START,
     end_date=datetime(2018, 11, 18, 17, 0),
-    info='Salty Breezle Weekender',
+    info='Salty Brizzle Weekender',
     pricing_rules=[
         {
             "name": "combination",
@@ -74,10 +75,10 @@ products = [
         name=MICHAL_KASIA + ' - Adv 1',
         key='mk_adv_1',
         info='1st adv class by ' + MICHAL_KASIA,
-        start_datetime=SAT_MORNING_START,
-        end_datetime=SAT_MORNING_END,
+        start_datetime=SAT_NOON_START,
+        end_datetime=SAT_NOON_END,
         teachers=MICHAL_KASIA,
-        level='advanced',
+        level='intermed./adv.',
         **kwargs,
     ),
     WorkshopProduct(
@@ -87,27 +88,27 @@ products = [
         start_datetime=SUN_NOON_START,
         end_datetime=SUN_NOON_END,
         teachers=MICHAL_KASIA,
-        level='advanced',
+        level='intermed./adv.',
         **kwargs,
     ),
     WorkshopProduct(
         name=NIAL_ANNABELLE + ' - Adv 1',
         key='na_adv_1',
-        info='1st adv class by ' + NIAL_ANNABELLE,
-        start_datetime=SAT_NOON_START,
-        end_datetime=SAT_NOON_END,
+        info='Rhythm breaks - description TBC.',
+        start_datetime=SAT_MORNING_START,
+        end_datetime=SAT_MORNING_END,
         teachers=NIAL_ANNABELLE,
-        level='advanced',
+        level='intermed./adv.',
         **kwargs,
     ),
     WorkshopProduct(
         name=NIAL_ANNABELLE + ' - Adv 2',
         key='na_adv_2',
-        info='2nd adv class by ' + NIAL_ANNABELLE,
+        info='Democracy Sausage (Styling and footwork): Dancing shag is a team effort, we\'ll show you ways that you can both express your own styling as well as working with your partner\'s styling.',
         start_datetime=SUN_MORNING_START,
         end_datetime=SUN_MORNING_END,
         teachers=NIAL_ANNABELLE,
-        level='advanced',
+        level='intermed./adv.',
         **kwargs,
     ),
 
@@ -115,10 +116,10 @@ products = [
         name=MICHAL_KASIA + ' - Int 1',
         key='mk_int_1',
         info='1st int class by ' + MICHAL_KASIA,
-        start_datetime=SAT_NOON_START,
-        end_datetime=SAT_NOON_END,
+        start_datetime=SAT_MORNING_START,
+        end_datetime=SAT_MORNING_END,
         teachers=MICHAL_KASIA,
-        level='intermediate',
+        level='improv./intermed.',
         **kwargs,
     ),
     WorkshopProduct(
@@ -128,27 +129,27 @@ products = [
         start_datetime=SUN_MORNING_START,
         end_datetime=SUN_MORNING_END,
         teachers=MICHAL_KASIA,
-        level='intermediate',
+        level='improv./intermed.',
         **kwargs,
     ),
     WorkshopProduct(
         name=NIAL_ANNABELLE + ' - Int 1',
         key='na_int_1',
-        info='1st int class by ' + NIAL_ANNABELLE,
-        start_datetime=SAT_MORNING_START,
-        end_datetime=SAT_MORNING_END,
+        info='Emu Egg Scramble (Turns and flow): We\'ll be working through some fun turns involving flow and momentum, try not to get too scrambled!',
+        start_datetime=SAT_NOON_START,
+        end_datetime=SAT_NOON_END,
         teachers=NIAL_ANNABELLE,
-        level='intermediate',
+        level='improv./intermed.',
         **kwargs,
     ),
     WorkshopProduct(
         name=NIAL_ANNABELLE + ' - Int 2',
         key='na_int_2',
-        info='2nd int class by ' + NIAL_ANNABELLE,
+        info='Kangaroo on a Spit (Circular moves and rotation): Rotation, rotation, rotation. We love using rotation in our shag and changing between different rotating shapes, we hope you\'ll love it too.',
         start_datetime=SUN_NOON_START,
         end_datetime=SUN_NOON_END,
         teachers=NIAL_ANNABELLE,
-        level='intermediate',
+        level='improv./intermed.',
         **kwargs,
     ),
 ]
@@ -158,12 +159,12 @@ event.append_products(products)
 event.layout = dict(
     workshops=dict(
         Saturday=[
-            dict(Intermediate='na_int_1', Advanced='mk_adv_1'),
-            dict(Intermediate='mk_int_1', Advanced='na_adv_1'),
+            {r'Improv/Intermed':'mk_int_1', r'Intermed/Adv': 'na_adv_1'},
+            {r'Improv/Intermed':'na_int_1', r'Intermed/Adv': 'mk_adv_1'},
         ],
         Sunday=[
-            dict(Intermediate='mk_int_2', Advanced='na_adv_2'),
-            dict(Intermediate='na_int_2', Advanced='mk_adv_2'),
+            {r'Improv/Intermed':'mk_int_2', r'Intermed/Adv': 'na_adv_2'},
+            {r'Improv/Intermed':'na_int_2', r'Intermed/Adv': 'mk_adv_2'},
         ],
     )
 )
