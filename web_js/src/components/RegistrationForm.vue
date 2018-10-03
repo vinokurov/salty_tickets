@@ -73,7 +73,6 @@ export default {
   },
   watch: {
     registration () {
-      console.log(this.registration)
       this.$state.commit('SET_REGISTRATION', this.registration)
     }
   }

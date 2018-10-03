@@ -1,4 +1,5 @@
 from flask import render_template, redirect, url_for
+from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
 from salty_tickets import app
 from salty_tickets import config
@@ -13,11 +14,11 @@ from salty_tickets.utils.utils import jsonify_dataclass
 
 __author__ = 'vnkrv'
 
-if app.debug:
-    @app.route('/static/dist/<path:path>')
-    def catch_all(path):
-        import requests
-        return requests.get('http://localhost:8080/{}'.format(path)).text
+# if app.debug:
+#     @app.route('/static/dist/<path:path>')
+#     def catch_all(path):
+#         import requests
+#         return requests.get('http://localhost:8080/{}'.format(path)).text
 
 
 @app.route('/')
@@ -89,11 +90,13 @@ def user_order_info(pmt_token):
 
 
 @app.route('/admin/event/<string:event_key>', methods=['GET'])
+@login_required
 def admin_event_index(event_key):
     return render_template('admin_event.html', event_key=event_key)
 
 
 @app.route('/admin/event_info/<string:event_key>', methods=['GET'])
+@login_required
 def admin_event_info(event_key):
     dao = TicketsDAO(MONGO)
     return jsonify_dataclass(do_get_event_stats(dao, event_key))

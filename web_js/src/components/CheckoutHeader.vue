@@ -106,7 +106,6 @@ export default {
       let values = [item.name]
       if (item.person) {values.push(item.person)}
       if (item.dance_role) {values.push(item.dance_role)}
-      console.log(values, values.join(' / '))
       return values.join(' / ')
     },
     hideModal() {

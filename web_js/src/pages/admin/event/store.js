@@ -15,6 +15,7 @@ const my_state = {
     layout: null,
     registrations: [],
     payments: [],
+    summary:{},
   }
 }
 
@@ -35,7 +36,6 @@ export default new Vuex.Store({
     async init ({context, state}) {
       const url = '/admin/event_info/' + event_key
       let response = await axios.get(url)
-      console.log(response.data)
       state.event_info = response.data
     },
   },

@@ -35,7 +35,6 @@ export default new Vuex.Store({
     async init ({context, state}) {
       const url = '/order_info/' + pmt_token
       let response = await axios.get(url)
-      console.log(response.data)
       state.user_order_info = response.data
     },
   },

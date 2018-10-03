@@ -16,7 +16,6 @@
     methods: {
       async fetchResults () {
         const response = await axios.get('mock/service')
-        console.log('RECEIVED: ' + response.data )
         this.value = response.data
       }
     },

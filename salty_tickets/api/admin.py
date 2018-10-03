@@ -1,8 +1,9 @@
 from typing import List, Dict, Optional
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from salty_tickets.api.registration_process import ProductWaitingListInfo
+from salty_tickets.constants import LEADER, FOLLOWER
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct
@@ -11,24 +12,50 @@ from salty_tickets.tokens import PaymentId, PartnerToken
 
 
 @dataclass
+class SummaryInfo(DataClassJsonMixin):
+    persons_count: int
+    workshops_accepted: int
+    workshops_wait_listed: int
+    total_sales: float
+    amount_paid: float
+    amount_due_later: float
+
+    @classmethod
+    def from_event(cls, event: Event):
+        registrations = []
+        for p_key, p in event.products.items():
+            registrations = registrations + p.registrations
+        registrations = [r for r in registrations if r.active]
+
+        total_sales = sum([r.price for r in registrations if r.price] or [0])
+        amount_paid = sum([r.paid_price for r in registrations if r.paid_price] or [0])
+        return cls(
+            persons_count=len(set([r.person.full_name for r in registrations])),
+            workshops_accepted=len([r for r in registrations if not r.wait_listed]),
+            workshops_wait_listed=len([r for r in registrations if r.wait_listed]),
+            total_sales=total_sales,
+            amount_paid=amount_paid,
+            amount_due_later=total_sales - amount_paid
+        )
+
+
+@dataclass
 class RegistrationInfo(DataClassJsonMixin):
     id: str
     name: str
     email: str
     product: str
+    product_key: str
     price: float
     paid_price: float
     wait_listed: bool
     active: bool
-    payment_id: str
-    payment_token: str
     dance_role: str = None
     partner: str = None
     ptn_token: str = None
 
     @classmethod
-    def from_registration(cls, dao: TicketsDAO, registration: ProductRegistration, event: Event):
-        payment = dao.get_payment_by_registration(registration)
+    def from_registration(cls, registration: ProductRegistration, event: Event):
         if registration.partner:
             partner = registration.partner.full_name
         else:
@@ -38,14 +65,13 @@ class RegistrationInfo(DataClassJsonMixin):
             name=registration.person.full_name,
             email=registration.person.email,
             product=event.products[registration.product_key].name,
+            product_key=registration.product_key,
             price=registration.price,
             paid_price=registration.paid_price,
             wait_listed=registration.wait_listed,
             active=registration.active,
             dance_role=registration.dance_role,
             partner=partner,
-            payment_id=str(payment.id),
-            payment_token=PaymentId().serialize(payment),
             ptn_token=PartnerToken().serialize(registration.person),
         )
 
@@ -60,9 +86,15 @@ class PaymentInfo(DataClassJsonMixin):
     paid_price: float
     status: str
     stripe: Dict
+    partner: str = None
 
     @classmethod
     def from_payment(cls, payment: Payment):
+        regs = [r.partner for r in payment.registrations if r.partner and r.partner!=r.registered_by]
+        if regs:
+            partner = regs[0].full_name
+        else:
+            partner = None
         return cls(
             id=str(payment.id),
             pmt_token=PaymentId().serialize(payment),
@@ -72,6 +104,7 @@ class PaymentInfo(DataClassJsonMixin):
             paid_price=payment.paid_price,
             status=payment.status,
             stripe=payment.stripe,
+            partner=partner,
         )
 
 
@@ -81,6 +114,7 @@ class ProductInfo(DataClassJsonMixin):
     title: str
     start_datetime: str
     end_datetime: str
+    registrations: List[RegistrationInfo]
     time: str = None
     level: str = None
     teachers: str = None
@@ -89,10 +123,21 @@ class ProductInfo(DataClassJsonMixin):
     info: str = None
     waiting_list: Optional[ProductWaitingListInfo] = None
     ratio: float = None
+    leaders: str = None
+    followers: str = None
+    current_ratio: float = None
+    has_wait_list: bool = False
 
     @classmethod
-    def from_workshop(cls, workshop: WorkshopProduct):
+    def from_workshop(cls, event, workshop: WorkshopProduct):
         available = workshop.max_available - workshop.waiting_list.total_accepted
+
+        def _role_stat(role):
+            stat = str(workshop.waiting_list.registration_stats[role].accepted)
+            if workshop.waiting_list.registration_stats[role].waiting:
+                stat = stat + ' + ' + str(workshop.waiting_list.registration_stats[role].waiting)
+            return stat
+
         return cls(
             key=workshop.key,
             title=workshop.name,
@@ -103,11 +148,14 @@ class ProductInfo(DataClassJsonMixin):
             available=available,
             price=workshop.base_price,
             info=workshop.info,
-            waiting_list=ProductWaitingListInfo(**workshop.waiting_list.waiting_stats)
+            waiting_list=ProductWaitingListInfo(**workshop.waiting_list.waiting_stats),
+            registrations=[RegistrationInfo.from_registration(r, event) for r in workshop.registrations],
+            leaders=_role_stat(LEADER),
+            followers=_role_stat(FOLLOWER),
+            current_ratio=workshop.waiting_list.current_ratio,
+            has_wait_list=workshop.waiting_list.has_waiting_list,
+            ratio=workshop.ratio,
         )
-
-
-
 
 
 @dataclass
@@ -116,21 +164,21 @@ class EventInfo(DataClassJsonMixin):
     key: str
     products: List[ProductInfo]
     layout: Dict
-    registrations: List[RegistrationInfo]
     payments: List[PaymentInfo]
+    summary: SummaryInfo
 
     @classmethod
     def from_event(cls, dao: TicketsDAO, event: Event):
-        registrations = dao.query_registrations(event=event)
+        # registrations = dao.query_registrations(event=event)
         payments = dao.get_payments_by_event(event)
         return cls(
             name=event.name,
             key=event.key,
-            products=[ProductInfo.from_workshop(p) for k, p in event.products.items()
+            products=[ProductInfo.from_workshop(event, p) for k, p in event.products.items()
                       if isinstance(p, WorkshopProduct)],
             layout=event.layout,
-            registrations=[RegistrationInfo.from_registration(dao, r, event) for r in registrations],
-            payments=[PaymentInfo.from_payment(p) for p in payments]
+            payments=[PaymentInfo.from_payment(p) for p in payments],
+            summary=SummaryInfo.from_event(event)
         )
 
 

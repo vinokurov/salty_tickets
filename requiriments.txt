@@ -3,6 +3,7 @@ flask-bootstrap
 flask-sqlalchemy
 flask-wtf
 flask-session
+flask-simplelogin
 stripe
 premailer
 hashids

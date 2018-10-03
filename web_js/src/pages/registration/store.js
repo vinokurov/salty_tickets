@@ -51,8 +51,6 @@ if (stripe_field) {
   }
 
   Vue.use(VueStripeCheckout, checkout_base_options);
-  console.log('REGISTERED STRIPE WITH:')
-  console.log(checkout_base_options)
 }
 
 export default new Vuex.Store({
@@ -110,21 +108,17 @@ export default new Vuex.Store({
 
   actions: {
     async initEvent ({context, state}) {
-      // const url = 'http://127.0.0.1:5000/event/salty_breezle'
       const url = '/event/salty_brizzle'
       let response = await axios.get(url)
-      console.log(response.data)
       state.layout = response.data.layout
       state.products = response.data.products
       state.event_name = response.data.name
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
-      // const url = 'http://127.0.0.1:5000/price/salty_breezle'
       const url = '/price/salty_brizzle'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
-        console.log(response.data)
         commit('setPricingResponseDetails', response.data)
         // state['pricing_details'] = response.data
       }
@@ -135,7 +129,6 @@ export default new Vuex.Store({
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
-        console.log(response.data)
         commit('setPricingResponseDetails', response.data)
         // state['pricing_details'] = response.data
       }
@@ -146,7 +139,6 @@ export default new Vuex.Store({
         setTimeout(async () => {
           if (!state.throttled_calls[url].complete){
             if (params == state.throttled_calls[url].params){
-              console.log('QUERY: ' + url)
               let response = await axios.post(url, state.throttled_calls[url].params)
               commit('markThrottledRequestAsComplete', url)
               resolve(response)
@@ -177,24 +169,19 @@ export default new Vuex.Store({
         allowRememberMe: false,
         panelLabel: panelLabel,
         token: async (token) => {
-          console.log('STRIPE RECEIVED')
-          console.log(token)
           const data = {
             stripe_token: token,
             csrf_token: getters.getCSRF,
           }
-          console.log(data)
           const url = '/pay/'
           try {
             let response = await axios.post(url, data)
             commit('setPaymentResponseDetails', response.data)
-            console.log(response)
           } catch(err) {
             commit('setPaymentResponseDetails', {
               success:false,
               error_message: 'Server error while processing payment',
             })
-            console.log(err)
           }
         }
       })
@@ -238,7 +225,6 @@ export default new Vuex.Store({
     getCSRF: (state) => {
       let element = document.getElementById("csrf_token");
       let content = element && element.getAttribute("value");
-      console.log(content);
       return content
     },
   }
