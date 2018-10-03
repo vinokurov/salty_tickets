@@ -62,7 +62,6 @@ class ProductInfo(DataClassJsonMixin):
     @classmethod
     def from_workshop(cls, workshop: WorkshopProduct):
         available = workshop.max_available - workshop.waiting_list.total_accepted
-        print(workshop.waiting_list)
         return cls(
             key=workshop.key,
             title=workshop.name,

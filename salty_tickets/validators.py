@@ -39,7 +39,6 @@ def errors_if_overlapping(registrations: List[ProductRegistration],
     if registrations:
         primary = registrations[0].registered_by
         if primary:
-            print(registrations)
             matching_products = [products[r.product_key] for r in registrations
                                  if tag in products[r.product_key].tags
                                  and r.person == primary]
