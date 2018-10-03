@@ -13,6 +13,13 @@ from salty_tickets.utils.utils import jsonify_dataclass
 
 __author__ = 'vnkrv'
 
+if app.debug:
+    @app.route('/static/dist/<path:path>')
+    def catch_all(path):
+        print('PATH: '+path)
+        import requests
+        return requests.get('http://localhost:8080/{}'.format(path)).text
+
 
 @app.route('/')
 @app.route('/r')
@@ -69,7 +76,6 @@ def check_partner_token():
 
 @app.route('/order/<string:pmt_token>', methods=['GET'])
 def user_order_index(pmt_token):
-    dao = TicketsDAO(MONGO)
     return render_template("user_order.html", pmt_token=pmt_token, stripe_pk=config.STRIPE_PK)
 
 

@@ -6,7 +6,7 @@ from salty_tickets.dao import PaymentDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import ProductRegistration, Payment, PaymentStripeDetails
 from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
-from salty_tickets.tokens import PartnerToken
+from salty_tickets.tokens import PartnerToken, PaymentId
 
 
 @pytest.fixture
@@ -246,7 +246,7 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
     assert 50 == res.json['order_summary']['total_price']
 
 
-def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
+def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
 
     client.post('/checkout', data=sample_data.form_data)
@@ -256,9 +256,10 @@ def test_do_pay_success(mock_stripe, sample_stripe_successful_charge, test_dao, 
 
     res = post_pay(client)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
+    pmt_token = PaymentId().serialize(last_payment)
 
     expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
-                'payment_id': str(last_payment.id), 'complete': True}
+                'pmt_token': pmt_token, 'payment_id': str(last_payment.id), 'complete': True}
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert SUCCESSFUL == payment.status
@@ -290,7 +291,7 @@ def post_payment_status(client, payment_id, stripe_token_id='ch_test', url='/pay
     return res
 
 
-def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_routes, client, sample_data):
+def test_do_pay_failure(mock_send_email, mock_stripe, sample_stripe_card_error, test_dao, app_routes, client, sample_data):
     mock_stripe.Charge.create.side_effect = sample_stripe_card_error
 
     client.post('/checkout', data=sample_data.form_data)
@@ -298,7 +299,7 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
     res = post_pay(client)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    expected = {'success': False, 'error_message': 'Payment failed',
+    expected = {'success': False, 'error_message': 'Payment failed', 'pmt_token': None,
                 'payee_id': None, 'payment_id': str(last_payment.id), 'complete': True}
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
@@ -312,7 +313,7 @@ def test_do_pay_failure(mock_stripe, sample_stripe_card_error, test_dao, app_rou
         assert sess.get('event_key') is not None
 
 
-def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+def test_do_pay_failure_then_success(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
                                      test_dao, app_routes, client, sample_data):
     # first CardError, then success
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
@@ -327,9 +328,10 @@ def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, samp
     assert FAILED == payment.status
 
     res = post_pay(client)
+    pmt_token = PaymentId().serialize(last_payment)
 
     expected = {'success': True, 'error_message': None, 'payee_id': str(last_payment.paid_by.id),
-                'payment_id': str(last_payment.id), 'complete': True}
+                'pmt_token': pmt_token, 'payment_id': str(last_payment.id), 'complete': True}
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
     assert SUCCESSFUL == payment.status
@@ -342,7 +344,7 @@ def test_do_pay_failure_then_success(mock_stripe, sample_stripe_card_error, samp
         assert sess.get('event_key') is None
 
 
-def test_registration_process_balance(mock_stripe, sample_stripe_successful_charge, sample_stripe_customer,
+def test_registration_process_balance(mock_send_email, mock_stripe, sample_stripe_successful_charge, sample_stripe_customer,
                                      test_dao, app_routes, client, sample_data, salty_recipes, person_factory):
 
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
@@ -389,7 +391,7 @@ def test_registration_process_balance(mock_stripe, sample_stripe_successful_char
     assert 25 == first_waiting_follower.paid_price
 
 
-def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
                                test_dao, app_routes, client, sample_data):
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': LEADER}
@@ -412,6 +414,7 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
         'complete': True,
         'error_message': 'Access denied to see payment status',
         'payee_id': None,
+        'pmt_token': None,
         'payment_id': None,
         'success': False
     }
@@ -424,6 +427,7 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
         'complete': True,
         'error_message': 'Payment failed',
         'payee_id': None,
+        'pmt_token': None,
         'payment_id': payment_id,
         'success': False
     }
@@ -437,9 +441,11 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
 
     # now get the succeeded payment details
     res = post_payment_status(client, payment_id, stripe_token_id='ch_test')
+    pmt_token = PaymentId().serialize(payment)
     expected = {
         'complete': True,
         'error_message': None,
+        'pmt_token': pmt_token,
         'payee_id': payee_id,
         'payment_id': payment_id,
         'success': True
@@ -447,7 +453,7 @@ def test_do_get_payment_status(mock_stripe, sample_stripe_card_error, sample_str
     assert expected == res.json
 
 
-def test_do_check_partner_token(salty_recipes, test_dao, app_routes, client):
+def test_do_check_partner_token(mock_send_email, salty_recipes, test_dao, app_routes, client):
     partner = test_dao.get_registrations_for_product('salty_recipes', 'saturday')[0].person
     ptn_token = PartnerToken().serialize(partner)
     post_data = {'partner_token': ptn_token, 'event_key': 'salty_recipes'}
@@ -466,7 +472,7 @@ def test_do_check_partner_token(salty_recipes, test_dao, app_routes, client):
     assert not res.json['success']
 
 
-def test_process_first_payment(mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
                                sample_stripe_customer, person_factory):
     psn = person_factory.pop()
 

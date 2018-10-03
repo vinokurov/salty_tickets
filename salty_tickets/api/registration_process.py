@@ -409,7 +409,7 @@ def balance_event_waiting_lists(dao: TicketsDAO, event: Event):
 
 
 def registration_post_process(dao: TicketsDAO, payment: Payment):
-    """send emails, ballance waiting lists"""
+    """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     send_registration_confirmation(payment, event)
     balance_event_waiting_lists(dao, event)

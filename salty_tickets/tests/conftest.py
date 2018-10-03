@@ -240,6 +240,21 @@ def app_routes(app, test_dao):
     def _check_partner_token():
         return jsonify_dataclass(do_check_partner_token(test_dao))
 
+    @app.route('/user_order', methods=['GET'])
+    def user_order_index():
+        pass
+
+
+@pytest.fixture
+def mock_send_email():
+    with mock.patch('salty_tickets.emails.send_email') as mock_1,\
+         mock.patch('salty_tickets.api.registration_process.send_registration_confirmation') as mock_2,\
+         mock.patch('salty_tickets.api.registration_process.send_waiting_list_accept_email') as mock_3:
+        mock_1.return_value = True
+        mock_2.return_value = True
+        mock_3.return_value = True
+        yield
+
 
 @pytest.fixture
 def mock_stripe():
@@ -346,6 +361,7 @@ class AllVars:
     app: Flask
     client: FlaskClient
     person_factory: PersonFactory
+    mock_send_email: Mock
     mock_stripe: Mock
     sample_stripe_card_error: CardError
     sample_stripe_successful_charge: typing.Dict
@@ -354,7 +370,9 @@ class AllVars:
 
 @pytest.fixture
 def e2e_vars(test_dao, salty_recipes, app, app_routes, client, person_factory,
-             mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge, sample_stripe_customer):
+             mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+             sample_stripe_customer, mock_send_email):
 
-    return AllVars(test_dao, app, client, person_factory,
-                   mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge, sample_stripe_customer)
+    return AllVars(test_dao, app, client, person_factory, mock_send_email,
+                   mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
+                   sample_stripe_customer)

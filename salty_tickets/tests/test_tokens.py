@@ -19,4 +19,5 @@ def test_registration_token(test_dao, salty_recipes):
 
     ptn_token = RegistrationToken()
     assert 'registration_salt' == ptn_token.salt
-    assert 'reg_MQ.tJOtcIErHNyInNaXHYDeRa8Di2A' == ptn_token.serialize(reg.registered_by)
+    reg.registered_by.id = '5bb51f80ab5b8064b088eb27'
+    assert 'reg_IjViYjUxZjgwYWI1YjgwNjRiMDg4ZWIyNyI.9jIB1RMzim6ywafiu2r6CFh-qsU' == ptn_token.serialize(reg.registered_by)

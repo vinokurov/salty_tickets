@@ -11,6 +11,7 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import Payment, PersonInfo, ProductRegistration, PaymentStripeDetails
 from salty_tickets.models.products import BaseProduct
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
+from salty_tickets.utils.utils import timeit
 
 
 @fields_from_dataclass(ProductRegistration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
@@ -156,8 +157,9 @@ class TicketsDAO:
         # from salty_tickets.utils.demo_db import salty_recipes
         # salty_recipes(self)
 
-    def get_event_by_key(self, key, get_registrations=True) -> typing.Optional[Event]:
-        event_doc = EventDocument.objects(key=key).first()
+    @timeit
+    def get_event_by_key(self, event_key, get_registrations=True) -> typing.Optional[Event]:
+        event_doc = self._get_event_doc(event_key)
         if event_doc is None:
             return None
 
@@ -182,6 +184,7 @@ class TicketsDAO:
         event_doc = EventDocument.from_dataclass(event_model)
         event_doc.save()
 
+    @timeit
     def _get_event_doc(self, event) -> EventDocument:
         if isinstance(event, str):
             return EventDocument.objects(key=event).first()
