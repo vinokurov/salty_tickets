@@ -1,5 +1,6 @@
 __pycache__
 salty_tickets/static/events
+salty_tickets/static/dist
 *.zip
 *.bak
 *.egg*
