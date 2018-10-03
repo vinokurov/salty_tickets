@@ -1,7 +1,7 @@
 import pymongo
 
-STRIPE_SK = 'sk_test_NEwiOsRtQbOCgjglKtiJN5R4'
-STRIPE_PK = 'pk_test_JINxJqXoY58hgW37stGd09hK'
+STRIPE_SK = 'sk_test_'
+STRIPE_PK = 'pk_test_'
 
 MODE_TESTING = STRIPE_SK.find('live') is -1 and STRIPE_PK.find('live') is -1
 
