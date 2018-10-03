@@ -8,7 +8,7 @@
            <div class="jumbotron text-center">
 
              <!--Title-->
-             <h1 class="card-title h2-responsive mt-2"><strong>Salty Breezle ☆ Shag Weekend</strong></h1>
+             <h1 class="card-title h2-responsive mt-2"><strong>Salty Brizzle ☆ Shag Weekend</strong></h1>
              <!--Subtitle-->
              <p class="blue-text mb-4 font-bold">17-18 November, 2018</p>
            </div>

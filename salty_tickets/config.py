@@ -16,7 +16,11 @@ SALT_ORDER = ''
 SALT_GROUP_TOKEN = ''
 SALT_PARTNER_TOKEN = ''
 SALT_REGISTRATION_TOKEN = ''
-EMAIL_FROM = ''
+
+MAILGUN_KEY = 'key-f2f231b6c20ab438aedd7a2f3b919e84'
+
+EMAIL_FROM = 'Salty Jitterbugs <registration@saltyjitterbugs.co.uk>'
+EMAIL_DEBUG = 'info@saltyjitterbugs.co.uk'
 
 MONGO = 'mongodb://localhost/salty_tickets'
 

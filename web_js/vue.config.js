@@ -1,7 +1,7 @@
 'use strict'
 // const titles = require('./title.js')
 const glob = require('glob')
-const pages = {}
+const pages = {} 
 
 glob.sync('./src/pages/**/app.js').forEach(path => {
   const chunk = path.split('./src/pages/')[1].split('/app.js')[0]

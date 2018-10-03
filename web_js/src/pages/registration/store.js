@@ -111,7 +111,7 @@ export default new Vuex.Store({
   actions: {
     async initEvent ({context, state}) {
       // const url = 'http://127.0.0.1:5000/event/salty_breezle'
-      const url = '/event/salty_breezle'
+      const url = '/event/salty_brizzle'
       let response = await axios.get(url)
       console.log(response.data)
       state.layout = response.data.layout
@@ -120,7 +120,7 @@ export default new Vuex.Store({
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
-      const url = '/price/salty_breezle'
+      const url = '/price/salty_brizzle'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
@@ -131,7 +131,7 @@ export default new Vuex.Store({
     },
     async requestCheckout({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
-      const url = '/checkout/salty_breezle'
+      const url = '/checkout/salty_brizzle'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {

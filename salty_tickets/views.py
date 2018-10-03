@@ -32,13 +32,21 @@ __author__ = 'vnkrv'
 import requests
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def catch_all(path):
-    if app.debug:
-        print('PATH: '+path)
-        return requests.get('http://localhost:8080/{}'.format(path)).text
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path:path>')
+# def catch_all(path):
+#     if app.debug:
+#         print('PATH: '+path)
+#         return requests.get('http://localhost:8080/{}'.format(path)).text
 
+
+# from flask import send_from_directory
+#
+#
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path:path>')
+# def serve(path):
+#     return send_from_directory('static', path)
 
 @app.route('/r')
 @app.route('/register')
@@ -50,7 +58,7 @@ def register_index():
 @app.route('/register/<string:event_key>', methods=['GET'])
 def event_index(event_key):
     dao = TicketsDAO(MONGO)
-    event = dao.get_event_by_key(event_key, get_registrations=True)
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     form = create_event_form(event)()
     return render_template("event.html", event=event, form=form, stripe_pk=config.STRIPE_PK)
 

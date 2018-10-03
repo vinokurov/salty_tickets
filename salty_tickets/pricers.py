@@ -82,7 +82,6 @@ class CombinationsPriceRule(BasePriceRule):
                     return self.count_prices[str(count)] / count
 
 
-
 PRICING_RULES = {
     'special_price_if_more_than': SpecialPriceIfMoreThanPriceRule,
     'combination': CombinationsPriceRule,
