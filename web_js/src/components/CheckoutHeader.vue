@@ -56,14 +56,15 @@
             </b-list-group-item>
 
           </b-list-group>
-          <b-card v-if="has_waiting" bg-variant="warning" class="mb-4 my-4">
-            <b-form-group label="Some of the items are on the waiting list. You have the following options:">
+          <b-alert show  v-if="has_waiting" variant="warning" class="mb-4 my-4">
+            <p><font-awesome icon="exclamation-triangle"/> Some of the items are on the waiting list. You have the following options:</p>
+            <b-form-group label="">
               <b-form-radio-group v-model="pay_all" @input="requestCheckout" stacked>
                 <b-form-radio value="y">Pay 100% in advance now (can be refunded on request)</b-form-radio>
                 <b-form-radio value="">Let us process payment automatically when the place is available</b-form-radio>
               </b-form-radio-group>
             </b-form-group>
-          </b-card>
+          </b-alert>
           <button class="btn btn-success my-4" @click="hideModal();stripeCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
           </button>
