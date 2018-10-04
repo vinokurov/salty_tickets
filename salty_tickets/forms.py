@@ -78,22 +78,32 @@ def create_event_form(event):
     return EventForm
 
 
-def get_primary_personal_info_from_form(form):
-    return PersonInfo(
-        full_name=form.name.data,
-        email=form.email.data,
-        comment=form.comment.data,
-        location=form.location.data or None,
-    )
+def get_primary_personal_info_from_form(form) -> PersonInfo:
+    if hasattr(form, 'primary_person_info'):
+        return form.primary_person_info
+    else:
+        person = PersonInfo(
+            full_name=form.name.data,
+            email=form.email.data,
+            comment=form.comment.data,
+            location=form.location.data or None,
+        )
+        form.primary_person_info = person
+        return person
 
 
-def get_partner_personal_info_from_form(form):
-    return PersonInfo(
-        full_name=form.partner_name.data,
-        email=form.partner_email.data,
-        comment=form.comment.data,
-        location=form.partner_location.data or None,
-    )
+def get_partner_personal_info_from_form(form) -> PersonInfo:
+    if hasattr(form, 'partner_person_info'):
+        return form.partner_person_info
+    else:
+        person = PersonInfo(
+            full_name=form.partner_name.data,
+            email=form.partner_email.data,
+            comment=form.comment.data,
+            location=form.partner_location.data or None,
+        )
+        form.partner_person_info = person
+        return person
 
 
 class OrderProductCancelForm(FlaskForm):

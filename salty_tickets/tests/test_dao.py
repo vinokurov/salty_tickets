@@ -88,8 +88,8 @@ def test_add_registration(test_dao, salty_recipes):
 
 
 def test_add_multiple_registrations(test_dao, salty_recipes):
-    mr_x = PersonInfo(full_name='Mr X', email='mr.x@my.com')
-    ms_y = PersonInfo(full_name='Ms Y', email='ms.y@my.com')
+    mr_x = PersonInfo(full_name='Mr X-123', email='mr.x@my.com')
+    ms_y = PersonInfo(full_name='Ms Y-123', email='ms.y@my.com')
     event = test_dao.get_event_by_key('salty_recipes', False)
 
     registrations = [
@@ -105,6 +105,9 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
     ]
     for r in registrations:
         test_dao.add_registration(r, event=event)
+
+    assert 1 == RegistrationDocument.objects(full_name=mr_x.full_name).count()
+    assert 1 == RegistrationDocument.objects(full_name=ms_y.full_name).count()
 
     assert registrations[0].id
     registration_doc = ProductRegistrationDocument.objects(id=registrations[0].id).first()
@@ -189,6 +192,10 @@ def test_add_retrieve_payments_auto_regester(test_dao, salty_recipes):
                       date=datetime(2018, 9, 3, 17, 0))
 
     test_dao.add_payment(payment, event, register=True)
+
+    assert 1 == RegistrationDocument.objects(full_name=mr_x.full_name).count()
+    assert 1 == RegistrationDocument.objects(full_name=ms_y.full_name).count()
+
     assert payment.id
     doc = PaymentDocument.objects(id=payment.id).first()
 
@@ -310,5 +317,3 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
 
     assert stripe_details == PaymentDocument.objects(id=payment.id).first().stripe.to_dataclass()
     assert stripe_details == test_dao.get_payment_by_id(payment.id).stripe
-
-

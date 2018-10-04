@@ -41,15 +41,18 @@ def test_create_event_form(app):
 
 
 def test_get_primary_personal_info_from_form():
-    form = MagicMock()
+    form = MagicMock(spec=DanceSignupForm)
     form.name.data = 'My Name'
     form.email.data = 'email@email.com'
     form.comment.data = 'My comment'
 
-    info = get_primary_personal_info_from_form(form)
-    assert info.full_name == 'My Name'
-    assert info.email == 'email@email.com'
-    assert info.comment == 'My comment'
+    person = get_primary_personal_info_from_form(form)
+    assert person.full_name == 'My Name'
+    assert person.email == 'email@email.com'
+    assert person.comment == 'My comment'
+
+    person1 = get_primary_personal_info_from_form(form)
+    assert person is person1
 
 
 def test_need_partner_check():

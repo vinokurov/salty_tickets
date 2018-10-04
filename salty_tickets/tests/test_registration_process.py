@@ -3,7 +3,7 @@ import pickle
 
 import pytest
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
-from salty_tickets.dao import PaymentDocument
+from salty_tickets.dao import PaymentDocument, RegistrationDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import ProductRegistration, Payment, PaymentStripeDetails
 from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
@@ -284,6 +284,7 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
 
 def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    assert 0 == RegistrationDocument.objects(full_name=sample_data.form_data['name']).count()
 
     res = post_json_data(client, '/checkout', data=sample_data.form_data)
     with client.session_transaction() as sess:
@@ -308,6 +309,9 @@ def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_c
     with client.session_transaction() as sess:
         assert sess.get('payment') is None
         assert sess.get('event_key') is None
+
+    # make sure that person is added only once
+    assert 1 == RegistrationDocument.objects(full_name=sample_data.form_data['name']).count()
 
     # try do_pay on the same payment, make sure we receive an error
     res = post_pay(client)

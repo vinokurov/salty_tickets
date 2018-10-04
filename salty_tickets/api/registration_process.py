@@ -256,7 +256,7 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
 def get_extra_registrations_from_partner_token(dao: TicketsDAO, event: Event, form):
     if form.partner_token.data:
         partner = PartnerToken().deserialize(dao, form.partner_token.data)
-        return dao.query_registrations(event.key, partner)
+        return dao.query_registrations(event, partner)
 
 
 def do_price(dao: TicketsDAO, event_key: str):
