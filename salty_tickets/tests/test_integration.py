@@ -34,7 +34,7 @@ def price_checkout_pay(dao: TicketsDAO, client, form_data, assert_pay_success=Tr
 
     payment_id = res.json['payment_id']
 
-    return dao.get_payment_by_id(payment_id)
+    return dao.get_payment_by_id(payment_id) if payment_id else None
 
 
 def test_e2e_leader_accepted(e2e_vars):
@@ -291,7 +291,7 @@ def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
     assert {'saturday': FOLLOWER} == token_res.json['roles']
     form_data['partner_token'] = ptn_token
 
-    # check leader is registered ok
+    # check leader yayment is saved with success=FALSE
     leader_payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data, assert_pay_success=False)
     assert FAILED == leader_payment.status
     assert not leader_payment.registrations[0].active

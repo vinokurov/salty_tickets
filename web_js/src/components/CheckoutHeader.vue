@@ -78,8 +78,9 @@
               body-bg-variant="danger"
               body-text-variant='light'>
       <div class="d-block">
-        An error has occured during processing your payment. The money haven't been transfered.<br/>
-        {{payment_response.error_message}}
+        <p>An error has occured during processing your payment.</p>
+        <p v-if="payment_response.complete && !payment_response.success">The money haven't been transfered.</p>
+        <p>{{payment_response.error_message}}</p>
       </div>
     </b-modal>
 

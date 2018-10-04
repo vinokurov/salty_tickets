@@ -302,47 +302,66 @@ def do_checkout(dao: TicketsDAO, event_key: str):
 
 def do_pay(dao: TicketsDAO):
     form = StripeCheckoutForm()
-    if form.validate_on_submit():
-        payment_pickle = session.get('payment')
-        payment = pickle.loads(payment_pickle) if payment_pickle else None
-        event_key = session.get('event_key')
-        if payment and event_key:
-            if payment is None or payment.status not in [NEW, FAILED]:
-                return PaymentResult(success=False, error_message='Invalid payment id')
+    valid = form.validate_on_submit()
+    if not valid:
+        error_message = 'API error. Please check your registration details.'
+        return PaymentResult(success=False, complete=True, error_message=error_message)
 
-            event = dao.get_event_by_key(event_key)
-            payment.description = event.name
-            stripe_token_id = form.stripe_token.data.get('id')
-            payment.stripe = PaymentStripeDetails(token_id=stripe_token_id)
+    payment_pickle = session.get('payment', None)
+    if not payment_pickle:
+        error_message = 'Payment information has expired. Please try again.'
+        return PaymentResult(success=False, complete=True, error_message=error_message)
 
-            if hasattr(payment, 'id') and payment.id:
-                dao.update_payment(payment)
-            else:
-                dao.add_payment(payment, event, register=True)
+    payment = pickle.loads(payment_pickle)
 
-            success = process_first_payment(payment)
-            dao.update_payment(payment)
-            session['payment'] = pickle.dumps(payment)
+    event_key = session.get('event_key', None)
+    if not event_key:
+        error_message = 'API error. Please check your registration details.'
+        return PaymentResult(success=False, complete=True, error_message=error_message)
 
-            if success:
-                session.pop('payment')
-                session.pop('event_key')
-                for reg in payment.registrations:
-                    reg.active = True
-                    dao.update_registration(reg)
+    if payment is None or payment.status not in [NEW, FAILED]:
+        error_message = 'Payment information has expired. Please try again.'
+        return PaymentResult(success=False, error_message=error_message)
 
-                # TODO: make it nicer - with emails, etc.
-                if payment.extra_registrations:
-                    for reg in payment.registrations:
-                        for extra_reg in payment.extra_registrations:
-                            if extra_reg.active and (reg.product_key == extra_reg.product_key):
-                                take_existing_registration_off_waiting_list(dao, extra_reg, reg.registered_by)
+    event = dao.get_event_by_key(event_key)
+    payment.description = event.name
+    stripe_token_id = form.stripe_token.data.get('id')
+    payment.stripe = PaymentStripeDetails(token_id=stripe_token_id)
 
-                registration_post_process(dao, payment)
+    if hasattr(payment, 'id') and payment.id:
+        dao.update_payment(payment)
+    else:
+        dao.add_payment(payment, event, register=True)
 
-            return PaymentResult.from_paid_payment(payment)
+    success = process_first_payment(payment)
+    dao.update_payment(payment)
+    session['payment'] = pickle.dumps(payment)
 
-    return PaymentResult(success=False, error_message='Invalid payment id')
+    if not success:
+        error_message = 'Payment has been declined by the provider.'
+        try:
+            error_message = error_message + ' ' + payment.stripe.error_response['error']['message']
+        except Exception as err:
+            pass
+        return PaymentResult(success=False, complete=True,
+                             error_message=error_message, payment_id=str(payment.id))
+
+    session.pop('payment')
+    session.pop('event_key')
+    for reg in payment.registrations:
+        reg.active = True
+        dao.update_registration(reg)
+
+    # TODO: make it nicer - with emails, etc.
+    if payment.extra_registrations:
+        for reg in payment.registrations:
+            for extra_reg in payment.extra_registrations:
+                if extra_reg.active and (reg.product_key == extra_reg.product_key):
+                    take_existing_registration_off_waiting_list(dao, extra_reg, reg.registered_by)
+
+    registration_post_process(dao, payment)
+
+    return PaymentResult.from_paid_payment(payment)
 
 
 def process_first_payment(payment):

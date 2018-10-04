@@ -339,7 +339,7 @@ def test_do_pay_failure(mock_send_email, mock_stripe, sample_stripe_card_error, 
     res = post_pay(client)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
 
-    expected = {'success': False, 'error_message': 'Payment failed', 'pmt_token': None,
+    expected = {'success': False, 'error_message': 'Payment has been declined by the provider.', 'pmt_token': None,
                 'payee_id': None, 'payment_id': str(last_payment.id), 'complete': True}
     assert expected == res.json
     payment = test_dao.get_payment_by_id(str(last_payment.id))
