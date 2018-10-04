@@ -1,16 +1,28 @@
 from flask_wtf import FlaskForm
 from salty_tickets.constants import LEADER, FOLLOWER
 from salty_tickets.models.registrations import PersonInfo
-from wtforms.fields import StringField, SubmitField, SelectField, BooleanField, FormField, HiddenField, TextAreaField, RadioField
+from wtforms.fields import Field, StringField, SubmitField, SelectField, BooleanField, FormField, HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError
+
+
+class RawField(Field):
+    """
+    Fictional field that retrieves any raw data
+    """
+    def process_formdata(self, valuelist):
+        if valuelist:
+            self.data = valuelist[0]
+
+    def _value(self):
+        return self.data
 
 
 class SignupForm(FlaskForm):
     stripe_token = HiddenField()
     name = StringField(u'Your name', validators=[DataRequired()])
     email = StringField(u'Email', validators=[Email(), DataRequired()])
+    location = RawField(u'Location')
     comment = TextAreaField('Comment')
-    # submit = SubmitField(u'Signup')
 
 
 class StripeCheckoutForm(FlaskForm):
@@ -38,19 +50,12 @@ def need_partner_check(event, event_form, form_field):
 
 
 class DanceSignupForm(FormWithProducts, SignupForm):
-    location_query = StringField('Location')
-    country = StringField('Country')
-    state = StringField('State')
-    city = StringField('City')
     dance_role = SelectField('Your Dance Role in Couple',
                              choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower'), ('', 'None')],
                              default='')
     partner_name = StringField(u'Partner\'s name')
     partner_email = StringField(u'Partner\'s email')
-    partner_location_query = StringField('Partner\'s Location')
-    partner_country = StringField('Partner\'s Country')
-    partner_state = StringField('Partner\'s State')
-    partner_city = StringField('Partner\'s City')
+    partner_location = RawField('Partner Location')
     registration_token = StringField('Registration Code')
     partner_token = StringField('Registration Code')
     pay_all = BooleanField(default="checked")
@@ -73,40 +78,12 @@ def create_event_form(event):
     return EventForm
 
 
-def get_registration_from_form(form):
-    from salty_tickets.to_delete.sql_models import Registration
-    assert isinstance(form, SignupForm)
-    registration_model = Registration(
-        name=form.name.data,
-        email=form.email.data,
-        comment=form.comment.data,
-        country=form.country.data,
-        state=form.state.data,
-        city=form.city.data
-    )
-    return registration_model
-
-
-def get_partner_registration_from_form(form):
-    from salty_tickets.to_delete.sql_models import Registration
-    assert isinstance(form, SignupForm)
-    registration_model = Registration(
-        name=form.partner_name.data,
-        email=form.partner_email.data,
-        comment=form.comment.data,
-        country=form.partner_country.data,
-        state=form.partner_state.data,
-        city=form.partner_city.data
-    )
-    return registration_model
-
-
 def get_primary_personal_info_from_form(form):
     return PersonInfo(
         full_name=form.name.data,
         email=form.email.data,
         comment=form.comment.data,
-        # location=form.location,
+        location=form.location.data or None,
     )
 
 
@@ -115,7 +92,7 @@ def get_partner_personal_info_from_form(form):
         full_name=form.partner_name.data,
         email=form.partner_email.data,
         comment=form.comment.data,
-        # location=form.partner_location,
+        location=form.partner_location.data or None,
     )
 
 

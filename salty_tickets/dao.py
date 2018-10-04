@@ -6,7 +6,7 @@ import dataclasses
 from bson import ObjectId
 from mongoengine import fields, connect
 from salty_tickets import models
-from salty_tickets.constants import FOLLOWER, LEADER, REGISTRATION_STATUSES, NEW
+from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import Payment, PersonInfo, ProductRegistration, PaymentStripeDetails
 from salty_tickets.models.products import BaseProduct
@@ -157,7 +157,6 @@ class TicketsDAO:
         # from salty_tickets.utils.demo_db import salty_recipes
         # salty_recipes(self)
 
-    @timeit
     def get_event_by_key(self, event_key, get_registrations=True) -> typing.Optional[Event]:
         event_doc = self._get_event_doc(event_key)
         if event_doc is None:
@@ -184,7 +183,6 @@ class TicketsDAO:
         event_doc = EventDocument.from_dataclass(event_model)
         event_doc.save()
 
-    @timeit
     def _get_event_doc(self, event) -> EventDocument:
         if isinstance(event, str):
             return EventDocument.objects(key=event).first()

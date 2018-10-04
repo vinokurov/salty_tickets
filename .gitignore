@@ -9,3 +9,4 @@ web_js/node_modules
 web_js/public
 web_js/package-lock.json
 salty_tickets/config.py
+config.py

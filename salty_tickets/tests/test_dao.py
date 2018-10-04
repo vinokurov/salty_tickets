@@ -55,7 +55,8 @@ def test_dao_get_registrations_for_product(test_dao, salty_recipes):
 
 def test_add_person(test_dao, salty_recipes):
     event = test_dao.get_event_by_key('salty_recipes', False)
-    person = PersonInfo(full_name='Mr X', email='mr.x@email.com')
+    person = PersonInfo(full_name='Mr X', email='mr.x@email.com',
+                        location={'country': 'UK', 'city': 'London'})
     test_dao.add_person(person, event=event)
 
     assert person.id is not None
@@ -63,6 +64,7 @@ def test_add_person(test_dao, salty_recipes):
     assert person.full_name == person_doc.full_name
     assert person.email == person_doc.email
     assert person_doc.event.name == salty_recipes.name
+    assert {'country': 'UK', 'city': 'London'} == person_doc.location
 
 
 def test_add_registration(test_dao, salty_recipes):
@@ -204,6 +206,7 @@ def test_dao_update_doc(test_dao, salty_recipes):
 
     person_1 = RegistrationDocument.objects(full_name='Yi Damon').first().to_dataclass()
     assert person == person_1
+    assert {'country': 'UK', 'city': 'London'} == person_1.location
 
 
 def test_update_statuses(test_dao, salty_recipes):
