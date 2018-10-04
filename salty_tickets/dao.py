@@ -177,7 +177,7 @@ class TicketsDAO:
             'event': event.id,
         }
 
-        items = ProductRegistrationDocument.objects(**filters).all()
+        items = ProductRegistrationDocument.objects(**filters).select_related(3)
         return [r.to_dataclass() for r in items]
 
     def create_event(self, event_model):
@@ -270,7 +270,7 @@ class TicketsDAO:
 
     def get_payments_by_person(self, event: Event, person: PersonInfo) -> List[Payment]:
         person_doc = self._get_doc(RegistrationDocument, person)
-        payment_docs = PaymentDocument.objects(event=event.id, paid_by=person_doc).all()
+        payment_docs = PaymentDocument.objects(event=event.id, paid_by=person_doc).select_related(3)
         return [p.to_dataclass() for p in payment_docs]
 
     def get_payment_by_registration(self, registration):
@@ -291,7 +291,7 @@ class TicketsDAO:
         if product is not None:
             filters['product_key'] = self._get_product_key(product)
 
-        return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).all()]
+        return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).select_related(3)]
 
     def _update_doc(self, doc_class, model, **kwargs):
         saved_model_doc = self._get_doc(doc_class, model)
@@ -361,7 +361,7 @@ class TicketsDAO:
             return doc.to_dataclass()
 
     def get_payments_by_event(self, event: Event) -> List[Payment]:
-        docs = PaymentDocument.objects(event=event.id).all()
+        docs = PaymentDocument.objects(event=event.id).select_related(3)
         if docs:
             return [d.to_dataclass() for d in docs]
 
