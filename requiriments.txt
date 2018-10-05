@@ -10,3 +10,4 @@ hashids
 PyMySQL
 pytest
 mock
+scipy

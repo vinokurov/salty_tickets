@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass, field
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
 from salty_tickets.models.registrations import PersonInfo, ProductRegistration
-from salty_tickets.waiting_lists import AutoBalanceWaitingList, RegistrationStats, flip_role
+from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role, ProbabilityWaitingList
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField
 from wtforms.validators import Optional
@@ -105,10 +105,12 @@ class PartnerProduct(BaseProduct):
 class WaitListedPartnerProduct(PartnerProduct):
     ratio: float = 100
     allow_first: int = None
+    expected_leads: int = None
+    expected_follows: int = None
 
     @property
-    def waiting_list(self) -> AutoBalanceWaitingList:
-        return AutoBalanceWaitingList(
+    def waiting_list(self) -> SimpleWaitingList:
+        return SimpleWaitingList(
             max_available=self.max_available,
             ratio=self.ratio,
             registration_stats={
@@ -117,6 +119,8 @@ class WaitListedPartnerProduct(PartnerProduct):
                 COUPLE: self._get_registration_stats_for_role(COUPLE),
             },
             allow_first=self.allow_first,
+            expected_leads=self.expected_leads,
+            expected_follows=self.expected_follows,
         )
 
     def _get_registration_stats_for_role(self, option):

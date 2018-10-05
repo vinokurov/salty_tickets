@@ -1,7 +1,9 @@
+import math
 from typing import Dict, Optional
 
 from dataclasses import dataclass, field
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
+from scipy.stats import binom
 
 
 @dataclass
@@ -22,23 +24,49 @@ def flip_role(role):
         }[role]
 
 
+def waiting_probability(max_available, ratio, this, other, p_other):
+    if this + other >= max_available:
+        return 0
+
+    if other and (this + 1) / other <= ratio:
+        return 1
+
+    k = math.ceil(this / ratio) - other
+    n = max_available - this - other
+    p = 1 - binom.cdf(k, n, p_other)
+    return p
+
+
 @dataclass
-class AutoBalanceWaitingList:
+class BaseWaitingList:
+    """
+    Base class for waiting lists.
+    Need to override methods: can_add() and waiting_list_for_option()
+    """
     max_available: int
     ratio: float
-    allow_first: int = None
     registration_stats: Dict[str, RegistrationStats] = field(default_factory=dict)
+    expected_leads: int = None
+    expected_follows: int = None
 
     def __post_init__(self):
-        if self.allow_first is None:
-            self.allow_first = self.max_available
-
         for o in [LEADER, FOLLOWER, COUPLE]:
             if o not in self.registration_stats:
                 self.registration_stats[o] = RegistrationStats()
 
+        if self.expected_leads is None:
+            self.expected_leads = int(self.max_available/2)
+
+        if self.expected_follows is None:
+            self.expected_follows = int(self.max_available/2)
+
+        self._p = {
+            LEADER: self.expected_leads / self.max_available,
+            FOLLOWER: self.expected_follows / self.max_available
+        }
+
     @property
-    def waiting_stats(self) -> Dict[str, RegistrationStats]:
+    def waiting_stats(self) -> dict:
         return {o: self.waiting_list_for_option(o) for o in [LEADER, FOLLOWER, COUPLE]}
 
     @property
@@ -67,35 +95,102 @@ class AutoBalanceWaitingList:
             return self.can_add(option, consider_waiting_list=False) \
                    and self.registration_stats[option].waiting > 0
 
+    def probability_for_option(self, option) -> float:
+        if option == COUPLE:
+            if self.total_accepted + 2 <= self.max_available:
+                return 1
+            else:
+                return 0
+
+        other_role = flip_role(option)
+        this_role_accepted = self.registration_stats[option].accepted
+        this_role_waiting = self.registration_stats[option].waiting
+        other_role_accepted = self.registration_stats[other_role].accepted
+        total_accepted = self.total_accepted
+
+        if total_accepted + 1 > self.max_available:
+            return False
+
+        return waiting_probability(
+            self.max_available,
+            self.ratio,
+            this_role_accepted + this_role_waiting + 1,
+            other_role_accepted,
+            self._p[other_role]
+        )
+
+    def can_add(self, option, consider_waiting_list=True) -> bool:
+        raise NotImplementedError()
+
+    def waiting_list_for_option(self, option) -> Optional[int]:
+        raise NotImplementedError()
+
+
+@dataclass
+class SimpleWaitingList(BaseWaitingList):
+    """
+    Limits registrations by checking if current ratio violation.
+    In order to pass the beginning turbulence, use allow_first option
+    """
+    allow_first: int = None
+
+    def __post_init__(self):
+        super(SimpleWaitingList, self).__post_init__()
+        if self.allow_first is None:
+            self.allow_first = self.max_available
+
     def can_add(self, option, consider_waiting_list=True) -> bool:
         if consider_waiting_list and self.registration_stats[option].waiting:
             return False
 
         if option == COUPLE:
             return self.total_accepted + 2 <= self.max_available
-        else:
-            other_role = flip_role(option)
-            this_role_accepted = self.registration_stats[option].accepted
-            other_role_accepted = self.registration_stats[other_role].accepted
-            other_role_total = self.registration_stats[other_role].total
-            total_accepted = self.total_accepted
 
-            if total_accepted + 1 <= self.max_available:
-                if total_accepted < self.allow_first:
-                    return True
-                elif other_role_accepted == 0 and total_accepted >= self.allow_first:
-                    return False
-                elif (this_role_accepted + 1) / other_role_total <= self.ratio:
-                    return True
+        other_role = flip_role(option)
+        this_role_accepted = self.registration_stats[option].accepted
+        other_role_accepted = self.registration_stats[other_role].accepted
+        other_role_total = self.registration_stats[other_role].total
+        total_accepted = self.total_accepted
 
+        if total_accepted + 1 > self.max_available:
             return False
 
-    def waiting_list_for_option(self, option) -> Optional[int]:
+        if total_accepted < self.allow_first:
+            return True
+        elif other_role_accepted == 0 and total_accepted >= self.allow_first:
+            return False
+        elif (this_role_accepted + 1) / other_role_total <= self.ratio:
+            return True
+        else:
+            return False
+
+    def waiting_list_for_option(self, option) -> Optional[float]:
         already_waiting = self.registration_stats[option].waiting
         if already_waiting:
-            return already_waiting
+            return self.probability_for_option(option)
+
+        if self.can_add(option):
+            return None
         else:
-            if self.can_add(option):
-                return None
-            else:
-                return 0
+            return self.probability_for_option(option)
+
+
+@dataclass
+class ProbabilityWaitingList(BaseWaitingList):
+    """
+    Limits registrations by checking if probability of violating ratio.
+    Gives a probability to get off the waiting list.
+    """
+    probability_threshold: float = 0.96
+
+    def can_add(self, option, consider_waiting_list=True) -> bool:
+        if consider_waiting_list and self.registration_stats[option].waiting:
+            return False
+
+        probability = self.probability_for_option(option)
+        return probability >= self.probability_threshold
+
+    def waiting_list_for_option(self, option) -> Optional[float]:
+        probability = self.probability_for_option(option)
+        if probability < self.probability_threshold:
+            return probability

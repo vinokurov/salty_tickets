@@ -7,7 +7,7 @@ from salty_tickets.api.admin import do_get_event_stats
 from salty_tickets.config import MONGO
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
-    do_check_partner_token, EventInfo
+    do_check_partner_token, EventInfo, balance_event_waiting_lists
 from salty_tickets.api.user_order import do_get_user_order_info
 from salty_tickets.utils.utils import jsonify_dataclass
 
@@ -102,4 +102,9 @@ def admin_event_info(event_key):
     return jsonify_dataclass(do_get_event_stats(dao, event_key))
 
 
-
+@app.route('/admin/balance_event/<string:event_key>', methods=['GET'])
+@login_required
+def admin_balance_event(event_key):
+    dao = TicketsDAO(MONGO)
+    balance_event_waiting_lists(dao, event_key)
+    return ''

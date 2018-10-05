@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from flask import session
 from salty_tickets import config
-from salty_tickets.constants import NEW, SUCCESSFUL, FAILED
+from salty_tickets.constants import NEW, SUCCESSFUL, FAILED, LEADER, FOLLOWER, COUPLE
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
@@ -62,6 +62,7 @@ class ProductInfo(DataClassJsonMixin):
     @classmethod
     def from_workshop(cls, workshop: WorkshopProduct):
         available = workshop.max_available - workshop.waiting_list.total_accepted
+        waiting_stats = workshop.waiting_list.waiting_stats
         return cls(
             key=workshop.key,
             title=workshop.name,
@@ -72,7 +73,11 @@ class ProductInfo(DataClassJsonMixin):
             available=available,
             price=workshop.base_price,
             info=workshop.info,
-            waiting_list=ProductWaitingListInfo(**workshop.waiting_list.waiting_stats)
+            waiting_list=ProductWaitingListInfo(
+                leader=int(waiting_stats[LEADER] * 100) if waiting_stats[LEADER] is not None else None,
+                follower=int(waiting_stats[FOLLOWER] * 100) if waiting_stats[FOLLOWER] is not None else None,
+                couple=int(waiting_stats[COUPLE] * 100) if waiting_stats[COUPLE] is not None else None,
+            )
         )
 
 
@@ -418,9 +423,11 @@ def do_get_payment_status(dao: TicketsDAO):
     return PaymentResult(success=False, error_message='Access denied to see payment status')
 
 
-def balance_event_waiting_lists(dao: TicketsDAO, event: Event):
+def balance_event_waiting_lists(dao: TicketsDAO, event_key: str):
     balanced_registrations = []
-    event = dao.get_event_by_key(event.key)
+
+    # it is a good idea to refresh event object
+    event = dao.get_event_by_key(event_key)
     for product_key, product in event.products.items():
         if isinstance(product, WaitListedPartnerProduct):
             if product.waiting_list.has_waiting_list:
@@ -433,7 +440,7 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     send_registration_confirmation(payment, event)
-    balance_event_waiting_lists(dao, event)
+    balance_event_waiting_lists(dao, event.key)
 
 
 def do_check_partner_token(dao: TicketsDAO):
