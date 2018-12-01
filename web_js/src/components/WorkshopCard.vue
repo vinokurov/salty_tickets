@@ -15,6 +15,14 @@
                   v-if="!soldOut"
                   />
         </div>
+        <b-alert v-if="this.product.waiting_list.leader" show variant="warning">
+          <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.
+          Chances to get accepted: {{this.product.waiting_list.leader}}%.
+        </b-alert>
+        <b-alert v-if="this.product.waiting_list.follower" show variant="warning">
+          <font-awesome icon="exclamation-triangle"/> Waiting list for followers.
+          Chances to get accepted: {{this.product.waiting_list.follower}}%.
+        </b-alert>
         <div class="card-footer">
             <p style="margin:0" v-if="time">
               <small class="text-muted"><font-awesome icon="clock-o"/> {{time}}</small>
@@ -138,12 +146,15 @@ export default {
 
       if (this.product.waiting_list.leader != null) {
         buttons[0].variant = 'warning'
+        buttons[0].chances = this.product.waiting_list.leader
       }
       if (this.product.waiting_list.follower != null) {
         buttons[1].variant = 'warning'
+        buttons[1].chances = this.product.waiting_list.follower
       }
       if (this.product.waiting_list.couple != null) {
         buttons[2].variant = 'warning'
+        buttons[2].chances = this.product.waiting_list.couple
       }
 
       // partner mode: single, couple or none

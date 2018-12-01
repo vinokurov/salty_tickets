@@ -7,7 +7,8 @@
                 :pressed="btn.state"
                 v-model="btn.state"
                 @input="toggle(btn.value, btn.state)"
-      >{{ btn.caption }}</toggle-button>
+      >{{ btn.caption }}
+    </toggle-button>
     <!-- </b-button-group> -->
     <input type="hidden" :name="name" :value="button_value" v-if="button_value">
   </div>
