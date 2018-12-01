@@ -1,6 +1,8 @@
+from datetime import date
+
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, BaseWaitingList, ProbabilityWaitingList, \
-    waiting_probability
+    waiting_probability, poisson_rate, waiting_probability_poisson
 
 
 def test_simple_waiting_list():
@@ -267,3 +269,56 @@ def test_probability_waiting_list__scenario1():
     p4 = waiting_list.probability_for_option(FOLLOWER)
     assert p4 > p3
 
+
+def test_poisson_rate():
+    assert 10 == poisson_rate(date(2018, 1, 1), date(2018, 1, 31), date(2018, 1, 1), 10)
+    assert 5 == poisson_rate(date(2018, 1, 1), date(2018, 1, 30), date(2018, 1, 16), 10)
+    assert 1/3.0 == poisson_rate(date(2018, 1, 1), date(2018, 1, 30), date(2018, 1, 30), 10)
+
+
+def test_waiting_probability_poisson():
+    # almost no registrations
+    assert 1 - waiting_probability_poisson(30, 1.4, 0, 0, 10) < 1e-2
+    assert 1 - waiting_probability_poisson(30, 1.4, 2, 0, 10) < 1e-2
+
+    # not violating ratio
+    assert 1 == waiting_probability_poisson(30, 1.4, 13, 10, 10)
+
+    # last place not violating ratio
+    assert 1 == waiting_probability_poisson(30, 1.4, 15, 14, 10)
+
+    # no places
+    assert 0 == waiting_probability_poisson(30, 1.4, 15, 15, 10)
+
+    # no way how ratio can be achieved
+    assert 0 == waiting_probability_poisson(30, 1.4, 20, 5, 10)
+
+    # this is less than other
+    assert 1 == waiting_probability_poisson(30, 1.4, 0, 15, 10)
+    assert 1 == waiting_probability_poisson(30, 1.4, 5, 15, 10)
+
+    # some checks that make sense
+    assert waiting_probability_poisson(30, 1.4, 5, 1, 10) > 0.95
+    assert waiting_probability_poisson(30, 1.4, 11, 5, 5) < 0.95
+
+    # monotonously decreases if this role increases
+    p = waiting_probability_poisson(30, 1.4, 0, 5, 10)
+    for i in range(1, 30):
+        p1 = waiting_probability_poisson(30, 1.4, i, 5, 10)
+        assert p1 <= p
+        p = p1
+        print(p)
+
+    # monotonously increases if other role increases
+    p = waiting_probability_poisson(30, 1.4, 10, 0, 10)
+    for i in range(1, 20):
+        p1 = waiting_probability_poisson(30, 1.4, 10, i, 10)
+        assert p1 >= p
+        p = p1
+
+    # monotonously decreases as rate decreases
+    p = waiting_probability_poisson(30, 1.4, 11, 5, 10)
+    for i in range(1, 10):
+        p1 = waiting_probability_poisson(30, 1.4, 11, 5, 10-i)
+        assert p1 <= p
+        p = p1

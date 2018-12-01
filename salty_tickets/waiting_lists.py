@@ -1,9 +1,10 @@
 import math
+from datetime import date
 from typing import Dict, Optional
 
 from dataclasses import dataclass, field
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
-from scipy.stats import binom
+from scipy.stats import binom, poisson
 
 
 @dataclass
@@ -34,6 +35,27 @@ def waiting_probability(max_available, ratio, this, other, p_other):
     k = math.ceil(this / ratio) - other
     n = max_available - this - other
     p = 1 - binom.cdf(k, n, p_other)
+    return p
+
+
+def poisson_rate(start_date: date, end_date: date, today: date, expected: int) -> float:
+    total_days = (end_date - start_date).days + 1
+    remaining_days = (end_date - today).days + 1
+    return expected / total_days * remaining_days
+
+
+def waiting_probability_poisson(max_available, ratio, this, other, rate):
+    if this + other >= max_available:
+        return 0
+
+    if other and (this + 1) / other <= ratio:
+        return 1
+
+    if this > other and this + this / ratio > max_available:
+        return 0
+
+    k = math.ceil(this / ratio) - other
+    p = 1 - poisson.cdf(k, mu=rate)
     return p
 
 
