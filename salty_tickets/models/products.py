@@ -3,11 +3,11 @@ from datetime import datetime
 import typing
 
 from dataclasses import dataclass, field
-from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form
+from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, RawField
 from salty_tickets.models.registrations import PersonInfo, ProductRegistration
 from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role, ProbabilityWaitingList
 from wtforms import Form as NoCsrfForm
-from wtforms.fields import RadioField
+from wtforms.fields import RadioField, SelectField, SelectMultipleField
 from wtforms.validators import Optional
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.utils.utils import string_to_key
@@ -32,7 +32,7 @@ class BaseProduct:
         raise NotImplementedError()
 
     def parse_form(self, form) -> typing.List[ProductRegistration]:
-        if self.added(form.get_product_by_key(self.key)):
+        if self.is_added(form.get_product_by_key(self.key)):
             return [self._create_base_registration()]
 
     def get_available_quantity(self) -> typing.Optional[int]:
@@ -42,7 +42,8 @@ class BaseProduct:
         total_accepted = len([r for r in self.registrations if not r.wait_listed])
         return self.max_available - total_accepted
 
-    def added(self, product_form) -> bool:
+    @classmethod
+    def is_added(cls, product_form) -> bool:
         return bool(product_form.add.data)
 
     def _create_base_registration(self) -> ProductRegistration:
@@ -71,7 +72,7 @@ class PartnerProduct(BaseProduct):
 
     def parse_form(self, event_form) -> typing.List[ProductRegistration]:
         product_data = event_form.get_product_by_key(self.key)
-        if self.added(product_data):
+        if self.is_added(product_data):
             if product_data.add.data == COUPLE:
                 person_1 = get_primary_personal_info_from_form(event_form) or PersonInfo('You', '')
                 person_2 = get_partner_personal_info_from_form(event_form) or PersonInfo('Partner', '')
@@ -182,7 +183,7 @@ class WaitListedPartnerProduct(PartnerProduct):
     def parse_form(self, event_form) -> typing.List[ProductRegistration]:
         regs = super(WaitListedPartnerProduct, self).parse_form(event_form)
         product_data = event_form.get_product_by_key(self.key)
-        if self.added(product_data):
+        if self.is_added(product_data):
             role = product_data.add.data
             if not self.waiting_list.can_add(role):
                 for r in regs:
@@ -236,3 +237,20 @@ class PartyProduct(PartnerProduct):
     start_datetime: datetime = None
     end_datetime: datetime = None
     location: str = None
+
+
+@dataclass
+class FestivalPass(PartnerProduct):
+    includes: typing.Dict = field(default_factory=dict)
+
+
+class MerchandiseProductForm(NoCsrfForm):
+    add = RawField()
+
+
+@dataclass
+class MerchandiseProduct(BaseProduct):
+    options: typing.Dict = field(default_factory=dict)
+
+    def get_form_class(self):
+        return MerchandiseProductForm

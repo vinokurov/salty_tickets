@@ -17,12 +17,15 @@ class ProductPricer:
             self.price_rules.append(BasePriceRule())
 
     def price_all(self, registrations: List[ProductRegistration]):
+        priced_regs = []
         for reg in registrations:
-            reg.price = self.optimal_price(reg, registrations)
+            reg.price = self.optimal_price(reg, registrations, priced_registrations=priced_regs)
+            priced_regs.append(reg)
 
     def optimal_price(self, registration: ProductRegistration,
-                      registration_list: List[ProductRegistration]) -> float:
-        possible_prices = [rule.price(registration, registration_list, self.event_products)
+                      registration_list: List[ProductRegistration],
+                      priced_registrations: List[ProductRegistration]) -> float:
+        possible_prices = [rule.price(registration, registration_list, self.event_products, priced_registrations)
                            for rule in self.price_rules]
         possible_prices = [p for p in possible_prices if p is not None]
         if possible_prices:
@@ -36,8 +39,22 @@ class ProductPricer:
 
 
 class BasePriceRule:
-    def price(self, registration, registration_list, event_products) -> float:
+    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
         return event_products[registration.product_key].base_price
+
+    @classmethod
+    def filter_products_by_tag(cls, event_products, tag):
+        return [k for k, p in event_products.items() if tag in p.tags]
+
+
+@dataclass
+class TaggedBasePriceRule(BasePriceRule):
+    tag: str
+
+    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
+        applicable_product_keys = self.filter_products_by_tag(event_products, self.tag)
+        if registration.product_key in applicable_product_keys:
+            return super(TaggedBasePriceRule, self).price(registration, registration_list, event_products, priced_registrations)
 
 
 @dataclass
@@ -46,12 +63,11 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
     special_price: float
     tag: str
 
-    def price(self, registration, registration_list, event_products) -> float:
+    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
         applicable_product_keys = [k for k, p in event_products.items()
                                    if self.tag in p.tags]
         if registration.product_key in applicable_product_keys:
-            already = [r for r in registration_list
-                       if r.price is not None and r.product_key in applicable_product_keys]
+            already = [r for r in priced_registrations if r.product_key in applicable_product_keys]
 
             # make sure we count only purchase items for one person
             person = registration.person
@@ -65,9 +81,9 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
 @dataclass
 class CombinationsPriceRule(BasePriceRule):
     tag: str
-    count_prices: Dict[int, float]
+    count_prices: Dict[str, float]
 
-    def price(self, registration, registration_list, event_products) -> float:
+    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
         applicable_product_keys = [k for k, p in event_products.items()
                                    if self.tag in p.tags]
         if registration.product_key in applicable_product_keys:
@@ -82,7 +98,61 @@ class CombinationsPriceRule(BasePriceRule):
                     return self.count_prices[str(count)] / count
 
 
+@dataclass
+class MindTheShagPriceRule(BasePriceRule):
+    price_station: float
+    price_clinic: float
+    price_station_extra: float
+
+    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
+        person = registration.person
+        if person:
+            person_registrations = [r for r in registration_list if r.person == person]
+            person_priced_registrations = [r for r in priced_registrations if r.person == person]
+        else:
+            person_registrations = registration_list
+            person_priced_registrations = priced_registrations
+
+        registration_keys = [r.product_key for r in person_registrations]
+        station_keys = self.filter_products_by_tag(event_products, 'station')
+        fast_train_station_keys = self.filter_products_by_tag(event_products, 'train')
+        party_keys = self.filter_products_by_tag(event_products, 'party')
+        clinic_keys = self.filter_products_by_tag(event_products, 'clinic')
+
+        stations_priced_count = len([r for r in person_priced_registrations if r.product_key in station_keys])
+
+        if registration.product_key in clinic_keys:
+            if 'full_weekend_ticket' in registration_keys or 'full_weekend_ticket_no_parties' in registration_keys:
+                if stations_priced_count < 3:
+                    return self.price_clinic - self.price_station_extra
+                else:
+                    return self.price_clinic
+            else:
+                return self.price_clinic
+
+        elif registration.product_key in station_keys:
+            if 'fast_shag_train' in registration_keys or 'fast_shag_train_no_parties' in registration_keys:
+                if registration.product_key in fast_train_station_keys:
+                    return 0.0
+                else:
+                    return self.price_station_extra
+
+            elif 'full_weekend_ticket' in registration_keys or 'full_weekend_ticket_no_parties' in registration_keys:
+                if stations_priced_count < 3:
+                    return 0
+                else:
+                    return self.price_station_extra
+            else:
+                return self.price_station
+
+        elif registration.product_key in party_keys:
+            if any([x in registration_keys for x in ['fast_shag_train', 'full_weekend_ticket', 'party_pass']]):
+                return 0.0
+
+
 PRICING_RULES = {
     'special_price_if_more_than': SpecialPriceIfMoreThanPriceRule,
     'combination': CombinationsPriceRule,
+    'mind_the_shag': MindTheShagPriceRule,
+    'tagged_base': TaggedBasePriceRule,
 }
