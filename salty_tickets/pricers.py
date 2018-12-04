@@ -104,6 +104,11 @@ class MindTheShagPriceRule(BasePriceRule):
     price_clinic: float
     price_station_extra: float
 
+    tag_station: str = 'station'
+    tag_fast_train: str = 'train'
+    tag_party: str = 'party'
+    tag_clinic: str = 'clinic'
+
     def price(self, registration, registration_list, event_products, priced_registrations) -> float:
         person = registration.person
         if person:
@@ -114,10 +119,10 @@ class MindTheShagPriceRule(BasePriceRule):
             person_priced_registrations = priced_registrations
 
         registration_keys = [r.product_key for r in person_registrations]
-        station_keys = self.filter_products_by_tag(event_products, 'station')
-        fast_train_station_keys = self.filter_products_by_tag(event_products, 'train')
-        party_keys = self.filter_products_by_tag(event_products, 'party')
-        clinic_keys = self.filter_products_by_tag(event_products, 'clinic')
+        station_keys = self.filter_products_by_tag(event_products, self.tag_station)
+        fast_train_station_keys = self.filter_products_by_tag(event_products, self.tag_fast_train)
+        party_keys = self.filter_products_by_tag(event_products, self.tag_party)
+        clinic_keys = self.filter_products_by_tag(event_products, self.tag_clinic)
 
         stations_priced_count = len([r for r in person_priced_registrations if r.product_key in station_keys])
 

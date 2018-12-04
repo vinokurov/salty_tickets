@@ -217,6 +217,8 @@ def ms_y():
     ('w1 w2 w3 clinic full_weekend_ticket_no_parties', [0, 0, 0, 40, 75]),
     ('w1 w2 w3 w4 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 40, 0, 0, 0, 120]),
     ('w1 w2 w3 w4 clinic full_weekend_ticket_no_parties', [0, 0, 0, 25, 40, 75]),
+
+    ('w1 beg1 beg2 clinic p1 p2 p3 fast_shag_train', [25, 0, 0, 40, 0, 0, 0, 90]),
 ])
 def test_mind_the_shag_price_rule(mts_products, mts_pricing_rules, mr_x, ms_y, registration_keys, expected_prices):
     pricer = ProductPricer(mts_products, mts_pricing_rules)
