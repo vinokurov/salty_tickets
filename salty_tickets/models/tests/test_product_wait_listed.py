@@ -5,7 +5,7 @@ from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct
-from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.registrations import Person, Registration
 from salty_tickets.tokens import PartnerToken
 
 LEADER_NAMES = [
@@ -100,24 +100,24 @@ def util_generate_registrations(meta_list):
             else:
                 name = FOLLOWER_NAMES[follower_idx]
                 follower_idx += 1
-            person = PersonInfo(full_name=name, email=f'{name}@{dance_role}.com')
-            reg = ProductRegistration(registered_by=person, person=person, dance_role=dance_role,
-                                      wait_listed=meta.wait_listed, active=meta.active)
+            person = Person(full_name=name, email=f'{name}@{dance_role}.com')
+            reg = Registration(registered_by=person, person=person, dance_role=dance_role,
+                               wait_listed=meta.wait_listed, active=meta.active)
             registrations.append(reg)
 
         elif isinstance(meta, CoupleRegistrationMeta):
             name = LEADER_NAMES[leader_idx]
             leader_idx += 1
-            leader = PersonInfo(full_name=name, email=f'{name}@leader.com')
+            leader = Person(full_name=name, email=f'{name}@leader.com')
 
             name = FOLLOWER_NAMES[follower_idx]
             follower_idx += 1
-            follower = PersonInfo(full_name=name, email=f'{name}@follower.com')
+            follower = Person(full_name=name, email=f'{name}@follower.com')
 
-            reg1 = ProductRegistration(registered_by=leader, person=leader, partner=follower,
-                                       dance_role=LEADER, wait_listed=meta.wait_listed, active=meta.active)
-            reg2 = ProductRegistration(registered_by=leader, person=follower, partner=leader,
-                                       dance_role=FOLLOWER, wait_listed=meta.wait_listed, active=meta.active)
+            reg1 = Registration(registered_by=leader, person=leader, partner=follower,
+                                dance_role=LEADER, wait_listed=meta.wait_listed, active=meta.active)
+            reg2 = Registration(registered_by=leader, person=follower, partner=leader,
+                                dance_role=FOLLOWER, wait_listed=meta.wait_listed, active=meta.active)
             registrations.append(reg1)
             registrations.append(reg2)
 
@@ -271,33 +271,33 @@ def test_wait_listed_parse_form(app):
 def test_wait_listed_apply_extra_partner(app):
     product = WaitListedPartnerProduct(ratio=1.5, allow_first=1, name='Test', max_available=10)
 
-    me = PersonInfo('Mr X', 'mr.x@xx.com')
-    another_one = PersonInfo('Mr Z', 'mr.z@zz.com')
+    me = Person('Mr X', 'mr.x@xx.com')
+    another_one = Person('Mr Z', 'mr.z@zz.com')
 
     names = FOLLOWER_NAMES.copy()
 
     def pop_person():
         _name = names.pop()
-        return PersonInfo(_name, _name.replace(' ', '.') + '@yy.com')
+        return Person(_name, _name.replace(' ', '.') + '@yy.com')
 
     # none of the extra registrations is available for me
-    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    my_registration = Registration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
     extra_registrations = [
-        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
-        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=LEADER, product_key='test'),
-        ProductRegistration(person=pop_person(), partner=another_one, wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
-        ProductRegistration(person=pop_person(), wait_listed=False, active=False, dance_role=FOLLOWER, product_key='test'),
+        Registration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
+        Registration(person=pop_person(), wait_listed=False, active=True, dance_role=LEADER, product_key='test'),
+        Registration(person=pop_person(), partner=another_one, wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
+        Registration(person=pop_person(), wait_listed=False, active=False, dance_role=FOLLOWER, product_key='test'),
     ]
     regs = product.apply_extra_partner(my_registration, extra_registrations)
     assert not regs
     assert my_registration.wait_listed
 
     # I am wait listed, partner is wait listed, we both get off the wait list
-    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    my_registration = Registration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
     extra_registrations = [
-        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
-        ProductRegistration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
-        ProductRegistration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
+        Registration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='another'),
+        Registration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
+        Registration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, product_key='test'),
     ]
     applied_reg = product.apply_extra_partner(my_registration, extra_registrations)
     assert extra_registrations[1] == applied_reg
@@ -314,9 +314,9 @@ def test_wait_listed_apply_extra_partner(app):
     ])
     assert not product.waiting_list.can_add(COUPLE)
 
-    my_registration = ProductRegistration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
+    my_registration = Registration(person=me, wait_listed=True, active=True, dance_role=LEADER, product_key='test')
     extra_registrations = [
-        ProductRegistration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
+        Registration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, product_key='test'),
     ]
     applied_reg = product.apply_extra_partner(my_registration, extra_registrations)
     assert not applied_reg

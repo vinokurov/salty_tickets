@@ -8,21 +8,21 @@ from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
-from salty_tickets.models.registrations import Payment, PersonInfo, ProductRegistration, PaymentStripeDetails
+from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails
 from salty_tickets.models.products import BaseProduct
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
 
 
-@fields_from_dataclass(ProductRegistration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
-class ProductRegistrationDocument(fields.Document):
+@fields_from_dataclass(Registration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
+class RegistrationDocument(fields.Document):
     meta = {
-        'collection': 'product_registrations'
+        'collection': 'registrations'
     }
     dance_role = fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
-    person = fields.ReferenceField('RegistrationDocument', required=True)
-    partner = fields.ReferenceField('RegistrationDocument', null=True)
-    registered_by = fields.ReferenceField('RegistrationDocument', required=True)
+    person = fields.ReferenceField('PersonDocument', required=True)
+    partner = fields.ReferenceField('PersonDocument', null=True)
+    registered_by = fields.ReferenceField('PersonDocument', required=True)
     product_key = fields.StringField(required=True)
     event = fields.ReferenceField('EventDocument', required=True)
 
@@ -99,8 +99,8 @@ class EventDocument(fields.Document):
 #         model.int_id = self.int_id
 #         return model
 
-@fields_from_dataclass(PersonInfo, skip=['event'])
-class RegistrationDocument(fields.Document):
+@fields_from_dataclass(Person, skip=['event'])
+class PersonDocument(fields.Document):
     meta = {
         'collection': 'person_registrations',
     }
@@ -124,10 +124,10 @@ class PaymentDocument(fields.Document):
         'collection': 'payments'
     }
     date = fields.DateTimeField(null=False, default=datetime.datetime.utcnow)
-    paid_by = fields.ReferenceField(RegistrationDocument)
+    paid_by = fields.ReferenceField(PersonDocument)
     event = fields.ReferenceField(EventDocument)
-    registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
-    extra_registrations = fields.ListField(fields.ReferenceField(ProductRegistrationDocument))
+    registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
+    extra_registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
 
@@ -170,13 +170,13 @@ class TicketsDAO:
 
         return event
 
-    def get_registrations_for_product(self, event: Event, product) -> List[ProductRegistration]:
+    def get_registrations_for_product(self, event: Event, product) -> List[Registration]:
         filters = {
             'product_key': self._get_product_key(product),
             'event': event.id,
         }
 
-        items = ProductRegistrationDocument.objects(**filters).select_related(3)
+        items = RegistrationDocument.objects(**filters).select_related(3)
         return [r.to_dataclass() for r in items]
 
     def create_event(self, event_model):
@@ -205,25 +205,25 @@ class TicketsDAO:
         else:
             return product.key
 
-    def _get_or_create_new_person(self, person, event) -> RegistrationDocument:
+    def _get_or_create_new_person(self, person, event) -> PersonDocument:
         if not hasattr(person, 'id'):
             self.add_person(person, event)
-        return RegistrationDocument.objects(id=person.id).first()
+        return PersonDocument.objects(id=person.id).first()
 
-    def add_person(self, person: PersonInfo, event: Event):
+    def add_person(self, person: Person, event: Event):
         if hasattr(person, 'id'):
             raise ValueError(f'Person already exists: {person}')
         else:
-            person_doc = RegistrationDocument.from_dataclass(person)
+            person_doc = PersonDocument.from_dataclass(person)
             person_doc.event = event.id
             person_doc.save()
             person.id = person_doc.id
 
-    def add_registration(self, registration: ProductRegistration, event):
+    def add_registration(self, registration: Registration, event):
         if hasattr(registration, 'id'):
             raise ValueError(f'Registration already exists: {registration}')
 
-        registration_doc = ProductRegistrationDocument.from_dataclass(registration)
+        registration_doc = RegistrationDocument.from_dataclass(registration)
         registration_doc.event = event.id
         registration_doc.person = self._get_or_create_new_person(registration.person, event)
         registration_doc.registered_by = self._get_or_create_new_person(registration.registered_by, event)
@@ -266,8 +266,8 @@ class TicketsDAO:
         else:
             raise ValueError(f'Can\'t find {doc_class} by {model}')
 
-    def get_payments_by_person(self, event: Event, person: PersonInfo) -> List[Payment]:
-        person_doc = self._get_doc(RegistrationDocument, person)
+    def get_payments_by_person(self, event: Event, person: Person) -> List[Payment]:
+        person_doc = self._get_doc(PersonDocument, person)
         payment_docs = PaymentDocument.objects(event=event.id, paid_by=person_doc).select_related(3)
         return [p.to_dataclass() for p in payment_docs]
 
@@ -277,19 +277,19 @@ class TicketsDAO:
             if payment_doc:
                 return payment_doc.to_dataclass()
 
-    def query_registrations(self, event: Event, person: PersonInfo=None, paid_by: PersonInfo=None,
-                            partner: PersonInfo=None, product=None) -> List[ProductRegistration]:
+    def query_registrations(self, event: Event, person: Person=None, paid_by: Person=None,
+                            partner: Person=None, product=None) -> List[Registration]:
         filters = {'event': self._get_event_id(event)}
         if person is not None:
-            filters['person'] = self._get_doc(RegistrationDocument, person)
+            filters['person'] = self._get_doc(PersonDocument, person)
         if paid_by is not None:
-            filters['paid_by'] = self._get_doc(RegistrationDocument, paid_by)
+            filters['paid_by'] = self._get_doc(PersonDocument, paid_by)
         if partner is not None:
-            filters['partner'] = self._get_doc(RegistrationDocument, partner)
+            filters['partner'] = self._get_doc(PersonDocument, partner)
         if product is not None:
             filters['product_key'] = self._get_product_key(product)
 
-        return [r.to_dataclass() for r in ProductRegistrationDocument.objects(**filters).select_related(3)]
+        return [r.to_dataclass() for r in RegistrationDocument.objects(**filters).select_related(3)]
 
     def _update_doc(self, doc_class, model, **kwargs):
         saved_model_doc = self._get_doc(doc_class, model)
@@ -315,13 +315,13 @@ class TicketsDAO:
             saved_model_doc.save()
             model = saved_model_doc.to_dataclass()
 
-    def update_person(self, person: PersonInfo):
-        self._update_doc(RegistrationDocument, person)
+    def update_person(self, person: Person):
+        self._update_doc(PersonDocument, person)
 
-    def update_registration(self, registration: ProductRegistration):
+    def update_registration(self, registration: Registration):
         registration_0 = self.get_product_registration_by_id(registration.id)
         extra_updates = {}
-        event = ProductRegistrationDocument.objects(id=registration.id).first().event.key
+        event = RegistrationDocument.objects(id=registration.id).first().event.key
         if registration.person != registration_0.person:
             extra_updates['person'] = self._get_or_create_new_person(registration.person, event)
         if registration.registered_by != registration_0.registered_by:
@@ -329,15 +329,15 @@ class TicketsDAO:
         if registration.partner != registration_0.partner:
             extra_updates['partner'] = self._get_or_create_new_person(registration.partner, event)
 
-        self._update_doc(ProductRegistrationDocument, registration, **extra_updates)
+        self._update_doc(RegistrationDocument, registration, **extra_updates)
 
     @timeit
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)
 
     def mark_registrations_as_couple(self,
-                                     registration_1: ProductRegistration,
-                                     registration_2: ProductRegistration):
+                                     registration_1: Registration,
+                                     registration_2: Registration):
         registration_1.partner = registration_2.person
         registration_2.partner = registration_1.person
         self.update_registration(registration_1)
@@ -353,8 +353,8 @@ class TicketsDAO:
         if payment_doc:
             return self.get_event_by_key(payment_doc.event.key, get_registrations=get_registrations)
 
-    def get_person_by_id(self, object_id) -> PersonInfo:
-        doc = RegistrationDocument.objects(**id_filter(object_id)).first()
+    def get_person_by_id(self, object_id) -> Person:
+        doc = PersonDocument.objects(**id_filter(object_id)).first()
         if doc:
             return doc.to_dataclass()
 
@@ -363,8 +363,8 @@ class TicketsDAO:
         if docs:
             return [d.to_dataclass() for d in docs]
 
-    def get_product_registration_by_id(self, object_id) -> ProductRegistration:
-        doc = ProductRegistrationDocument.objects(**id_filter(object_id)).first()
+    def get_product_registration_by_id(self, object_id) -> Registration:
+        doc = RegistrationDocument.objects(**id_filter(object_id)).first()
         if doc:
             return doc.to_dataclass()
 

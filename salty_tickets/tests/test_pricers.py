@@ -1,5 +1,5 @@
 import pytest
-from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.registrations import Person, Registration
 from salty_tickets.models.products import BaseProduct, WorkshopProduct, PartyProduct, FestivalPass
 from salty_tickets.pricers import ProductPricer, SpecialPriceIfMoreThanPriceRule, CombinationsPriceRule, BasePriceRule, \
     MindTheShagPriceRule, TaggedBasePriceRule
@@ -16,8 +16,8 @@ def test_base_pricer():
     pricer = ProductPricer(event_products)
 
     registrations = [
-        ProductRegistration(product_key=product_list[0].key),
-        ProductRegistration(product_key=product_list[2].key),
+        Registration(product_key=product_list[0].key),
+        Registration(product_key=product_list[2].key),
     ]
 
     for r in registrations:
@@ -43,7 +43,7 @@ def test_pricer_special_price_if_more_than():
     ]
     pricer = ProductPricer(event_products, pricing_rules)
 
-    registrations = [ProductRegistration(product_key=p.key) for p in products]
+    registrations = [Registration(product_key=p.key) for p in products]
 
     pricer.price_all(registrations)
     assert [25, 25, 20, 15] == [r.price for r in registrations]
@@ -64,19 +64,19 @@ def test_pricer_special_price_if_more_than_2_persons():
     ]
     pricer = ProductPricer(event_products, pricing_rules)
 
-    mr_one = PersonInfo(full_name='Mr One', email='Mr.One@one.com')
-    ms_two = PersonInfo(full_name='Ms Two', email='Ms.Two@two.com')
+    mr_one = Person(full_name='Mr One', email='Mr.One@one.com')
+    ms_two = Person(full_name='Ms Two', email='Ms.Two@two.com')
 
     registrations = [
-        ProductRegistration(product_key=products[0].key, person=mr_one),
-        ProductRegistration(product_key=products[0].key, person=ms_two),
+        Registration(product_key=products[0].key, person=mr_one),
+        Registration(product_key=products[0].key, person=ms_two),
 
-        ProductRegistration(product_key=products[1].key, person=mr_one),
-        ProductRegistration(product_key=products[1].key, person=ms_two),
+        Registration(product_key=products[1].key, person=mr_one),
+        Registration(product_key=products[1].key, person=ms_two),
 
-        ProductRegistration(product_key=products[2].key, person=ms_two),
+        Registration(product_key=products[2].key, person=ms_two),
 
-        ProductRegistration(product_key=products[3].key, person=mr_one),
+        Registration(product_key=products[3].key, person=mr_one),
     ]
 
     pricer.price_all(registrations)
@@ -98,38 +98,38 @@ def test_combinations_price_rule():
     ]
     pricer = ProductPricer(event_products, pricing_rules)
 
-    mr_x = PersonInfo(full_name='Mr.X', email='mr.x@x.com')
-    ms_y = PersonInfo(full_name='Ms.Y', email='ms.y@y.com')
+    mr_x = Person(full_name='Mr.X', email='mr.x@x.com')
+    ms_y = Person(full_name='Ms.Y', email='ms.y@y.com')
 
     registrations = [
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w1'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w2'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w1'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w2'),
     ]
     pricer.price_all(registrations)
     assert [20.0, 20.0] == [r.price for r in registrations]
 
     registrations = [
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w1'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w2'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w3'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w1'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w2'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w3'),
     ]
     pricer.price_all(registrations)
     assert [19, 19, 19] == [r.price for r in registrations]
 
     registrations = [
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w1'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w2'),
-        ProductRegistration(person=ms_y, registered_by=mr_x, product_key='w1'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w1'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w2'),
+        Registration(person=ms_y, registered_by=mr_x, product_key='w1'),
     ]
     pricer.price_all(registrations)
     assert [20, 20, None] == [r.price for r in registrations]
 
     registrations = [
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w1'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w2'),
-        ProductRegistration(person=mr_x, registered_by=mr_x, product_key='w3'),
-        ProductRegistration(person=ms_y, registered_by=mr_x, product_key='w1'),
-        ProductRegistration(person=ms_y, registered_by=mr_x, product_key='w2'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w1'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w2'),
+        Registration(person=mr_x, registered_by=mr_x, product_key='w3'),
+        Registration(person=ms_y, registered_by=mr_x, product_key='w1'),
+        Registration(person=ms_y, registered_by=mr_x, product_key='w2'),
     ]
     pricer.price_all(registrations)
     assert [19, 19, 19, 20, 20] == [r.price for r in registrations]
@@ -170,12 +170,12 @@ def mts_pricing_rules():
 
 @pytest.fixture
 def mr_x():
-    return PersonInfo(full_name='Mr.X', email='mr.x@x.com')
+    return Person(full_name='Mr.X', email='mr.x@x.com')
 
 
 @pytest.fixture
 def ms_y():
-    return PersonInfo(full_name='Ms.Y', email='ms.y@y.com')
+    return Person(full_name='Ms.Y', email='ms.y@y.com')
 
 
 @pytest.mark.parametrize("registration_keys,expected_prices", [
@@ -224,16 +224,16 @@ def test_mind_the_shag_price_rule(mts_products, mts_pricing_rules, mr_x, ms_y, r
     pricer = ProductPricer(mts_products, mts_pricing_rules)
 
     # solo registration
-    registrations = [ProductRegistration(person=mr_x, registered_by=mr_x, product_key=k)
+    registrations = [Registration(person=mr_x, registered_by=mr_x, product_key=k)
                      for k in registration_keys.split(' ')]
     pricer.price_all(registrations)
     assert sum(expected_prices) == sum([r.price for r in registrations])
     assert expected_prices == [r.price for r in registrations]
 
     # couple registration
-    registrations_x = [ProductRegistration(person=mr_x, registered_by=mr_x, product_key=k)
+    registrations_x = [Registration(person=mr_x, registered_by=mr_x, product_key=k)
                        for k in registration_keys.split(' ')]
-    registrations_y = [ProductRegistration(person=ms_y, registered_by=mr_x, product_key=k)
+    registrations_y = [Registration(person=ms_y, registered_by=mr_x, product_key=k)
                        for k in registration_keys.split(' ')]
     registrations_couple = registrations_x + registrations_y
     pricer.price_all(registrations_couple)
@@ -242,7 +242,7 @@ def test_mind_the_shag_price_rule(mts_products, mts_pricing_rules, mr_x, ms_y, r
     assert expected_prices_couple == [r.price for r in registrations_couple]
 
     # partner has just one workshop
-    registrations_couple = registrations_x + [ProductRegistration(person=ms_y, registered_by=mr_x, product_key='w1')]
+    registrations_couple = registrations_x + [Registration(person=ms_y, registered_by=mr_x, product_key='w1')]
     pricer.price_all(registrations_couple)
     expected_prices_couple = expected_prices + [30]
     assert sum(expected_prices_couple) == sum([r.price for r in registrations_couple])

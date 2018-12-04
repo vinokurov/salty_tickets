@@ -12,7 +12,7 @@ from salty_tickets.emails import send_waiting_list_accept_email, send_registrati
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProduct
-from salty_tickets.models.registrations import Payment, PersonInfo, PaymentStripeDetails, ProductRegistration
+from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import ProductPricer
 from salty_tickets.tokens import PartnerToken, PaymentId
@@ -230,13 +230,15 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
 
     # apply extra registrations
     if extra_registrations is not None:
-        applied_registrations = []
+        applied_extra_registrations = []
         for reg in [r for r in registrations if not r.partner]:
             product = event.products[reg.product_key]
             if isinstance(product, WaitListedPartnerProduct):
                 applied_reg = product.apply_extra_partner(reg, extra_registrations)
                 if applied_reg:
-                    applied_registrations.append(applied_reg)
+                    applied_extra_registrations.append(applied_reg)
+    else:
+        applied_extra_registrations = None
 
     # add prices
     pricer = ProductPricer.from_event(event)
@@ -252,8 +254,8 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
 
     set_payment_totals(payment)
 
-    if extra_registrations is not None:
-        payment.extra_registrations = applied_registrations
+    if applied_extra_registrations is not None:
+        payment.extra_registrations = applied_extra_registrations
 
     return payment
 
@@ -390,8 +392,8 @@ def process_first_payment(payment):
                 return True
 
 
-def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: ProductRegistration,
-                                                new_partner: PersonInfo=None):
+def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: Registration,
+                                                new_partner: Person=None):
     if (registration.paid_price or 0) < registration.price:
         payment = dao.get_payment_by_registration(registration)
         price = registration.price - (registration.paid_price or 0)

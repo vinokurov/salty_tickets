@@ -7,7 +7,7 @@ from salty_tickets.constants import LEADER, FOLLOWER
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct
-from salty_tickets.models.registrations import ProductRegistration, Payment
+from salty_tickets.models.registrations import Registration, Payment
 from salty_tickets.tokens import PaymentId, PartnerToken
 
 
@@ -55,7 +55,7 @@ class RegistrationInfo(DataClassJsonMixin):
     ptn_token: str = None
 
     @classmethod
-    def from_registration(cls, registration: ProductRegistration, event: Event):
+    def from_registration(cls, registration: Registration, event: Event):
         if registration.partner:
             partner = registration.partner.full_name
         else:

@@ -5,7 +5,7 @@ from dataclasses_json import DataClassJsonMixin
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import BaseProduct, WorkshopProduct
-from salty_tickets.models.registrations import Payment, ProductRegistration
+from salty_tickets.models.registrations import Payment, Registration
 from salty_tickets.tokens import PartnerToken, PaymentId
 
 
@@ -25,7 +25,7 @@ class ProductRegistrationInfo(DataClassJsonMixin):
     dance_role: str = None
 
     @classmethod
-    def from_registration(cls, registration: ProductRegistration, event_products: Dict[str, BaseProduct]):
+    def from_registration(cls, registration: Registration, event_products: Dict[str, BaseProduct]):
         product = event_products[registration.product_key]
         kwargs = dict(
             person=registration.person.full_name,

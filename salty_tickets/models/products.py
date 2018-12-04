@@ -4,7 +4,7 @@ import typing
 
 from dataclasses import dataclass, field
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, RawField
-from salty_tickets.models.registrations import PersonInfo, ProductRegistration
+from salty_tickets.models.registrations import Person, Registration
 from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role, ProbabilityWaitingList
 from wtforms import Form as NoCsrfForm
 from wtforms.fields import RadioField, SelectField, SelectMultipleField
@@ -22,7 +22,7 @@ class BaseProduct:
     base_price: float = 0
     image_url: str = None
     tags: typing.Set = field(default_factory=set)
-    registrations: typing.List[ProductRegistration] = field(default_factory=list)
+    registrations: typing.List[Registration] = field(default_factory=list)
 
     def __post_init__(self):
         if self.key is None:
@@ -31,7 +31,7 @@ class BaseProduct:
     def get_form_class(self) -> NoCsrfForm:
         raise NotImplementedError()
 
-    def parse_form(self, form) -> typing.List[ProductRegistration]:
+    def parse_form(self, form) -> typing.List[Registration]:
         if self.is_added(form.get_product_by_key(self.key)):
             return [self._create_base_registration()]
 
@@ -46,10 +46,10 @@ class BaseProduct:
     def is_added(cls, product_form) -> bool:
         return bool(product_form.add.data)
 
-    def _create_base_registration(self) -> ProductRegistration:
-        return ProductRegistration(product_key=self.key)
+    def _create_base_registration(self) -> Registration:
+        return Registration(product_key=self.key)
 
-    def item_info(self, registration: ProductRegistration) -> str:
+    def item_info(self, registration: Registration) -> str:
         return self.name
 
 
@@ -62,7 +62,7 @@ class PartnerProduct(BaseProduct):
     def get_form_class(self):
         return PartnerProductForm
 
-    def create_registration(self, person_info: PersonInfo, registered_by: PersonInfo, dance_role):
+    def create_registration(self, person_info: Person, registered_by: Person, dance_role):
         registration = self._create_base_registration()
         # registration.info = f'{self.name} / {dance_role.title()} / {person_info.full_name}'
         registration.person = person_info
@@ -70,12 +70,12 @@ class PartnerProduct(BaseProduct):
         registration.dance_role = dance_role
         return registration
 
-    def parse_form(self, event_form) -> typing.List[ProductRegistration]:
+    def parse_form(self, event_form) -> typing.List[Registration]:
         product_data = event_form.get_product_by_key(self.key)
         if self.is_added(product_data):
             if product_data.add.data == COUPLE:
-                person_1 = get_primary_personal_info_from_form(event_form) or PersonInfo('You', '')
-                person_2 = get_partner_personal_info_from_form(event_form) or PersonInfo('Partner', '')
+                person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
+                person_2 = get_partner_personal_info_from_form(event_form) or Person('Partner', '')
 
                 dance_role = event_form.dance_role.data
                 registration_1 = self.create_registration(person_1, person_1, dance_role)
@@ -86,13 +86,13 @@ class PartnerProduct(BaseProduct):
                 return [registration_1, registration_2]
 
             elif product_data.add.data in [LEADER, FOLLOWER]:
-                person_1 = get_primary_personal_info_from_form(event_form) or PersonInfo('You', '')
+                person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
                 dance_role = product_data.add.data
                 registration = self.create_registration(person_1, person_1, dance_role)
                 return [registration]
         return []
 
-    def item_info(self, registration: ProductRegistration) -> str:
+    def item_info(self, registration: Registration) -> str:
         info_list = [self.name]
         if registration.dance_role:
             info_list.append(registration.dance_role.title())
@@ -145,7 +145,7 @@ class WaitListedPartnerProduct(PartnerProduct):
                          + self.waiting_list.registration_stats[FOLLOWER].accepted
         return self.max_available - total_accepted
 
-    def balance_waiting_list(self) -> typing.List[ProductRegistration]:
+    def balance_waiting_list(self) -> typing.List[Registration]:
         balanced_registrations = []
         while self.waiting_list.needs_balancing():
             if self.waiting_list.needs_balancing(COUPLE):
@@ -164,7 +164,7 @@ class WaitListedPartnerProduct(PartnerProduct):
 
         return balanced_registrations
 
-    def _get_first_waiting_couple(self) -> typing.List[ProductRegistration]:
+    def _get_first_waiting_couple(self) -> typing.List[Registration]:
         for r1 in self.registrations:
             if r1.as_couple and r1.wait_listed and r1.active:
                 r2_list = [r for r in self.registrations if r.person == r1.partner and r.active]
@@ -175,12 +175,12 @@ class WaitListedPartnerProduct(PartnerProduct):
                 return [r1]
         return []
 
-    def _get_first_waiting(self, role: str) -> ProductRegistration:
+    def _get_first_waiting(self, role: str) -> Registration:
         for r in self.registrations:
             if r.active and (r.dance_role == role) and r.wait_listed:
                 return r
 
-    def parse_form(self, event_form) -> typing.List[ProductRegistration]:
+    def parse_form(self, event_form) -> typing.List[Registration]:
         regs = super(WaitListedPartnerProduct, self).parse_form(event_form)
         product_data = event_form.get_product_by_key(self.key)
         if self.is_added(product_data):
@@ -190,8 +190,8 @@ class WaitListedPartnerProduct(PartnerProduct):
                    r.wait_listed = True
         return regs
 
-    def apply_extra_partner(self, this_registration: ProductRegistration,
-                            extra_registrations: typing.List[ProductRegistration]):
+    def apply_extra_partner(self, this_registration: Registration,
+                            extra_registrations: typing.List[Registration]):
         if self.waiting_list.can_add(COUPLE):
             available_extra_regs = [r for r in extra_registrations
                                     if r.product_key == self.key and r.active and not r.partner
@@ -204,7 +204,7 @@ class WaitListedPartnerProduct(PartnerProduct):
                 extra_reg.wait_listed = False
                 return extra_reg
 
-    def item_info(self, registration: ProductRegistration) -> str:
+    def item_info(self, registration: Registration) -> str:
         info = super(WaitListedPartnerProduct, self).item_info(registration)
         if registration.wait_listed:
             info = f'Waiting List: {info}'
@@ -249,8 +249,26 @@ class MerchandiseProductForm(NoCsrfForm):
 
 
 @dataclass
-class MerchandiseProduct(BaseProduct):
-    options: typing.Dict = field(default_factory=dict)
+class MerchandiseProduct:
+    name: str
+    key: str = None
+    info: str = None
+    max_available: int = None
+    base_price: float = 0
+    image_url: str = None
+    tags: typing.Set = field(default_factory=set)
 
     def get_form_class(self):
         return MerchandiseProductForm
+
+
+@dataclass
+class DiscountProduct(BaseProduct):
+    pass
+
+
+@dataclass
+class Basket:
+    registrations: BaseProduct = field(default_factory=list)
+    merchandise: MerchandiseProduct = field(default_factory=list)
+    discounts: BaseProduct = field(default_factory=list)

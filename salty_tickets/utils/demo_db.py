@@ -3,7 +3,7 @@ from datetime import datetime
 
 from dataclasses import dataclass
 from salty_tickets.constants import SUCCESSFUL, LEADER, FOLLOWER, FAILED
-from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, PaymentDocument
+from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import BaseProduct, WorkshopProduct, PartyProduct
 from salty_tickets.waiting_lists import flip_role
@@ -97,7 +97,7 @@ def save_event_from_meta(event_meta):
     event_meta.registration_docs = {}
 
     def _person_from_name(name):
-        person_doc = RegistrationDocument(full_name=name, email=name.replace(' ', '.') + '@salty.co.uk')
+        person_doc = PersonDocument(full_name=name, email=name.replace(' ', '.') + '@salty.co.uk')
         person_doc.save(force_insert=True)
         return person_doc
 
@@ -133,7 +133,7 @@ def save_event_from_meta(event_meta):
             if reg_meta.dance_role is not None:
                 kwargs['dance_role'] = reg_meta.dance_role
 
-            reg_doc = ProductRegistrationDocument(**kwargs)
+            reg_doc = RegistrationDocument(**kwargs)
             reg_doc.save(force_insert=True)
             registration_docs.append(reg_doc)
 
@@ -142,7 +142,7 @@ def save_event_from_meta(event_meta):
                 reg_doc.save()
 
                 #create a copy
-                reg_doc = ProductRegistrationDocument(**kwargs)
+                reg_doc = RegistrationDocument(**kwargs)
                 reg_doc.partner = persons[reg_meta.partner_name]
                 reg_doc.person, reg_doc.partner = reg_doc.partner, reg_doc.person
                 if reg_doc.dance_role:

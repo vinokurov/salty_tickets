@@ -12,11 +12,11 @@ from flask.testing import FlaskClient
 from flask_session import Session
 from mongoengine import connect
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
-from salty_tickets.dao import EventDocument, RegistrationDocument, ProductRegistrationDocument, \
+from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
-from salty_tickets.models.registrations import PersonInfo
+from salty_tickets.models.registrations import Person
 from salty_tickets.api.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
     do_price
 from salty_tickets.utils.utils import jsonify_dataclass
@@ -126,7 +126,7 @@ def save_event_from_meta(event_meta):
     event_meta.registration_docs = {}
 
     def _person_from_name(name):
-        person_doc = RegistrationDocument(full_name=name, email=name.replace(' ', '.') + '@salty.co.uk')
+        person_doc = PersonDocument(full_name=name, email=name.replace(' ', '.') + '@salty.co.uk')
         person_doc.save(force_insert=True)
         return person_doc
 
@@ -162,7 +162,7 @@ def save_event_from_meta(event_meta):
             if reg_meta.dance_role is not None:
                 kwargs['dance_role'] = reg_meta.dance_role
 
-            reg_doc = ProductRegistrationDocument(**kwargs)
+            reg_doc = RegistrationDocument(**kwargs)
             reg_doc.save(force_insert=True)
             registration_docs.append(reg_doc)
 
@@ -171,7 +171,7 @@ def save_event_from_meta(event_meta):
                 reg_doc.save()
 
                 #create a copy
-                reg_doc = ProductRegistrationDocument(**kwargs)
+                reg_doc = RegistrationDocument(**kwargs)
                 reg_doc.partner = persons[reg_meta.partner_name]
                 reg_doc.person, reg_doc.partner = reg_doc.partner, reg_doc.person
                 if reg_doc.dance_role:
@@ -347,7 +347,7 @@ class PersonFactory:
     def pop(self, location=None):
         name = self._names.pop()
         email = name.replace(' ', '.') + '@mail.com'
-        return PersonInfo(full_name=name, email=email)
+        return Person(full_name=name, email=email)
 
 
 @pytest.fixture

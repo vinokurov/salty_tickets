@@ -7,7 +7,7 @@ from salty_tickets import config
 from salty_tickets.config import EMAIL_FROM
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
-from salty_tickets.models.registrations import Payment, ProductRegistration
+from salty_tickets.models.registrations import Payment, Registration
 from salty_tickets.tokens import PaymentId, PartnerToken
 
 
@@ -43,7 +43,7 @@ def send_registration_confirmation(payment: Payment, event: Event):
     return send_email(EMAIL_FROM, payment.paid_by.email, subj, body_text, body_html=None)
 
 
-def send_waiting_list_accept_email(dao: TicketsDAO, registration: ProductRegistration):
+def send_waiting_list_accept_email(dao: TicketsDAO, registration: Registration):
     payment = dao.get_payment_by_registration(registration)
     event = dao.get_payment_event(payment)
     order_status_url = url_for('user_order_index', pmt_token=PaymentId().serialize(payment), _external=True)

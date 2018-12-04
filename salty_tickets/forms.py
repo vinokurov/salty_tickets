@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from salty_tickets.constants import LEADER, FOLLOWER
-from salty_tickets.models.registrations import PersonInfo
+from salty_tickets.models.registrations import Person
 from wtforms.fields import Field, StringField, SubmitField, SelectField, BooleanField, FormField, HiddenField, TextAreaField, RadioField
 from wtforms.validators import Email, DataRequired, ValidationError
 
@@ -78,11 +78,11 @@ def create_event_form(event):
     return EventForm
 
 
-def get_primary_personal_info_from_form(form) -> PersonInfo:
+def get_primary_personal_info_from_form(form) -> Person:
     if hasattr(form, 'primary_person_info'):
         return form.primary_person_info
     else:
-        person = PersonInfo(
+        person = Person(
             full_name=form.name.data,
             email=form.email.data,
             comment=form.comment.data,
@@ -92,11 +92,11 @@ def get_primary_personal_info_from_form(form) -> PersonInfo:
         return person
 
 
-def get_partner_personal_info_from_form(form) -> PersonInfo:
+def get_partner_personal_info_from_form(form) -> Person:
     if hasattr(form, 'partner_person_info'):
         return form.partner_person_info
     else:
-        person = PersonInfo(
+        person = Person(
             full_name=form.partner_name.data,
             email=form.partner_email.data,
             comment=form.comment.data,

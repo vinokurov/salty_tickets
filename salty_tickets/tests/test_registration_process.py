@@ -3,9 +3,9 @@ import pickle
 
 import pytest
 from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, FAILED
-from salty_tickets.dao import PaymentDocument, RegistrationDocument
+from salty_tickets.dao import PaymentDocument, PersonDocument
 from salty_tickets.forms import create_event_form
-from salty_tickets.models.registrations import ProductRegistration, Payment, PaymentStripeDetails
+from salty_tickets.models.registrations import Registration, Payment, PaymentStripeDetails
 from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
 from salty_tickets.tokens import PartnerToken, PaymentId
 
@@ -77,18 +77,18 @@ def test_PartnerTokenCheckResult(test_dao, person_factory):
     assert expected == PartnerTokenCheckResult.from_registration_list([])
 
     registrations = [
-        ProductRegistration(person=p1, dance_role=LEADER, product_key='k1', active=False),
-        ProductRegistration(person=p1, product_key='k2', active=True),
-        ProductRegistration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
+        Registration(person=p1, dance_role=LEADER, product_key='k1', active=False),
+        Registration(person=p1, product_key='k2', active=True),
+        Registration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
     ]
     expected = PartnerTokenCheckResult(success=False, error='Token is not valid for this event')
     assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
 
     registrations = [
-        ProductRegistration(person=p1, dance_role=LEADER, product_key='k1', active=True),
-        ProductRegistration(person=p1, dance_role=FOLLOWER, product_key='k2', active=True),
-        ProductRegistration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
-        ProductRegistration(person=p1, dance_role=LEADER, product_key='k4', active=False),
+        Registration(person=p1, dance_role=LEADER, product_key='k1', active=True),
+        Registration(person=p1, dance_role=FOLLOWER, product_key='k2', active=True),
+        Registration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
+        Registration(person=p1, dance_role=LEADER, product_key='k4', active=False),
     ]
     expected = PartnerTokenCheckResult(success=True, error='', name=p1.full_name, roles={'k1': LEADER, 'k2': FOLLOWER})
     assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
@@ -284,7 +284,7 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
 
 def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
-    assert 0 == RegistrationDocument.objects(full_name=sample_data.form_data['name']).count()
+    assert 0 == PersonDocument.objects(full_name=sample_data.form_data['name']).count()
 
     res = post_json_data(client, '/checkout', data=sample_data.form_data)
     with client.session_transaction() as sess:
@@ -311,7 +311,7 @@ def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_c
         assert sess.get('event_key') is None
 
     # make sure that person is added only once
-    assert 1 == RegistrationDocument.objects(full_name=sample_data.form_data['name']).count()
+    assert 1 == PersonDocument.objects(full_name=sample_data.form_data['name']).count()
 
     # try do_pay on the same payment, make sure we receive an error
     res = post_pay(client)
@@ -531,9 +531,9 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay now, all accepted, stripe - OK
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn),
     ], pay_all_now=True)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
@@ -544,8 +544,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay now, all accepted, stripe - charge ERROR
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25),
     ], pay_all_now=True)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error]
@@ -556,8 +556,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay later, but all accepted, stripe - OK
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25),
     ], pay_all_now=False)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
@@ -569,9 +569,9 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay now, one wait listed, stripe - OK
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
-        ProductRegistration(registered_by=psn, person=psn),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn),
     ], pay_all_now=True)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
@@ -583,9 +583,9 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay later, one wait listed, stripe - OK
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25),
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
-        ProductRegistration(registered_by=psn, person=psn),
+        Registration(registered_by=psn, person=psn, price=25),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn),
     ], pay_all_now=False)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
@@ -597,8 +597,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay later, all wait listed, stripe - OK
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
     ], pay_all_now=False)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
@@ -610,8 +610,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay later, one wait listed, stripe - charge failure
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=False),
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=False),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
     ], pay_all_now=False)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error]
@@ -623,8 +623,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
 
     # Pay later, one wait listed, stripe - customer failure
     payment = _payment_from_registrations([
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
-        ProductRegistration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
+        Registration(registered_by=psn, person=psn, price=25, wait_listed=True),
     ], pay_all_now=False)
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
