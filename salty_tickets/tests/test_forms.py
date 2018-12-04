@@ -7,7 +7,7 @@ from salty_tickets.constants import COUPLE, LEADER, FOLLOWER
 from salty_tickets.forms import create_event_form, DanceSignupForm, get_primary_personal_info_from_form, \
     need_partner_check
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, BaseProduct, PartnerProductForm, PartyProduct
+from salty_tickets.models.products import WorkshopProduct, RegistrationProduct, PartnerProductForm, PartyProduct
 from wtforms import ValidationError
 
 

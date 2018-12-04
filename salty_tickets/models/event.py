@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, List
 
 from dataclasses import dataclass, field
-from salty_tickets.models.products import BaseProduct
+from salty_tickets.models.products import RegistrationProduct
 from salty_tickets.pricers import BasePriceRule
 from salty_tickets.utils.utils import string_to_key
 
@@ -15,7 +15,7 @@ class Event:
     end_date: datetime = None
     info: str = None
     active: bool = False
-    products: Dict[str, BaseProduct] = field(default_factory=dict)
+    products: Dict[str, RegistrationProduct] = field(default_factory=dict)
     pricing_rules: List = field(default_factory=list)
     validation_rules: List = field(default_factory=list)
     layout: Dict = None

@@ -1,6 +1,6 @@
 
-STRIPE_SK = ''
-STRIPE_PK = ''
+STRIPE_SK = 'sk_test_AAA'
+STRIPE_PK = 'pk_test_AAA'
 
 MODE_TESTING = STRIPE_SK.find('live') is -1 and STRIPE_PK.find('live') is -1
 
@@ -17,7 +17,7 @@ SALT_GROUP_TOKEN = ''
 SALT_PARTNER_TOKEN = ''
 SALT_REGISTRATION_TOKEN = ''
 
-MAILGUN_KEY = ''
+MAILGUN_KEY = 'key-AAA'
 
 EMAIL_FROM = 'Salty Jitterbugs <registration@saltyjitterbugs.co.uk>'
 EMAIL_DEBUG = 'info@saltyjitterbugs.co.uk'

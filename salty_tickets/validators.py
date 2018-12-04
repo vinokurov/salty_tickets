@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import BaseProduct
+from salty_tickets.models.products import RegistrationProduct
 from salty_tickets.models.registrations import Registration
 
 
@@ -16,7 +16,7 @@ def validate_registrations(event: Event, registrations: List[Registration]):
 
 
 def errors_at_least_any_with_tag(registrations: List[Registration],
-                                 products: Dict[str, BaseProduct],
+                                 products: Dict[str, RegistrationProduct],
                                  tag, count=1, error_text=None):
     if registrations:
         primary = registrations[0].registered_by
@@ -34,7 +34,7 @@ def errors_at_least_any_with_tag(registrations: List[Registration],
 
 
 def errors_if_overlapping(registrations: List[Registration],
-                          products: Dict[str, BaseProduct],
+                          products: Dict[str, RegistrationProduct],
                           tag, error_text=None):
     if registrations:
         primary = registrations[0].registered_by

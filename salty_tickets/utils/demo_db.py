@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from salty_tickets.constants import SUCCESSFUL, LEADER, FOLLOWER, FAILED
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, PaymentDocument
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import BaseProduct, WorkshopProduct, PartyProduct
+from salty_tickets.models.products import RegistrationProduct, WorkshopProduct, PartyProduct
 from salty_tickets.waiting_lists import flip_role
 
 
@@ -38,7 +38,7 @@ class EventMeta:
     info: str
     start_date: datetime
     end_date: datetime
-    products: typing.List[BaseProduct]
+    products: typing.List[RegistrationProduct]
     payments: typing.List[PaymentMeta]
 
 

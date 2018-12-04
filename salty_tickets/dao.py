@@ -9,7 +9,7 @@ from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails
-from salty_tickets.models.products import BaseProduct
+from salty_tickets.models.products import RegistrationProduct
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
 
@@ -35,7 +35,7 @@ class RegistrationDocument(fields.Document):
         return model
 
 
-@fields_from_dataclass(BaseProduct, skip=['registrations', 'product_class', 'product_class_parameters'])
+@fields_from_dataclass(RegistrationProduct, skip=['registrations', 'product_class', 'product_class_parameters'])
 class EventProductDocument(fields.EmbeddedDocument):
     image_url = fields.URLField()
 
@@ -45,7 +45,7 @@ class EventProductDocument(fields.EmbeddedDocument):
     @classmethod
     def from_dataclass(cls, model_dataclass):
         model_dict = dataclasses.asdict(model_dataclass)
-        base_fields = [f.name for f in dataclasses.fields(BaseProduct)]
+        base_fields = [f.name for f in dataclasses.fields(RegistrationProduct)]
         kwargs = {f: model_dict.pop(f) for f in base_fields if f in model_dict}
         kwargs.pop('registrations')
         kwargs['product_class'] = model_dataclass.__class__.__name__
@@ -56,7 +56,7 @@ class EventProductDocument(fields.EmbeddedDocument):
     def to_dataclass(self):
         kwargs = self.product_class_parameters
         model_class = getattr(models.products, self.product_class)
-        model_fields = [f.name for f in dataclasses.fields(BaseProduct) if f.name not in ['registrations']]
+        model_fields = [f.name for f in dataclasses.fields(RegistrationProduct) if f.name not in ['registrations']]
         kwargs.update({f: getattr(self, f) for f in model_fields})
         product_model = model_class(**kwargs)
         return product_model

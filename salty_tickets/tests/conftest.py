@@ -15,7 +15,7 @@ from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct, BaseProduct
+from salty_tickets.models.products import WorkshopProduct, PartyProduct, RegistrationProduct
 from salty_tickets.models.registrations import Person
 from salty_tickets.api.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
     do_price
@@ -66,7 +66,7 @@ class EventMeta:
     info: str
     start_date: datetime
     end_date: datetime
-    products: typing.List[BaseProduct]
+    products: typing.List[RegistrationProduct]
     payments: typing.List[PaymentMeta]
 
 

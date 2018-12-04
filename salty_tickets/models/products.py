@@ -1,5 +1,4 @@
 from datetime import datetime
-# from typing import Set, List
 import typing
 
 from dataclasses import dataclass, field
@@ -14,7 +13,7 @@ from salty_tickets.utils.utils import string_to_key
 
 
 @dataclass
-class BaseProduct:
+class RegistrationProduct:
     name: str
     key: str = None
     info: str = None
@@ -54,7 +53,7 @@ class BaseProduct:
 
 
 @dataclass
-class PartnerProduct(BaseProduct):
+class PartnerProduct(RegistrationProduct):
     def needs_partner(self, event_form):
         product_data = event_form.get_product_by_key(self.key)
         return product_data.add.data == COUPLE
@@ -263,12 +262,12 @@ class MerchandiseProduct:
 
 
 @dataclass
-class DiscountProduct(BaseProduct):
+class DiscountProduct(RegistrationProduct):
     pass
 
 
 @dataclass
 class Basket:
-    registrations: BaseProduct = field(default_factory=list)
+    registrations: RegistrationProduct = field(default_factory=list)
     merchandise: MerchandiseProduct = field(default_factory=list)
-    discounts: BaseProduct = field(default_factory=list)
+    discounts: RegistrationProduct = field(default_factory=list)

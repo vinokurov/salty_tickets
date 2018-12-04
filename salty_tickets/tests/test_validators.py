@@ -1,16 +1,16 @@
 from datetime import datetime
 
-from salty_tickets.models.products import WorkshopProduct, BaseProduct
+from salty_tickets.models.products import WorkshopProduct, RegistrationProduct
 from salty_tickets.models.registrations import Person, Registration
 from salty_tickets.validators import errors_at_least_any_with_tag, errors_if_overlapping
 
 
 def test_at_least_any_with_tag():
     products = {
-        'w1': BaseProduct(name='W1', tags={'workshop'}),
-        'w2': BaseProduct(name='W2', tags={'workshop'}),
-        'w3': BaseProduct(name='W3', tags={'workshop'}),
-        'p': BaseProduct(name='P', tags={'party'})
+        'w1': RegistrationProduct(name='W1', tags={'workshop'}),
+        'w2': RegistrationProduct(name='W2', tags={'workshop'}),
+        'w3': RegistrationProduct(name='W3', tags={'workshop'}),
+        'p': RegistrationProduct(name='P', tags={'party'})
     }
 
     mr_x = Person(full_name='Mr.X', email='mr.x@x.com')
@@ -52,7 +52,7 @@ def test_non_overlapping():
         'w1': WorkshopProduct(name='W1', tags={'workshop'}, start_datetime=datetime(2018, 9, 23, 11, 0)),
         'w2': WorkshopProduct(name='W2', tags={'workshop'}, start_datetime=datetime(2018, 9, 23, 11, 0)),
         'w3': WorkshopProduct(name='W3', tags={'workshop'}, start_datetime=datetime(2018, 9, 23, 16, 0)),
-        'p': BaseProduct(name='P', tags={'party'})
+        'p': RegistrationProduct(name='P', tags={'party'})
     }
 
     mr_x = Person(full_name='Mr.X', email='mr.x@x.com')

@@ -1,15 +1,15 @@
 import pytest
 from salty_tickets.models.registrations import Person, Registration
-from salty_tickets.models.products import BaseProduct, WorkshopProduct, PartyProduct, FestivalPass
+from salty_tickets.models.products import RegistrationProduct, WorkshopProduct, PartyProduct, FestivalPass
 from salty_tickets.pricers import ProductPricer, SpecialPriceIfMoreThanPriceRule, CombinationsPriceRule, BasePriceRule, \
     MindTheShagPriceRule, TaggedBasePriceRule
 
 
 def test_base_pricer():
     product_list = [
-        BaseProduct(name='Product 1', base_price=10),
-        BaseProduct(name='Product 2', base_price=20),
-        BaseProduct(name='Product 3', base_price=30),
+        RegistrationProduct(name='Product 1', base_price=10),
+        RegistrationProduct(name='Product 2', base_price=20),
+        RegistrationProduct(name='Product 3', base_price=30),
     ]
 
     event_products = {p.key: p for p in product_list}
@@ -30,10 +30,10 @@ def test_base_pricer():
 
 def test_pricer_special_price_if_more_than():
     products = [
-        BaseProduct(name='Product 1', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 2', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 3', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 4', base_price=15, tags={'regular'}),
+        RegistrationProduct(name='Product 1', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 2', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 3', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 4', base_price=15, tags={'regular'}),
     ]
 
     event_products = {p.key: p for p in products}
@@ -51,10 +51,10 @@ def test_pricer_special_price_if_more_than():
 
 def test_pricer_special_price_if_more_than_2_persons():
     products = [
-        BaseProduct(name='Product 1', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 2', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 3', base_price=25, tags={'workshop'}),
-        BaseProduct(name='Product 4', base_price=15, tags={'regular'}),
+        RegistrationProduct(name='Product 1', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 2', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 3', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='Product 4', base_price=15, tags={'regular'}),
     ]
 
     event_products = {p.key: p for p in products}
@@ -85,11 +85,11 @@ def test_pricer_special_price_if_more_than_2_persons():
 
 def test_combinations_price_rule():
     products = [
-        BaseProduct(name='w1', base_price=25, tags={'workshop'}),
-        BaseProduct(name='w2', base_price=25, tags={'workshop'}),
-        BaseProduct(name='w3', base_price=25, tags={'workshop'}),
-        BaseProduct(name='p1', base_price=15, tags={'party'}),
-        BaseProduct(name='p2', base_price=15, tags={'party'}),
+        RegistrationProduct(name='w1', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='w2', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='w3', base_price=25, tags={'workshop'}),
+        RegistrationProduct(name='p1', base_price=15, tags={'party'}),
+        RegistrationProduct(name='p2', base_price=15, tags={'party'}),
     ]
 
     event_products = {p.key: p for p in products}
