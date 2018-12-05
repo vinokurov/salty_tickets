@@ -4,7 +4,8 @@ import pytest
 from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
     do_check_partner_token
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct, FestivalPass, MerchandiseProduct
+from salty_tickets.models.products import WorkshopProduct, PartyProduct, FestivalPass
+from salty_tickets.models.merchandise import MerchandiseProduct
 from salty_tickets.utils.utils import jsonify_dataclass
 
 

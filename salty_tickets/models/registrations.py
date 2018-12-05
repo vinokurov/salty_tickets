@@ -36,6 +36,16 @@ class Registration:
 
 
 @dataclass
+class Purchase:
+    person: Person = None
+    merchandise_product_key: str = None
+    merchandise_product_option_key: str = None
+    amount: int = 0
+    price: float = None
+    paid_price: float = None
+
+
+@dataclass
 class PaymentStripeDetails:
     token_id: str = None
     customer_id: str = None
@@ -50,6 +60,7 @@ class Payment:
     description: str = ''
     transaction_fee: float = 0
     registrations: List[Registration] = field(default_factory=list)
+    purchases: List[Purchase] = field(default_factory=list)
 
     status: str = NEW
     stripe: PaymentStripeDetails = None

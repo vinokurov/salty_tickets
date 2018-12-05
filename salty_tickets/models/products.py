@@ -3,10 +3,11 @@ import typing
 
 from dataclasses import dataclass, field
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, RawField
+from salty_tickets.models.merchandise import MerchandiseProduct
 from salty_tickets.models.registrations import Person, Registration
-from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role, ProbabilityWaitingList
+from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role
 from wtforms import Form as NoCsrfForm
-from wtforms.fields import RadioField, SelectField, SelectMultipleField
+from wtforms.fields import RadioField
 from wtforms.validators import Optional
 from salty_tickets.constants import LEADER, FOLLOWER, COUPLE
 from salty_tickets.utils.utils import string_to_key
@@ -243,31 +244,8 @@ class FestivalPass(PartnerProduct):
     includes: typing.Dict = field(default_factory=dict)
 
 
-class MerchandiseProductForm(NoCsrfForm):
-    add = RawField()
-
-
-@dataclass
-class MerchandiseProduct:
-    name: str
-    key: str = None
-    info: str = None
-    max_available: int = None
-    base_price: float = 0
-    image_url: str = None
-    tags: typing.Set = field(default_factory=set)
-
-    def get_form_class(self):
-        return MerchandiseProductForm
-
-
-@dataclass
-class DiscountProduct(RegistrationProduct):
-    pass
-
-
-@dataclass
-class Basket:
-    registrations: RegistrationProduct = field(default_factory=list)
-    merchandise: MerchandiseProduct = field(default_factory=list)
-    discounts: RegistrationProduct = field(default_factory=list)
+# @dataclass
+# class Basket:
+#     registrations: RegistrationProduct = field(default_factory=list)
+#     merchandise: MerchandiseProduct = field(default_factory=list)
+#     registration_discounts

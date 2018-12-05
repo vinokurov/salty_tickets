@@ -8,7 +8,8 @@ from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
-from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails
+from salty_tickets.models.merchandise import MerchandiseProduct
+from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase
 from salty_tickets.models.products import RegistrationProduct
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
@@ -32,6 +33,19 @@ class RegistrationDocument(fields.Document):
         model.registered_by = self.registered_by.to_dataclass()
         if self.partner:
             model.partner = self.partner.to_dataclass()
+        return model
+
+
+@fields_from_dataclass(Purchase, skip=['person'])
+class PurchaseDocument(fields.Document):
+    meta = {
+        'collection': 'purchases',
+    }
+    person = fields.ReferenceField('PersonDocument', required=True)
+
+    def to_dataclass(self):
+        model = self._to_dataclass()
+        model.person = self.person.to_dataclass()
         return model
 
 
@@ -62,19 +76,27 @@ class EventProductDocument(fields.EmbeddedDocument):
         return product_model
 
 
-@fields_from_dataclass(Event, skip=['products'])
+@fields_from_dataclass(MerchandiseProduct)
+class MerchandiseProductDocument(fields.EmbeddedDocument):
+    pass
+
+
+@fields_from_dataclass(Event, skip=['products', 'merchandise'])
 class EventDocument(fields.Document):
     meta = {
         'collection': 'events',
     }
     key = fields.StringField()
     products = fields.MapField(fields.EmbeddedDocumentField(EventProductDocument))
+    merchandise = fields.MapField(fields.EmbeddedDocumentField(MerchandiseProductDocument))
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
         event_doc = cls._from_dataclass(model_dataclass)
         event_doc.products = {p_key: EventProductDocument.from_dataclass(p)
                               for p_key, p in model_dataclass.products.items()}
+        event_doc.merchandise = {p_key: MerchandiseProductDocument.from_dataclass(p)
+                                 for p_key, p in model_dataclass.merchandise.items()}
         return event_doc
 
     def to_dataclass(self):
@@ -82,6 +104,10 @@ class EventDocument(fields.Document):
         for p_key, prd in self.products.items():
             product_doc = prd.to_dataclass()
             event_model.products[p_key] = product_doc
+
+        for p_key, prd in self.merchandise.items():
+            merchandise_doc = prd.to_dataclass()
+            event_model.merchandise[p_key] = merchandise_doc
 
         return event_model
 
@@ -118,7 +144,7 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'extra_registrations'])
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'extra_registrations'])
 class PaymentDocument(fields.Document):
     meta = {
         'collection': 'payments'
@@ -128,6 +154,7 @@ class PaymentDocument(fields.Document):
     event = fields.ReferenceField(EventDocument)
     registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
     extra_registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
+    purchases = fields.ListField(fields.ReferenceField(PurchaseDocument))
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
 
@@ -135,6 +162,7 @@ class PaymentDocument(fields.Document):
         model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
         model.registrations = [r.to_dataclass() for r in self.registrations]
         model.extra_registrations = [r.to_dataclass() for r in self.extra_registrations]
+        model.purchases = [p.to_dataclass() for p in self.purchases]
         if self.stripe:
             model.stripe = self.stripe.to_dataclass()
         # model.int_id = self.int_id
