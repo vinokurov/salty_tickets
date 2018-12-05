@@ -11,17 +11,17 @@ from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WaitListedPartnerProduct, WorkshopProduct
+from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
 from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
-from salty_tickets.pricers import ProductPricer
+from salty_tickets.pricers import TicketPricer
 from salty_tickets.tokens import PartnerToken, PaymentId
 from salty_tickets.validators import validate_registrations
 
 """
 Before chackout:
     - get form data
-    - price products, validate fields
+    - price tickets, validate fields
     - return JSON with prices, field validation, etc
 
 Checkout:
@@ -38,14 +38,14 @@ Checkout:
 
 
 @dataclass
-class ProductWaitingListInfo(DataClassJsonMixin):
+class TicketWaitingListInfo(DataClassJsonMixin):
     leader: Optional[int] = None
     follower: Optional[int] = None
     couple: Optional[int] = None
 
 
 @dataclass
-class ProductInfo(DataClassJsonMixin):
+class TicketInfo(DataClassJsonMixin):
     key: str
     title: str
     start_datetime: str
@@ -57,10 +57,10 @@ class ProductInfo(DataClassJsonMixin):
     price: float = None
     info: str = None
     choice: str = None
-    waiting_list: Optional[ProductWaitingListInfo] = None
+    waiting_list: Optional[TicketWaitingListInfo] = None
 
     @classmethod
-    def from_workshop(cls, workshop: WorkshopProduct):
+    def from_workshop(cls, workshop: WorkshopTicket):
         available = workshop.max_available - workshop.waiting_list.total_accepted
         waiting_stats = workshop.waiting_list.waiting_stats
         return cls(
@@ -73,7 +73,7 @@ class ProductInfo(DataClassJsonMixin):
             available=available,
             price=workshop.base_price,
             info=workshop.info,
-            waiting_list=ProductWaitingListInfo(
+            waiting_list=TicketWaitingListInfo(
                 leader=int(waiting_stats[LEADER] * 100) if waiting_stats[LEADER] is not None else None,
                 follower=int(waiting_stats[FOLLOWER] * 100) if waiting_stats[FOLLOWER] is not None else None,
                 couple=int(waiting_stats[COUPLE] * 100) if waiting_stats[COUPLE] is not None else None,
@@ -85,7 +85,7 @@ class ProductInfo(DataClassJsonMixin):
 class EventInfo(DataClassJsonMixin):
     name: str
     key: str
-    products: List
+    tickets: List
     layout: Dict
 
     @classmethod
@@ -93,8 +93,8 @@ class EventInfo(DataClassJsonMixin):
         return cls(
             name=event.name,
             key=event.key,
-            products=[ProductInfo.from_workshop(p) for k, p in event.products.items()
-                      if isinstance(p, WorkshopProduct)],
+            tickets=[TicketInfo.from_workshop(p) for k, p in event.tickets.items()
+                     if isinstance(p, WorkshopTicket)],
             layout=event.layout
         )
 
@@ -127,7 +127,7 @@ class OrderSummary(DataClassJsonMixin):
         items = []
         for reg in payment.registrations:
             items.append(OrderItem(
-                name=event.products[reg.product_key].name,
+                name=event.tickets[reg.ticket_key].name,
                 price=reg.price,
                 person=reg.person.full_name,
                 partner=reg.partner.full_name if reg.partner else None,
@@ -220,35 +220,35 @@ class PartnerTokenCheckResult(DataClassJsonMixin):
             return cls(success=False, error='Token is not valid for this event')
 
         return cls(success=True, name=active_registrations[0].person.full_name,
-                   roles={r.product_key: r.dance_role for r in active_registrations})
+                   roles={r.ticket_key: r.dance_role for r in active_registrations})
 
 
 def get_payment_from_form(event: Event, form, extra_registrations=None):
     registrations = []
-    for prod_key, prod in event.products.items():
+    for prod_key, prod in event.tickets.items():
         registrations += prod.parse_form(form)
 
     # apply extra registrations
     if extra_registrations is not None:
         applied_extra_registrations = []
         for reg in [r for r in registrations if not r.partner]:
-            product = event.products[reg.product_key]
-            if isinstance(product, WaitListedPartnerProduct):
-                applied_reg = product.apply_extra_partner(reg, extra_registrations)
+            ticket = event.tickets[reg.ticket_key]
+            if isinstance(ticket, WaitListedPartnerTicket):
+                applied_reg = ticket.apply_extra_partner(reg, extra_registrations)
                 if applied_reg:
                     applied_extra_registrations.append(applied_reg)
     else:
         applied_extra_registrations = None
 
     # add prices
-    pricer = ProductPricer.from_event(event)
+    pricer = TicketPricer.from_event(event)
     pricer.price_all(registrations)
 
     payment = Payment(
         paid_by=registrations[0].registered_by if len(registrations) else None,
         registrations=registrations,
         status=NEW,
-        info_items=[(event.products[r.product_key].item_info(r), r.price) for r in registrations],
+        info_items=[(event.tickets[r.ticket_key].item_info(r), r.price) for r in registrations],
         pay_all_now=form.pay_all.data,
     )
 
@@ -363,7 +363,7 @@ def do_pay(dao: TicketsDAO):
     if payment.extra_registrations:
         for reg in payment.registrations:
             for extra_reg in payment.extra_registrations:
-                if extra_reg.active and (reg.product_key == extra_reg.product_key):
+                if extra_reg.active and (reg.ticket_key == extra_reg.ticket_key):
                     take_existing_registration_off_waiting_list(dao, extra_reg, reg.registered_by)
 
     registration_post_process(dao, payment)
@@ -430,10 +430,10 @@ def balance_event_waiting_lists(dao: TicketsDAO, event_key: str):
 
     # it is a good idea to refresh event object
     event = dao.get_event_by_key(event_key)
-    for product_key, product in event.products.items():
-        if isinstance(product, WaitListedPartnerProduct):
-            if product.waiting_list.has_waiting_list:
-                for registration in product.balance_waiting_list():
+    for ticket_key, ticket in event.tickets.items():
+        if isinstance(ticket, WaitListedPartnerTicket):
+            if ticket.waiting_list.has_waiting_list:
+                for registration in ticket.balance_waiting_list():
                     take_existing_registration_off_waiting_list(dao, registration)
                     balanced_registrations.append(registration)
 

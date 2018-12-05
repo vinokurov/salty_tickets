@@ -5,7 +5,7 @@ from salty_tickets.constants import LEADER, FOLLOWER, NEW, SUCCESSFUL, COUPLE
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct
+from salty_tickets.models.tickets import WorkshopTicket, PartyTicket
 from salty_tickets.models.registrations import Person, Registration, Payment, PaymentStripeDetails
 from salty_tickets.waiting_lists import RegistrationStats
 
@@ -13,44 +13,44 @@ from salty_tickets.waiting_lists import RegistrationStats
 def test_dao_get_event(test_dao, salty_recipes):
     event = test_dao.get_event_by_key('salty_recipes')
     assert event.name == salty_recipes.name
-    assert list(event.products.keys()) == [p.key for p in salty_recipes.products]
-    assert event.products['saturday'].name == salty_recipes.products[0].name
+    assert list(event.tickets.keys()) == [p.key for p in salty_recipes.tickets]
+    assert event.tickets['saturday'].name == salty_recipes.tickets[0].name
 
-    assert isinstance(event.products['saturday'], WorkshopProduct)
-    assert isinstance(event.products['party'], PartyProduct)
+    assert isinstance(event.tickets['saturday'], WorkshopTicket)
+    assert isinstance(event.tickets['party'], PartyTicket)
 
     assert event.id is not None
-    for prod_key, product in event.products.items():
-        for reg in product.registrations:
+    for ticket_key, ticket in event.tickets.items():
+        for reg in ticket.registrations:
             assert reg.id is not None
-    assert isinstance(event.products['saturday'], WorkshopProduct)
+    assert isinstance(event.tickets['saturday'], WorkshopTicket)
 
-    assert event.products['saturday'].waiting_list.registration_stats == {
+    assert event.tickets['saturday'].waiting_list.registration_stats == {
         LEADER: RegistrationStats(accepted=1, waiting=0),
         FOLLOWER: RegistrationStats(accepted=4, waiting=1),
         COUPLE: RegistrationStats(accepted=0, waiting=0)
     }
 
-    assert event.products['sunday'].waiting_list.registration_stats == {
+    assert event.tickets['sunday'].waiting_list.registration_stats == {
         LEADER: RegistrationStats(accepted=3, waiting=0),
         FOLLOWER: RegistrationStats(accepted=2, waiting=0),
         COUPLE: RegistrationStats(accepted=2, waiting=0)
     }
 
 
-def test_dao_get_registrations_for_product(test_dao, salty_recipes):
+def test_dao_get_registrations_for_ticket(test_dao, salty_recipes):
     event = test_dao.get_event_by_key('salty_recipes', False)
-    registrations = test_dao.get_registrations_for_product(event, 'saturday')
+    registrations = test_dao.get_registrations_for_ticket(event, 'saturday')
 
     saturday_names = [key[0] for key in salty_recipes.registration_docs.keys() if key[1] == 'saturday']
     assert saturday_names == [r.person.full_name for r in registrations]
 
     LEN = len(registrations)
     event = test_dao.get_event_by_key('salty_recipes')
-    assert LEN == len(test_dao.get_registrations_for_product(event, event.products['saturday']))
+    assert LEN == len(test_dao.get_registrations_for_ticket(event, event.tickets['saturday']))
 
     event_doc = EventDocument.objects(key='salty_recipes').first()
-    assert LEN == len(test_dao.get_registrations_for_product(event_doc, event_doc.products['saturday']))
+    assert LEN == len(test_dao.get_registrations_for_ticket(event_doc, event_doc.tickets['saturday']))
 
 
 def test_add_person(test_dao, salty_recipes):
@@ -77,7 +77,7 @@ def test_add_registration(test_dao, salty_recipes):
         partner=ms_y,
         registered_by=mr_x,
         dance_role=LEADER,
-        product_key='saturday'
+        ticket_key='saturday'
     )
     test_dao.add_registration(registration, event=event)
     assert registration.id
@@ -94,14 +94,14 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday'),
+                     ticket_key='saturday'),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday'),
+                     ticket_key='saturday'),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunay'),
+                     ticket_key='sunay'),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunday'),
-        Registration(person=mr_x, registered_by=mr_x, product_key='party'),
+                     ticket_key='sunday'),
+        Registration(person=mr_x, registered_by=mr_x, ticket_key='party'),
     ]
     for r in registrations:
         test_dao.add_registration(r, event=event)
@@ -115,7 +115,7 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
     assert mr_x.id == registration_doc.registered_by.id
     assert ms_y.id == registration_doc.partner.id
 
-    sat_registrations = test_dao.get_registrations_for_product(event, 'saturday')
+    sat_registrations = test_dao.get_registrations_for_ticket(event, 'saturday')
     assert registrations[1] in sat_registrations
     assert registrations[0] == sat_registrations[-2]
     assert registrations[0].id == sat_registrations[-2].id
@@ -146,14 +146,14 @@ def test_add_retrieve_payments(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunay', price=25, paid_price=25),
+                     ticket_key='sunay', price=25, paid_price=25),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunday', price=25, paid_price=25),
-        Registration(person=mr_x, registered_by=mr_x, product_key='party', price=5, paid_price=5),
+                     ticket_key='sunday', price=25, paid_price=25),
+        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, paid_price=5),
     ]
 
     for r in registrations:
@@ -178,14 +178,14 @@ def test_add_retrieve_payments_auto_regester(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunay', price=25, paid_price=25),
+                     ticket_key='sunay', price=25, paid_price=25),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     product_key='sunday', price=25, paid_price=25),
-        Registration(person=mr_x, registered_by=mr_x, product_key='party', price=5, paid_price=5),
+                     ticket_key='sunday', price=25, paid_price=25),
+        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, paid_price=5),
     ]
 
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
@@ -225,9 +225,9 @@ def test_update_statuses(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, active=False,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=FOLLOWER, active=False,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
     ]
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
                       date=datetime(2018, 9, 3, 17, 0))
@@ -248,7 +248,7 @@ def test_update_statuses(test_dao, salty_recipes):
         reg.active
         test_dao.update_registration(reg)
 
-    saved_registrations = test_dao.get_registrations_for_product(event, 'saturday')
+    saved_registrations = test_dao.get_registrations_for_ticket(event, 'saturday')
     assert saved_registrations[-1] == saved_payment.registrations[-1]
     assert saved_registrations[-2] == saved_payment.registrations[-2]
     assert saved_registrations[-2].id == saved_payment.registrations[-2].id
@@ -261,9 +261,9 @@ def test_dao_mark_registrations_as_couple(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, registered_by=mr_x, dance_role=LEADER, active=False,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
         Registration(person=ms_y, registered_by=ms_y, dance_role=FOLLOWER, active=False,
-                     product_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, paid_price=25),
     ]
     for r in registrations:
         test_dao.add_registration(r, event=event)
@@ -282,10 +282,10 @@ def test_dao_query_registrations(test_dao, salty_recipes):
 
     registrations = test_dao.query_registrations('salty_recipes', person=person_0)
     expected = [('Chang Schultheis', 'saturday'), ('Chang Schultheis', 'sunday'), ('Chang Schultheis', 'party')]
-    assert expected == [(r.person.full_name, r.product_key) for r in registrations]
+    assert expected == [(r.person.full_name, r.ticket_key) for r in registrations]
 
-    registrations = test_dao.query_registrations('salty_recipes', person=person_0, product='saturday')
-    assert [('Chang Schultheis', 'saturday')] == [(r.person.full_name, r.product_key) for r in registrations]
+    registrations = test_dao.query_registrations('salty_recipes', person=person_0, ticket='saturday')
+    assert [('Chang Schultheis', 'saturday')] == [(r.person.full_name, r.ticket_key) for r in registrations]
 
 
 def test_get_payment_event(test_dao, salty_recipes):
@@ -304,7 +304,7 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5,
                       registrations=[
                             Registration(person=mr_x, registered_by=mr_x, dance_role=LEADER,
-                                         product_key='saturday', price=25, paid_price=25),
+                                         ticket_key='saturday', price=25, paid_price=25),
                         ],
                       status=NEW, date=datetime(2018, 9, 3, 17, 0))
     test_dao.add_payment(payment, event, register=True)

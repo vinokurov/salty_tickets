@@ -5,11 +5,11 @@ from salty_tickets.models.registrations import Registration
 
 
 @dataclass
-class ProductPricer:
+class TicketPricer:
     """
-    A class to calculate prices for the selected products
+    A class to calculate prices for the selected tickets
     """
-    event_products: dict = field(default_factory=dict)
+    event_tickets: dict = field(default_factory=dict)
     price_rules: list = field(default_factory=list)
 
     def __post_init__(self):
@@ -25,7 +25,7 @@ class ProductPricer:
     def optimal_price(self, registration: Registration,
                       registration_list: List[Registration],
                       priced_registrations: List[Registration]) -> float:
-        possible_prices = [rule.price(registration, registration_list, self.event_products, priced_registrations)
+        possible_prices = [rule.price(registration, registration_list, self.event_tickets, priced_registrations)
                            for rule in self.price_rules]
         possible_prices = [p for p in possible_prices if p is not None]
         if possible_prices:
@@ -35,26 +35,26 @@ class ProductPricer:
     @classmethod
     def from_event(cls, event):
         pricing_rules = [PRICING_RULES[k['name']](**k['kwargs']) for k in event.pricing_rules]
-        return cls(event.products, pricing_rules)
+        return cls(event.tickets, pricing_rules)
 
 
 class BasePriceRule:
-    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
-        return event_products[registration.product_key].base_price
+    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
+        return event_tickets[registration.ticket_key].base_price
 
     @classmethod
-    def filter_products_by_tag(cls, event_products, tag):
-        return [k for k, p in event_products.items() if tag in p.tags]
+    def filter_tickets_by_tag(cls, event_tickets, tag):
+        return [k for k, p in event_tickets.items() if tag in p.tags]
 
 
 @dataclass
 class TaggedBasePriceRule(BasePriceRule):
     tag: str
 
-    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
-        applicable_product_keys = self.filter_products_by_tag(event_products, self.tag)
-        if registration.product_key in applicable_product_keys:
-            return super(TaggedBasePriceRule, self).price(registration, registration_list, event_products, priced_registrations)
+    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
+        applicable_ticket_keys = self.filter_tickets_by_tag(event_tickets, self.tag)
+        if registration.ticket_key in applicable_ticket_keys:
+            return super(TaggedBasePriceRule, self).price(registration, registration_list, event_tickets, priced_registrations)
 
 
 @dataclass
@@ -63,11 +63,11 @@ class SpecialPriceIfMoreThanPriceRule(BasePriceRule):
     special_price: float
     tag: str
 
-    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
-        applicable_product_keys = [k for k, p in event_products.items()
+    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
+        applicable_ticket_keys = [k for k, p in event_tickets.items()
                                    if self.tag in p.tags]
-        if registration.product_key in applicable_product_keys:
-            already = [r for r in priced_registrations if r.product_key in applicable_product_keys]
+        if registration.ticket_key in applicable_ticket_keys:
+            already = [r for r in priced_registrations if r.ticket_key in applicable_ticket_keys]
 
             # make sure we count only purchase items for one person
             person = registration.person
@@ -83,15 +83,15 @@ class CombinationsPriceRule(BasePriceRule):
     tag: str
     count_prices: Dict[str, float]
 
-    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
-        applicable_product_keys = [k for k, p in event_products.items()
+    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
+        applicable_ticket_keys = [k for k, p in event_tickets.items()
                                    if self.tag in p.tags]
-        if registration.product_key in applicable_product_keys:
+        if registration.ticket_key in applicable_ticket_keys:
             # make sure we count only purchase items for one person
             person = registration.person
             if person:
                 counted_regs = [r for r in registration_list
-                                if r.product_key in applicable_product_keys
+                                if r.ticket_key in applicable_ticket_keys
                                 and r.person == person]
                 count = len(counted_regs)
                 if str(count) in self.count_prices:
@@ -109,7 +109,7 @@ class MindTheShagPriceRule(BasePriceRule):
     tag_party: str = 'party'
     tag_clinic: str = 'clinic'
 
-    def price(self, registration, registration_list, event_products, priced_registrations) -> float:
+    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
         person = registration.person
         if person:
             person_registrations = [r for r in registration_list if r.person == person]
@@ -118,15 +118,15 @@ class MindTheShagPriceRule(BasePriceRule):
             person_registrations = registration_list
             person_priced_registrations = priced_registrations
 
-        registration_keys = [r.product_key for r in person_registrations]
-        station_keys = self.filter_products_by_tag(event_products, self.tag_station)
-        fast_train_station_keys = self.filter_products_by_tag(event_products, self.tag_fast_train)
-        party_keys = self.filter_products_by_tag(event_products, self.tag_party)
-        clinic_keys = self.filter_products_by_tag(event_products, self.tag_clinic)
+        registration_keys = [r.ticket_key for r in person_registrations]
+        station_keys = self.filter_tickets_by_tag(event_tickets, self.tag_station)
+        fast_train_station_keys = self.filter_tickets_by_tag(event_tickets, self.tag_fast_train)
+        party_keys = self.filter_tickets_by_tag(event_tickets, self.tag_party)
+        clinic_keys = self.filter_tickets_by_tag(event_tickets, self.tag_clinic)
 
-        stations_priced_count = len([r for r in person_priced_registrations if r.product_key in station_keys])
+        stations_priced_count = len([r for r in person_priced_registrations if r.ticket_key in station_keys])
 
-        if registration.product_key in clinic_keys:
+        if registration.ticket_key in clinic_keys:
             if 'full_weekend_ticket' in registration_keys or 'full_weekend_ticket_no_parties' in registration_keys:
                 if stations_priced_count < 3:
                     return self.price_clinic - self.price_station_extra
@@ -135,9 +135,9 @@ class MindTheShagPriceRule(BasePriceRule):
             else:
                 return self.price_clinic
 
-        elif registration.product_key in station_keys:
+        elif registration.ticket_key in station_keys:
             if 'fast_shag_train' in registration_keys or 'fast_shag_train_no_parties' in registration_keys:
-                if registration.product_key in fast_train_station_keys:
+                if registration.ticket_key in fast_train_station_keys:
                     return 0.0
                 else:
                     return self.price_station_extra
@@ -150,7 +150,7 @@ class MindTheShagPriceRule(BasePriceRule):
             else:
                 return self.price_station
 
-        elif registration.product_key in party_keys:
+        elif registration.ticket_key in party_keys:
             if any([x in registration_keys for x in ['fast_shag_train', 'full_weekend_ticket', 'party_pass']]):
                 return 0.0
 

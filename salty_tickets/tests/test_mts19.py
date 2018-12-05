@@ -4,7 +4,7 @@ import pytest
 from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
     do_check_partner_token
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct, FestivalPass
+from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, FestivalPassTicket
 from salty_tickets.models.merchandise import MerchandiseProduct
 from salty_tickets.utils.utils import jsonify_dataclass
 
@@ -58,7 +58,7 @@ def mts(test_dao):
     )
 
     products = [
-        WorkshopProduct(
+        WorkshopTicket(
             name='Rockabilly Bopper Shag',
             key='rockabilly_bopper',
             info='Rockabilly Bopper Shag info',
@@ -68,7 +68,7 @@ def mts(test_dao):
             level='collegiate any',
             **kwargs_station,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='St.Louis Cocktail',
             key='stl_cocktail',
             info='St.Louis Cocktail info',
@@ -78,7 +78,7 @@ def mts(test_dao):
             level='St.Louis Any',
             **kwargs_station,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Showmans Shag',
             key='showmans_shag',
             info='Showmans Shag info',
@@ -88,7 +88,7 @@ def mts(test_dao):
             level='Collegiate Adv',
             **kwargs_station,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Savoy Shag',
             key='savoy_shag',
             info='Savoy Shag info',
@@ -98,7 +98,7 @@ def mts(test_dao):
             level='Collegiate Any',
             **kwargs_station,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Hurricane Shag',
             key='hurricane_shag',
             info='Hurricane Shag info',
@@ -108,7 +108,7 @@ def mts(test_dao):
             level='Collegiate Any',
             **kwargs_station,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Shag Roots',
             key='shag_roots',
             info='Shag Roots info',
@@ -118,7 +118,7 @@ def mts(test_dao):
             level='Collegiate Beginner',
             **kwargs_train,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Rising Shag',
             key='rising_shag',
             info='Rising Shag info',
@@ -128,7 +128,7 @@ def mts(test_dao):
             level='Collegiate Beginner',
             **kwargs_train,
         ),
-        WorkshopProduct(
+        WorkshopTicket(
             name='Shag Clinic',
             key='shag_clinic',
             info='Shag Clinic info',
@@ -142,7 +142,7 @@ def mts(test_dao):
             base_price=40.0,
             tags={'mts', 'station', 'clinic'},
         ),
-        PartyProduct(
+        PartyTicket(
             name='Friday Party',
             key='friday_party',
             info='Friday Party Info',
@@ -153,7 +153,7 @@ def mts(test_dao):
             max_available=200,
             tags={'party'},
         ),
-        PartyProduct(
+        PartyTicket(
             name='Saturday Party',
             key='saturday_party',
             info='Saturday Party Info',
@@ -164,7 +164,7 @@ def mts(test_dao):
             max_available=200,
             tags={'party'},
         ),
-        PartyProduct(
+        PartyTicket(
             name='Sunday Party',
             key='sunday_party',
             info='Sunday Party Info',
@@ -175,7 +175,7 @@ def mts(test_dao):
             max_available=150,
             tags={'party'},
         ),
-        FestivalPass(
+        FestivalPassTicket(
             name='Full Weekend Ticket',
             key='full_weekend_ticket',
             info='Includes 3 stations and all parties',
@@ -185,7 +185,7 @@ def mts(test_dao):
                 'station': 3,
             },
         ),
-        FestivalPass(
+        FestivalPassTicket(
             name='Full Weekend Ticket w/o parties',
             key='full_weekend_ticket_no_parties',
             info='Includes 3 stations and no parties',
@@ -194,7 +194,7 @@ def mts(test_dao):
                 'station': 3,
             },
         ),
-        FestivalPass(
+        FestivalPassTicket(
             name='Fast Shag Train',
             key='fast_shag_train',
             info='Intensive beginner shag training and all parties',
@@ -204,7 +204,7 @@ def mts(test_dao):
                 'train': 2,
             },
         ),
-        FestivalPass(
+        FestivalPassTicket(
             name='Fast Shag Train w/o parties',
             key='fast_shag_train_no_parties',
             info='Intensive beginner shag and no parties',
@@ -213,7 +213,7 @@ def mts(test_dao):
                 'train': 2,
             },
         ),
-        FestivalPass(
+        FestivalPassTicket(
             name='Party Pass',
             key='party_pass',
             info='Includes all 3 parties',
@@ -259,7 +259,7 @@ def mts(test_dao):
         ),
     ]
 
-    event.append_products(products)
+    event.append_tickets(products)
     test_dao.create_event(event)
 
 

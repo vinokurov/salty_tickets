@@ -44,8 +44,8 @@ def test_e2e_leader_accepted(e2e_vars):
 
     # make sure we don't have waiting list for leaders
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.can_add(LEADER)
-    assert not event.products['saturday'].waiting_list.can_add(FOLLOWER)
+    assert event.tickets['saturday'].waiting_list.can_add(LEADER)
+    assert not event.tickets['saturday'].waiting_list.can_add(FOLLOWER)
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': LEADER}
     payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
@@ -62,7 +62,7 @@ def test_e2e_follower_wait_listed_pay_all(e2e_vars):
 
     # make sure we have waiting lsit
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': FOLLOWER, 'pay_all': 'y'}
     payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
@@ -81,9 +81,9 @@ def test_e2e_follower_wait_listed_some_pay_all(e2e_vars):
 
     # make sure we have waiting list
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
     # make sure we don't  have waiting list on sunday
-    assert not event.products['sunday'].waiting_list.has_waiting_list
+    assert not event.tickets['sunday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'pay_all': 'y',
                  'saturday-add': FOLLOWER, 'sunday-add': FOLLOWER}
@@ -110,7 +110,7 @@ def test_e2e_follower_wait_listed_pay_later(e2e_vars):
 
     # make sure we have waiting lsit
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': FOLLOWER, 'pay_all': ''}
     payment = price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
@@ -130,9 +130,9 @@ def test_e2e_follower_wait_listed_some_pay_later(e2e_vars):
 
     # make sure we have waiting list
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
     # make sure we don't  have waiting list on sunday
-    assert not event.products['sunday'].waiting_list.has_waiting_list
+    assert not event.tickets['sunday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'pay_all': '',
                  'saturday-add': FOLLOWER, 'sunday-add': FOLLOWER}
@@ -163,7 +163,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
 
     # make sure we have waiting lsit
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     # FOLLOWER
     new_client = e2e_vars.app.test_client()
@@ -223,7 +223,7 @@ def test_e2e_leader_uses_waiting_followers_token(e2e_vars):
 
     # make sure we have waiting list
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()
@@ -267,7 +267,7 @@ def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
 
     # make sure we have waiting lsit
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()
@@ -311,7 +311,7 @@ def test_e2e_follower_pays_later_leader_uses_her_token(e2e_vars):
 
     # make sure we have waiting list
     event = e2e_vars.dao.get_event_by_key('salty_recipes')
-    assert event.products['saturday'].waiting_list.has_waiting_list
+    assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()

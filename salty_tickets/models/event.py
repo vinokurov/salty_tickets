@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from dataclasses import dataclass, field
 from salty_tickets.models.merchandise import MerchandiseProduct
-from salty_tickets.models.products import RegistrationProduct
+from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.utils import string_to_key
 
 
@@ -15,7 +15,7 @@ class Event:
     end_date: datetime = None
     info: str = None
     active: bool = False
-    products: Dict[str, RegistrationProduct] = field(default_factory=dict)
+    tickets: Dict[str, Ticket] = field(default_factory=dict)
     merchandise: Dict[str, MerchandiseProduct] = field(default_factory=dict)
     pricing_rules: List = field(default_factory=list)
     validation_rules: List = field(default_factory=list)
@@ -25,5 +25,5 @@ class Event:
         if self.key is None:
             self.key = string_to_key(self.name)
 
-    def append_products(self, product_list):
-        self.products.update({p.key: p for p in product_list})
+    def append_tickets(self, ticket_list):
+        self.tickets.update({p.key: p for p in ticket_list})

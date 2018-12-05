@@ -77,18 +77,18 @@ def test_PartnerTokenCheckResult(test_dao, person_factory):
     assert expected == PartnerTokenCheckResult.from_registration_list([])
 
     registrations = [
-        Registration(person=p1, dance_role=LEADER, product_key='k1', active=False),
-        Registration(person=p1, product_key='k2', active=True),
-        Registration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
+        Registration(person=p1, dance_role=LEADER, ticket_key='k1', active=False),
+        Registration(person=p1, ticket_key='k2', active=True),
+        Registration(person=p1, dance_role=LEADER, ticket_key='k3', active=True, partner=p2),
     ]
     expected = PartnerTokenCheckResult(success=False, error='Token is not valid for this event')
     assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
 
     registrations = [
-        Registration(person=p1, dance_role=LEADER, product_key='k1', active=True),
-        Registration(person=p1, dance_role=FOLLOWER, product_key='k2', active=True),
-        Registration(person=p1, dance_role=LEADER, product_key='k3', active=True, partner=p2),
-        Registration(person=p1, dance_role=LEADER, product_key='k4', active=False),
+        Registration(person=p1, dance_role=LEADER, ticket_key='k1', active=True),
+        Registration(person=p1, dance_role=FOLLOWER, ticket_key='k2', active=True),
+        Registration(person=p1, dance_role=LEADER, ticket_key='k3', active=True, partner=p2),
+        Registration(person=p1, dance_role=LEADER, ticket_key='k4', active=False),
     ]
     expected = PartnerTokenCheckResult(success=True, error='', name=p1.full_name, roles={'k1': LEADER, 'k2': FOLLOWER})
     assert expected == PartnerTokenCheckResult.from_registration_list(registrations)
@@ -118,7 +118,7 @@ def test_register_one(test_dao, app, client, salty_recipes):
         valid = form.validate_on_submit()
         assert valid
         payment = get_payment_from_form(event, form)
-        assert [('saturday', LEADER)] == [(r.product_key, r.dance_role) for r in payment.registrations]
+        assert [('saturday', LEADER)] == [(r.ticket_key, r.dance_role) for r in payment.registrations]
         assert [('Saturday / Leader / Mr X', 25.0)] == payment.info_items
         assert 25 == payment.price
         assert 0.57 == payment.transaction_fee
@@ -143,7 +143,7 @@ def test_register_couple(test_dao, app, client, salty_recipes):
         assert valid
         payment = get_payment_from_form(event, form)
         assert [('saturday', LEADER), ('saturday', FOLLOWER),
-                ('sunday', LEADER), ('sunday', FOLLOWER)] == [(r.product_key, r.dance_role)
+                ('sunday', LEADER), ('sunday', FOLLOWER)] == [(r.ticket_key, r.dance_role)
                                                               for r in payment.registrations]
         # assert ['Saturday / leader / Mr X'] == payment.info_items
         assert 100 == payment.price
@@ -391,7 +391,7 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     mock_stripe.Customer.create.return_value = sample_stripe_customer
 
     event = test_dao.get_event_by_key('salty_recipes')
-    assert not event.products['sunday'].waiting_list.has_waiting_list
+    assert not event.tickets['sunday'].waiting_list.has_waiting_list
 
     def _register_one(role):
         person = person_factory.pop()
@@ -402,7 +402,7 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
         return res
 
     # add followers so that we have a waiting list
-    while not event.products['sunday'].waiting_list.has_waiting_list:
+    while not event.tickets['sunday'].waiting_list.has_waiting_list:
         res = _register_one(FOLLOWER)
         event = test_dao.get_event_by_key('salty_recipes')
 
@@ -411,19 +411,19 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     assert not first_waiting_follower.paid_price
 
     # now create leaders until we can balance
-    waiting_list = event.products['sunday'].waiting_list
+    waiting_list = event.tickets['sunday'].waiting_list
     while waiting_list.registration_stats[FOLLOWER].accepted / (waiting_list.registration_stats[LEADER].accepted + 1) > waiting_list.ratio:
         _register_one(LEADER)
         first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
         assert first_waiting_follower.wait_listed
 
         event = test_dao.get_event_by_key('salty_recipes')
-        waiting_list = event.products['sunday'].waiting_list
+        waiting_list = event.tickets['sunday'].waiting_list
 
     # now add one more leader and make sure that waiting list gets balanced
     _register_one(LEADER)
     event = test_dao.get_event_by_key('salty_recipes')
-    waiting_list = event.products['sunday'].waiting_list
+    waiting_list = event.tickets['sunday'].waiting_list
 
     assert waiting_list.current_ratio <= waiting_list.ratio
     first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
@@ -495,7 +495,7 @@ def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_
 
 def test_do_check_partner_token(mock_send_email, salty_recipes, test_dao, app_routes, client):
     event = test_dao.get_event_by_key('salty_recipes', False)
-    partner = test_dao.get_registrations_for_product(event, 'saturday')[0].person
+    partner = test_dao.get_registrations_for_ticket(event, 'saturday')[0].person
     ptn_token = PartnerToken().serialize(partner)
     post_data = {'partner_token': ptn_token, 'event_key': 'salty_recipes'}
     res = post_json_data(client, '/check_partner_token', data=post_data)

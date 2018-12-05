@@ -10,7 +10,7 @@ from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
 from salty_tickets.models.merchandise import MerchandiseProduct
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase
-from salty_tickets.models.products import RegistrationProduct
+from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
 
@@ -24,7 +24,7 @@ class RegistrationDocument(fields.Document):
     person = fields.ReferenceField('PersonDocument', required=True)
     partner = fields.ReferenceField('PersonDocument', null=True)
     registered_by = fields.ReferenceField('PersonDocument', required=True)
-    product_key = fields.StringField(required=True)
+    ticket_key = fields.StringField(required=True)
     event = fields.ReferenceField('EventDocument', required=True)
 
     def to_dataclass(self):
@@ -49,31 +49,31 @@ class PurchaseDocument(fields.Document):
         return model
 
 
-@fields_from_dataclass(RegistrationProduct, skip=['registrations', 'product_class', 'product_class_parameters'])
-class EventProductDocument(fields.EmbeddedDocument):
+@fields_from_dataclass(Ticket, skip=['registrations', 'ticket_class', 'ticket_class_parameters'])
+class TicketDocument(fields.EmbeddedDocument):
     image_url = fields.URLField()
 
-    product_class = fields.StringField(required=True)
-    product_class_parameters = fields.DictField()
+    ticket_class = fields.StringField(required=True)
+    ticket_class_parameters = fields.DictField()
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
         model_dict = dataclasses.asdict(model_dataclass)
-        base_fields = [f.name for f in dataclasses.fields(RegistrationProduct)]
+        base_fields = [f.name for f in dataclasses.fields(Ticket)]
         kwargs = {f: model_dict.pop(f) for f in base_fields if f in model_dict}
         kwargs.pop('registrations')
-        kwargs['product_class'] = model_dataclass.__class__.__name__
-        kwargs['product_class_parameters'] = model_dict
-        product_doc = cls(**kwargs)
-        return product_doc
+        kwargs['ticket_class'] = model_dataclass.__class__.__name__
+        kwargs['ticket_class_parameters'] = model_dict
+        ticket_doc = cls(**kwargs)
+        return ticket_doc
 
     def to_dataclass(self):
-        kwargs = self.product_class_parameters
-        model_class = getattr(models.products, self.product_class)
-        model_fields = [f.name for f in dataclasses.fields(RegistrationProduct) if f.name not in ['registrations']]
+        kwargs = self.ticket_class_parameters
+        model_class = getattr(models.tickets, self.ticket_class)
+        model_fields = [f.name for f in dataclasses.fields(Ticket) if f.name not in ['registrations']]
         kwargs.update({f: getattr(self, f) for f in model_fields})
-        product_model = model_class(**kwargs)
-        return product_model
+        ticket_model = model_class(**kwargs)
+        return ticket_model
 
 
 @fields_from_dataclass(MerchandiseProduct)
@@ -81,29 +81,29 @@ class MerchandiseProductDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Event, skip=['products', 'merchandise'])
+@fields_from_dataclass(Event, skip=['tickets', 'merchandise'])
 class EventDocument(fields.Document):
     meta = {
         'collection': 'events',
     }
     key = fields.StringField()
-    products = fields.MapField(fields.EmbeddedDocumentField(EventProductDocument))
+    tickets = fields.MapField(fields.EmbeddedDocumentField(TicketDocument))
     merchandise = fields.MapField(fields.EmbeddedDocumentField(MerchandiseProductDocument))
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
         event_doc = cls._from_dataclass(model_dataclass)
-        event_doc.products = {p_key: EventProductDocument.from_dataclass(p)
-                              for p_key, p in model_dataclass.products.items()}
+        event_doc.tickets = {p_key: TicketDocument.from_dataclass(p)
+                              for p_key, p in model_dataclass.tickets.items()}
         event_doc.merchandise = {p_key: MerchandiseProductDocument.from_dataclass(p)
                                  for p_key, p in model_dataclass.merchandise.items()}
         return event_doc
 
     def to_dataclass(self):
         event_model = self._to_dataclass()
-        for p_key, prd in self.products.items():
-            product_doc = prd.to_dataclass()
-            event_model.products[p_key] = product_doc
+        for p_key, prd in self.tickets.items():
+            ticket_doc = prd.to_dataclass()
+            event_model.tickets[p_key] = ticket_doc
 
         for p_key, prd in self.merchandise.items():
             merchandise_doc = prd.to_dataclass()
@@ -193,14 +193,14 @@ class TicketsDAO:
         event = event_doc.to_dataclass()
         if get_registrations:
             registrations = self.query_registrations(event)
-            for product_key in event.products:
-                event.products[product_key].registrations = [r for r in registrations if r.product_key == product_key]
+            for ticket_key in event.tickets:
+                event.tickets[ticket_key].registrations = [r for r in registrations if r.ticket_key == ticket_key]
 
         return event
 
-    def get_registrations_for_product(self, event: Event, product) -> List[Registration]:
+    def get_registrations_for_ticket(self, event: Event, ticket) -> List[Registration]:
         filters = {
-            'product_key': self._get_product_key(product),
+            'ticket_key': self._get_ticket_key(ticket),
             'event': event.id,
         }
 
@@ -227,11 +227,11 @@ class TicketsDAO:
         else:
             raise ValueError(f'Invalid event argument: {event}')
 
-    def _get_product_key(self, product) -> str:
-        if isinstance(product, str):
-            return product
+    def _get_ticket_key(self, ticket) -> str:
+        if isinstance(ticket, str):
+            return ticket
         else:
-            return product.key
+            return ticket.key
 
     def _get_or_create_new_person(self, person, event) -> PersonDocument:
         if not hasattr(person, 'id'):
@@ -306,7 +306,7 @@ class TicketsDAO:
                 return payment_doc.to_dataclass()
 
     def query_registrations(self, event: Event, person: Person=None, paid_by: Person=None,
-                            partner: Person=None, product=None) -> List[Registration]:
+                            partner: Person=None, ticket=None) -> List[Registration]:
         filters = {'event': self._get_event_id(event)}
         if person is not None:
             filters['person'] = self._get_doc(PersonDocument, person)
@@ -314,8 +314,8 @@ class TicketsDAO:
             filters['paid_by'] = self._get_doc(PersonDocument, paid_by)
         if partner is not None:
             filters['partner'] = self._get_doc(PersonDocument, partner)
-        if product is not None:
-            filters['product_key'] = self._get_product_key(product)
+        if ticket is not None:
+            filters['ticket_key'] = self._get_ticket_key(ticket)
 
         return [r.to_dataclass() for r in RegistrationDocument.objects(**filters).select_related(3)]
 
@@ -347,7 +347,7 @@ class TicketsDAO:
         self._update_doc(PersonDocument, person)
 
     def update_registration(self, registration: Registration):
-        registration_0 = self.get_product_registration_by_id(registration.id)
+        registration_0 = self.get_ticket_registration_by_id(registration.id)
         extra_updates = {}
         event = RegistrationDocument.objects(id=registration.id).first().event.key
         if registration.person != registration_0.person:
@@ -363,9 +363,7 @@ class TicketsDAO:
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)
 
-    def mark_registrations_as_couple(self,
-                                     registration_1: Registration,
-                                     registration_2: Registration):
+    def mark_registrations_as_couple(self, registration_1: Registration, registration_2: Registration):
         registration_1.partner = registration_2.person
         registration_2.partner = registration_1.person
         self.update_registration(registration_1)
@@ -391,7 +389,7 @@ class TicketsDAO:
         if docs:
             return [d.to_dataclass() for d in docs]
 
-    def get_product_registration_by_id(self, object_id) -> Registration:
+    def get_ticket_registration_by_id(self, object_id) -> Registration:
         doc = RegistrationDocument.objects(**id_filter(object_id)).first()
         if doc:
             return doc.to_dataclass()

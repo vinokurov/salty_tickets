@@ -7,7 +7,7 @@ from salty_tickets.constants import COUPLE, LEADER, FOLLOWER
 from salty_tickets.forms import create_event_form, DanceSignupForm, get_primary_personal_info_from_form, \
     need_partner_check
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, RegistrationProduct, PartnerProductForm, PartyProduct
+from salty_tickets.models.tickets import WorkshopTicket, Ticket, PartnerTicketForm, PartyTicket
 from wtforms import ValidationError
 
 
@@ -15,10 +15,10 @@ from wtforms import ValidationError
 def sample_event():
     """Sample event with 2 workshops and 1 party"""
     event = Event(name='Sample Event')
-    event.append_products([
-        WorkshopProduct(name='WS 1', base_price=15.0, max_available=10, ratio=1.5),
-        WorkshopProduct(name='WS 2', base_price=15.0, max_available=10, ratio=1.5),
-        PartyProduct(name='Main Party', base_price=5.0, max_available=20)
+    event.append_tickets([
+        WorkshopTicket(name='WS 1', base_price=15.0, max_available=10, ratio=1.5),
+        WorkshopTicket(name='WS 2', base_price=15.0, max_available=10, ratio=1.5),
+        PartyTicket(name='Main Party', base_price=5.0, max_available=20)
     ])
     return event
 
@@ -27,17 +27,17 @@ def test_create_event_form(app):
     event = Event(name='Salty Recipes', key='salty_recipes',
                   start_date=datetime(2018, 10, 11, 10, 0), end_date=datetime(2018, 10, 11, 16, 0))
 
-    products = [
-        WorkshopProduct(name='Morning WS', base_price=15.0, max_available=10, ratio=1.5, start_datetime=datetime(2018, 10, 11, 10, 0), end_datetime=datetime(2018, 10, 11, 12, 0)),
-        WorkshopProduct(name='Evening WS', base_price=15.0, max_available=10, ratio=1.5, start_datetime=datetime(2018, 10, 11, 15, 0), end_datetime=datetime(2018, 10, 11, 16, 0)),
+    tickets = [
+        WorkshopTicket(name='Morning WS', base_price=15.0, max_available=10, ratio=1.5, start_datetime=datetime(2018, 10, 11, 10, 0), end_datetime=datetime(2018, 10, 11, 12, 0)),
+        WorkshopTicket(name='Evening WS', base_price=15.0, max_available=10, ratio=1.5, start_datetime=datetime(2018, 10, 11, 15, 0), end_datetime=datetime(2018, 10, 11, 16, 0)),
     ]
-    event.append_products(products)
+    event.append_tickets(tickets)
 
     form_class = create_event_form(event)
     assert issubclass(form_class, DanceSignupForm)
 
     form = form_class()
-    assert form.get_product_by_key(products[0].key).form_class == products[0].get_form_class()
+    assert form.get_ticket_by_key(tickets[0].key).form_class == tickets[0].get_form_class()
 
 
 def test_get_primary_personal_info_from_form():
@@ -56,30 +56,30 @@ def test_get_primary_personal_info_from_form():
 
 
 def test_need_partner_check():
-    product_1 = Mock()
-    product_2 = Mock()
+    ticket_1 = Mock()
+    ticket_2 = Mock()
 
-    event = Event(name='Salty Recipes', products={'p1': product_1, 'p2': product_2})
+    event = Event(name='Salty Recipes', tickets={'p1': ticket_1, 'p2': ticket_2})
     event_form = Mock()
     form_field = Mock()
 
-    # field is empty and products require partner info
+    # field is empty and tickets require partner info
     form_field.data = None
-    product_1.needs_partner.return_value = True
-    product_2.needs_partner.return_value = False
+    ticket_1.needs_partner.return_value = True
+    ticket_2.needs_partner.return_value = False
     with raises(ValidationError):
         need_partner_check(event, event_form, form_field)
 
-    # field is empty but products don't require partner info
+    # field is empty but tickets don't require partner info
     form_field.data = None
-    product_1.needs_partner.return_value = False
-    product_2.needs_partner.return_value = False
+    ticket_1.needs_partner.return_value = False
+    ticket_2.needs_partner.return_value = False
     assert not need_partner_check(event, event_form, form_field)
 
     # field is not empty
     form_field.data = 'Some text'
-    product_1.needs_partner.return_value = True
-    product_2.needs_partner.return_value = False
+    ticket_1.needs_partner.return_value = True
+    ticket_2.needs_partner.return_value = False
     assert not need_partner_check(event, event_form, form_field)
 
 

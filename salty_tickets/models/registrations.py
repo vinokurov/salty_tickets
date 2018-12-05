@@ -27,7 +27,7 @@ class Registration:
     price: float = None
     paid_price: float = None
     date: datetime = None
-    product_key: str = None
+    ticket_key: str = None
     active: bool = False
 
     @property

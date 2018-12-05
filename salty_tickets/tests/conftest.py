@@ -15,7 +15,7 @@ from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import WorkshopProduct, PartyProduct, RegistrationProduct
+from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, Ticket
 from salty_tickets.models.registrations import Person
 from salty_tickets.api.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
     do_price
@@ -39,7 +39,7 @@ def test_dao():
 
 @dataclass
 class RegistrationMeta:
-    product_key: str
+    ticket_key: str
     dance_role: str = None
     price: float = None
     name: str = None
@@ -66,7 +66,7 @@ class EventMeta:
     info: str
     start_date: datetime
     end_date: datetime
-    products: typing.List[RegistrationProduct]
+    tickets: typing.List[Ticket]
     payments: typing.List[PaymentMeta]
 
 
@@ -77,10 +77,10 @@ def salty_recipes(test_dao):
         info='Salty Recipes Shag Weekender with super duper teachers',
         start_date=datetime(2018, 7, 10),
         end_date=datetime(2018, 7, 11),
-        products=[
-            WorkshopProduct(name='Saturday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
-            WorkshopProduct(name='Sunday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
-            PartyProduct('Party', base_price=10.0, max_available=50, tags={'full'}),
+        tickets=[
+            WorkshopTicket(name='Saturday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
+            WorkshopTicket(name='Sunday', base_price=25.0, max_available=15, ratio=1.3, allow_first=2, tags={'full'}),
+            PartyTicket('Party', base_price=10.0, max_available=50, tags={'full'}),
         ],
         payments=[
             PaymentMeta('Chang Schultheis', registrations=[
@@ -103,7 +103,7 @@ def salty_recipes(test_dao):
             ]),
             PaymentMeta('Emerson Damiano', [RegistrationMeta('sunday', LEADER), RegistrationMeta('party')]),
             PaymentMeta('Stevie Stumpf', [
-                CoupleRegistrationMeta(product_key='sunday', dance_role=LEADER, partner_name='Albertine Segers'),
+                CoupleRegistrationMeta(ticket_key='sunday', dance_role=LEADER, partner_name='Albertine Segers'),
                 RegistrationMeta('party'),
                 RegistrationMeta('party', name='Albertine Segers'),
             ])
@@ -119,7 +119,7 @@ def save_event_from_meta(event_meta):
         start_date=event_meta.start_date,
         end_date=event_meta.end_date,
         info=event_meta.info,
-        products={p.key: p for p in event_meta.products}
+        tickets={p.key: p for p in event_meta.tickets}
     ))
     new_event.save(force_insert=True)
 
@@ -143,7 +143,7 @@ def save_event_from_meta(event_meta):
         registration_docs = []
 
         for reg_meta in payment_meta.registrations:
-            price = reg_meta.price or new_event.products[reg_meta.product_key].base_price
+            price = reg_meta.price or new_event.tickets[reg_meta.ticket_key].base_price
             paid = reg_meta.paid or price
 
             if reg_meta.active is not None:
@@ -156,7 +156,7 @@ def save_event_from_meta(event_meta):
             else:
                 reg = persons[payment_meta.name]
 
-            kwargs = {'product_key': reg_meta.product_key, 'wait_listed': reg_meta.wait_listed,
+            kwargs = {'ticket_key': reg_meta.ticket_key, 'wait_listed': reg_meta.wait_listed,
                       'price': price, 'paid_price': paid,
                       'event': new_event, 'person': reg, 'registered_by': reg, 'active': active}
             if reg_meta.dance_role is not None:
@@ -187,7 +187,7 @@ def save_event_from_meta(event_meta):
                         event=new_event, paid_by=persons[payment_meta.name],
                         registrations=registration_docs).save(force_insert=True)
 
-        event_meta.registration_docs.update({(reg.person.full_name, reg.product_key, reg.active): reg
+        event_meta.registration_docs.update({(reg.person.full_name, reg.ticket_key, reg.active): reg
                                              for reg in registration_docs})
 
 

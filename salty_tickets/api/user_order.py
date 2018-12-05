@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
-from salty_tickets.models.products import RegistrationProduct, WorkshopProduct
+from salty_tickets.models.tickets import Ticket, WorkshopTicket
 from salty_tickets.models.registrations import Payment, Registration
 from salty_tickets.tokens import PartnerToken, PaymentId
 
@@ -25,8 +25,8 @@ class RegistrationInfo(DataClassJsonMixin):
     dance_role: str = None
 
     @classmethod
-    def from_registration(cls, registration: Registration, event_products: Dict[str, RegistrationProduct]):
-        product = event_products[registration.product_key]
+    def from_registration(cls, registration: Registration, event_products: Dict[str, Ticket]):
+        product = event_products[registration.ticket_key]
         kwargs = dict(
             person=registration.person.full_name,
             title=product.name,
@@ -38,7 +38,7 @@ class RegistrationInfo(DataClassJsonMixin):
         if registration.partner:
             kwargs['partner'] = registration.partner.full_name
 
-        if isinstance(product, WorkshopProduct):
+        if isinstance(product, WorkshopTicket):
             kwargs.update(dict(
                 start_datetime=str(product.start_datetime),
                 end_datetime=str(product.end_datetime),
@@ -69,7 +69,7 @@ class UserOrderInfo(DataClassJsonMixin):
             email=payment.paid_by.email,
             ptn_token=PartnerToken().serialize(payment.paid_by),
             pmt_token=PaymentId().serialize(payment),
-            products=[RegistrationInfo.from_registration(r, event.products)
+            products=[RegistrationInfo.from_registration(r, event.tickets)
                       for r in payment.registrations],
             event_name=event.name,
             event_info=event.info,

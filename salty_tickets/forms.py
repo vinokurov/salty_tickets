@@ -35,21 +35,21 @@ class PartnerTokenCheck(FlaskForm):
     event_key = StringField(validators=[DataRequired()])
 
 
-class FormWithProducts:
-    product_keys = []
+class FormWithTickets:
+    ticket_keys = []
 
-    def get_product_by_key(self, product_key):
-        return getattr(self, product_key)
+    def get_ticket_by_key(self, ticket_key):
+        return getattr(self, ticket_key)
 
 
 def need_partner_check(event, event_form, form_field):
     if not form_field.data:
-        for key, product in event.products.items():
-            if product.needs_partner(event_form):
+        for key, ticket in event.tickets.items():
+            if ticket.needs_partner(event_form):
                 raise ValidationError('Partner details are required')
 
 
-class DanceSignupForm(FormWithProducts, SignupForm):
+class DanceSignupForm(FormWithTickets, SignupForm):
     dance_role = SelectField('Your Dance Role in Couple',
                              choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower'), ('', 'None')],
                              default='')
@@ -72,8 +72,8 @@ def create_event_form(event):
         partner_name = StringField(u'Partner\'s name', validators=[need_partner_validator])
         partner_email = StringField(u'Partner\'s email', validators=[need_partner_validator])
 
-    for product_key, product in event.products.items():
-        setattr(EventForm, product_key, FormField(product.get_form_class()))
+    for ticket_key, ticket in event.tickets.items():
+        setattr(EventForm, ticket_key, FormField(ticket.get_form_class()))
 
     return EventForm
 

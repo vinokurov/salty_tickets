@@ -1,6 +1,6 @@
 Dear, {{ registration.person.full_name }}
 
-With great pleasure we want to confirm that you are no longer on the waiting list for {{event.name}} - {{event.products[registration.product_key].name}}!
+With great pleasure we want to confirm that you are no longer on the waiting list for {{event.name}} - {{event.tickets[registration.ticket_key].name}}!
 Your place is confirmed and we are looking forward to see you soon.
 
 {% if registration.partner %}Your partner is: {{ registration.partner.full_name }}

@@ -3,7 +3,6 @@ import typing
 
 from dataclasses import dataclass, field
 from salty_tickets.forms import get_primary_personal_info_from_form, get_partner_personal_info_from_form, RawField
-from salty_tickets.models.merchandise import MerchandiseProduct
 from salty_tickets.models.registrations import Person, Registration
 from salty_tickets.waiting_lists import SimpleWaitingList, RegistrationStats, flip_role
 from wtforms import Form as NoCsrfForm
@@ -14,7 +13,7 @@ from salty_tickets.utils.utils import string_to_key
 
 
 @dataclass
-class RegistrationProduct:
+class Ticket:
     name: str
     key: str = None
     info: str = None
@@ -32,7 +31,7 @@ class RegistrationProduct:
         raise NotImplementedError()
 
     def parse_form(self, form) -> typing.List[Registration]:
-        if self.is_added(form.get_product_by_key(self.key)):
+        if self.is_added(form.get_ticket_by_key(self.key)):
             return [self._create_base_registration()]
 
     def get_available_quantity(self) -> typing.Optional[int]:
@@ -43,24 +42,24 @@ class RegistrationProduct:
         return self.max_available - total_accepted
 
     @classmethod
-    def is_added(cls, product_form) -> bool:
-        return bool(product_form.add.data)
+    def is_added(cls, ticket_form) -> bool:
+        return bool(ticket_form.add.data)
 
     def _create_base_registration(self) -> Registration:
-        return Registration(product_key=self.key)
+        return Registration(ticket_key=self.key)
 
     def item_info(self, registration: Registration) -> str:
         return self.name
 
 
 @dataclass
-class PartnerProduct(RegistrationProduct):
+class PartnerTicket(Ticket):
     def needs_partner(self, event_form):
-        product_data = event_form.get_product_by_key(self.key)
-        return product_data.add.data == COUPLE
+        ticket_data = event_form.get_ticket_by_key(self.key)
+        return ticket_data.add.data == COUPLE
 
     def get_form_class(self):
-        return PartnerProductForm
+        return PartnerTicketForm
 
     def create_registration(self, person_info: Person, registered_by: Person, dance_role):
         registration = self._create_base_registration()
@@ -71,9 +70,9 @@ class PartnerProduct(RegistrationProduct):
         return registration
 
     def parse_form(self, event_form) -> typing.List[Registration]:
-        product_data = event_form.get_product_by_key(self.key)
-        if self.is_added(product_data):
-            if product_data.add.data == COUPLE:
+        ticket_data = event_form.get_ticket_by_key(self.key)
+        if self.is_added(ticket_data):
+            if ticket_data.add.data == COUPLE:
                 person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
                 person_2 = get_partner_personal_info_from_form(event_form) or Person('Partner', '')
 
@@ -85,9 +84,9 @@ class PartnerProduct(RegistrationProduct):
                 registration_2.partner = person_1
                 return [registration_1, registration_2]
 
-            elif product_data.add.data in [LEADER, FOLLOWER]:
+            elif ticket_data.add.data in [LEADER, FOLLOWER]:
                 person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
-                dance_role = product_data.add.data
+                dance_role = ticket_data.add.data
                 registration = self.create_registration(person_1, person_1, dance_role)
                 return [registration]
         return []
@@ -103,7 +102,7 @@ class PartnerProduct(RegistrationProduct):
 
 
 @dataclass
-class WaitListedPartnerProduct(PartnerProduct):
+class WaitListedPartnerTicket(PartnerTicket):
     ratio: float = 100
     allow_first: int = None
     expected_leads: int = None
@@ -139,7 +138,7 @@ class WaitListedPartnerProduct(PartnerProduct):
             return None
 
         if self.waiting_list is None:
-            raise LookupError('WorkShopProduct.waiting_list is not set up')
+            raise LookupError('WorkShopTicket.waiting_list is not set up')
 
         total_accepted = self.waiting_list.registration_stats[LEADER].accepted \
                          + self.waiting_list.registration_stats[FOLLOWER].accepted
@@ -181,10 +180,10 @@ class WaitListedPartnerProduct(PartnerProduct):
                 return r
 
     def parse_form(self, event_form) -> typing.List[Registration]:
-        regs = super(WaitListedPartnerProduct, self).parse_form(event_form)
-        product_data = event_form.get_product_by_key(self.key)
-        if self.is_added(product_data):
-            role = product_data.add.data
+        regs = super(WaitListedPartnerTicket, self).parse_form(event_form)
+        ticket_data = event_form.get_ticket_by_key(self.key)
+        if self.is_added(ticket_data):
+            role = ticket_data.add.data
             if not self.waiting_list.can_add(role):
                 for r in regs:
                    r.wait_listed = True
@@ -194,7 +193,7 @@ class WaitListedPartnerProduct(PartnerProduct):
                             extra_registrations: typing.List[Registration]):
         if self.waiting_list.can_add(COUPLE):
             available_extra_regs = [r for r in extra_registrations
-                                    if r.product_key == self.key and r.active and not r.partner
+                                    if r.ticket_key == self.key and r.active and not r.partner
                                     and r.dance_role == flip_role(this_registration.dance_role)]
             if available_extra_regs:
                 extra_reg = available_extra_regs[0]
@@ -205,7 +204,7 @@ class WaitListedPartnerProduct(PartnerProduct):
                 return extra_reg
 
     def item_info(self, registration: Registration) -> str:
-        info = super(WaitListedPartnerProduct, self).item_info(registration)
+        info = super(WaitListedPartnerTicket, self).item_info(registration)
         if registration.wait_listed:
             info = f'Waiting List: {info}'
 
@@ -213,7 +212,7 @@ class WaitListedPartnerProduct(PartnerProduct):
 
 
 @dataclass
-class WorkshopProduct(WaitListedPartnerProduct):
+class WorkshopTicket(WaitListedPartnerTicket):
     start_datetime: datetime = None
     end_datetime: datetime = None
 
@@ -223,7 +222,7 @@ class WorkshopProduct(WaitListedPartnerProduct):
     teachers: str = None
 
 
-class PartnerProductForm(NoCsrfForm):
+class PartnerTicketForm(NoCsrfForm):
     add = RadioField(label='Add', default='', validators=[Optional()], choices=[
         (LEADER, 'Leader'),
         (FOLLOWER, 'Follower'),
@@ -233,19 +232,13 @@ class PartnerProductForm(NoCsrfForm):
 
 
 @dataclass
-class PartyProduct(PartnerProduct):
+class PartyTicket(PartnerTicket):
     start_datetime: datetime = None
     end_datetime: datetime = None
     location: str = None
 
 
 @dataclass
-class FestivalPass(PartnerProduct):
+class FestivalPassTicket(PartnerTicket):
     includes: typing.Dict = field(default_factory=dict)
 
-
-# @dataclass
-# class Basket:
-#     registrations: RegistrationProduct = field(default_factory=list)
-#     merchandise: MerchandiseProduct = field(default_factory=list)
-#     registration_discounts
