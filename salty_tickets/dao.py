@@ -8,7 +8,7 @@ from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.event import Event
-from salty_tickets.models.merchandise import MerchandiseProduct
+from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase
 from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
@@ -76,8 +76,8 @@ class TicketDocument(fields.EmbeddedDocument):
         return ticket_model
 
 
-@fields_from_dataclass(MerchandiseProduct)
-class MerchandiseProductDocument(fields.EmbeddedDocument):
+@fields_from_dataclass(Product)
+class ProductDocument(fields.EmbeddedDocument):
     pass
 
 
@@ -88,15 +88,15 @@ class EventDocument(fields.Document):
     }
     key = fields.StringField()
     tickets = fields.MapField(fields.EmbeddedDocumentField(TicketDocument))
-    merchandise = fields.MapField(fields.EmbeddedDocumentField(MerchandiseProductDocument))
+    products = fields.MapField(fields.EmbeddedDocumentField(ProductDocument))
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
         event_doc = cls._from_dataclass(model_dataclass)
         event_doc.tickets = {p_key: TicketDocument.from_dataclass(p)
-                              for p_key, p in model_dataclass.tickets.items()}
-        event_doc.merchandise = {p_key: MerchandiseProductDocument.from_dataclass(p)
-                                 for p_key, p in model_dataclass.merchandise.items()}
+                             for p_key, p in model_dataclass.tickets.items()}
+        event_doc.products = {p_key: ProductDocument.from_dataclass(p)
+                              for p_key, p in model_dataclass.products.items()}
         return event_doc
 
     def to_dataclass(self):
@@ -105,9 +105,9 @@ class EventDocument(fields.Document):
             ticket_doc = prd.to_dataclass()
             event_model.tickets[p_key] = ticket_doc
 
-        for p_key, prd in self.merchandise.items():
-            merchandise_doc = prd.to_dataclass()
-            event_model.merchandise[p_key] = merchandise_doc
+        for p_key, prd in self.products.items():
+            product_doc = prd.to_dataclass()
+            event_model.merchandise[p_key] = product_doc
 
         return event_model
 

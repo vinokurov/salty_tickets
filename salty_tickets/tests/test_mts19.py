@@ -5,7 +5,7 @@ from salty_tickets.api.registration_process import do_price, do_checkout, do_pay
     do_check_partner_token
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, FestivalPassTicket
-from salty_tickets.models.merchandise import MerchandiseProduct
+from salty_tickets.models.products import Product
 from salty_tickets.utils.utils import jsonify_dataclass
 
 
@@ -222,7 +222,7 @@ def mts(test_dao):
                 'party': 3,
             },
         ),
-        MerchandiseProduct(
+        Product(
             name='Tote bag',
             key='tote_bag',
             tags={'merchandise'},
@@ -232,7 +232,7 @@ def mts(test_dao):
                 'red': 'Burgundy Red',
             }
         ),
-        MerchandiseProduct(
+        Product(
             name='T-shirt',
             key='tshirt',
             tags={'merchandise'},
@@ -248,7 +248,7 @@ def mts(test_dao):
                 'female_l': 'Female (L)',
             }
         ),
-        MerchandiseProduct(
+        Product(
             name='Bottle',
             key='bottle',
             tags={'merchandise'},

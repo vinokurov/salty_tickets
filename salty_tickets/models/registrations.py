@@ -38,8 +38,8 @@ class Registration:
 @dataclass
 class Purchase:
     person: Person = None
-    merchandise_product_key: str = None
-    merchandise_product_option_key: str = None
+    product_key: str = None
+    product_option_key: str = None
     amount: int = 0
     price: float = None
     paid_price: float = None

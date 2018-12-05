@@ -6,12 +6,12 @@ from dataclasses import dataclass, field
 from salty_tickets.forms import RawField
 
 
-class MerchandiseProductForm(NoCsrfForm):
+class ProductForm(NoCsrfForm):
     add = RawField()
 
 
 @dataclass
-class MerchandiseProduct:
+class Product:
     name: str
     key: str = None
     info: str = None
@@ -27,4 +27,4 @@ class MerchandiseProduct:
 
     @classmethod
     def get_form_class(cls):
-        return MerchandiseProductForm
+        return ProductForm
