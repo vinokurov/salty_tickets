@@ -128,7 +128,7 @@ def save_event_from_meta(event_meta):
                 reg = persons[payment_meta.name]
 
             kwargs = {'product_key': reg_meta.product_key, 'wait_listed': reg_meta.wait_listed,
-                      'price': price, 'paid': paid,
+                      'price': price, 'paid_price': paid,
                       'event': new_event, 'person': reg, 'registered_by': reg, 'active': active}
             if reg_meta.dance_role is not None:
                 kwargs['dance_role'] = reg_meta.dance_role

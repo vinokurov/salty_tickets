@@ -26,7 +26,6 @@ class Registration:
     details: Dict = field(default_factory=dict)
     price: float = None
     paid_price: float = None
-    paid: float = None
     date: datetime = None
     product_key: str = None
     active: bool = False
