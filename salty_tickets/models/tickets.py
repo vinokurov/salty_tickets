@@ -31,7 +31,7 @@ class Ticket:
         raise NotImplementedError()
 
     def parse_form(self, form) -> typing.List[Registration]:
-        if self.is_added(form.get_ticket_by_key(self.key)):
+        if self.is_added(form.get_item_by_key(self.key)):
             return [self._create_base_registration()]
 
     def get_available_quantity(self) -> typing.Optional[int]:
@@ -55,7 +55,7 @@ class Ticket:
 @dataclass
 class PartnerTicket(Ticket):
     def needs_partner(self, event_form):
-        ticket_data = event_form.get_ticket_by_key(self.key)
+        ticket_data = event_form.get_item_by_key(self.key)
         return ticket_data.add.data == COUPLE
 
     def get_form_class(self):
@@ -70,7 +70,7 @@ class PartnerTicket(Ticket):
         return registration
 
     def parse_form(self, event_form) -> typing.List[Registration]:
-        ticket_data = event_form.get_ticket_by_key(self.key)
+        ticket_data = event_form.get_item_by_key(self.key)
         if self.is_added(ticket_data):
             if ticket_data.add.data == COUPLE:
                 person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
@@ -181,7 +181,7 @@ class WaitListedPartnerTicket(PartnerTicket):
 
     def parse_form(self, event_form) -> typing.List[Registration]:
         regs = super(WaitListedPartnerTicket, self).parse_form(event_form)
-        ticket_data = event_form.get_ticket_by_key(self.key)
+        ticket_data = event_form.get_item_by_key(self.key)
         if self.is_added(ticket_data):
             role = ticket_data.add.data
             if not self.waiting_list.can_add(role):

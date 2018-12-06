@@ -96,7 +96,7 @@ def test_partner_ticket_needs_partner(value, result):
     ticket = PartnerTicket(name='Test ticket')
     event_form = Mock()
     ticket_data = Mock()
-    event_form.get_ticket_by_key.return_value = ticket_data
+    event_form.get_item_by_key.return_value = ticket_data
 
     ticket_data.add.data = value
     assert ticket.needs_partner(event_form) == result

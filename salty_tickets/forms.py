@@ -38,7 +38,7 @@ class PartnerTokenCheck(FlaskForm):
 class FormWithTickets:
     ticket_keys = []
 
-    def get_ticket_by_key(self, ticket_key):
+    def get_item_by_key(self, ticket_key):
         return getattr(self, ticket_key)
 
 
@@ -74,6 +74,8 @@ def create_event_form(event):
 
     for ticket_key, ticket in event.tickets.items():
         setattr(EventForm, ticket_key, FormField(ticket.get_form_class()))
+    for product_key, product in event.products.items():
+        setattr(EventForm, product_key, FormField(product.get_form_class()))
 
     return EventForm
 

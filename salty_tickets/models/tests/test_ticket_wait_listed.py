@@ -238,12 +238,12 @@ def test_wait_listed_parse_form(app):
 
     # will accept leader
     form = create_event_form(event)()
-    form.get_ticket_by_key('test').add.data = LEADER
+    form.get_item_by_key('test').add.data = LEADER
     regs = ticket.parse_form(form)
     assert not regs[0].wait_listed
 
     # follower will be wait listed
-    form.get_ticket_by_key('test').add.data = FOLLOWER
+    form.get_item_by_key('test').add.data = FOLLOWER
     regs = ticket.parse_form(form)
     assert regs[0].wait_listed
 
@@ -254,7 +254,7 @@ def test_wait_listed_parse_form(app):
         RegistrationMeta(FOLLOWER),  # 3/2 = 1.5
         RegistrationMeta(FOLLOWER),  # 4/2 = 2.0
     ])
-    form.get_ticket_by_key('test').add.data = COUPLE
+    form.get_item_by_key('test').add.data = COUPLE
     regs = ticket.parse_form(form)
     assert not any([r.wait_listed for r in regs])
 

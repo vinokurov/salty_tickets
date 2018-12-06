@@ -37,7 +37,7 @@ def test_create_event_form(app):
     assert issubclass(form_class, DanceSignupForm)
 
     form = form_class()
-    assert form.get_ticket_by_key(tickets[0].key).form_class == tickets[0].get_form_class()
+    assert form.get_item_by_key(tickets[0].key).form_class == tickets[0].get_form_class()
 
 
 def test_get_primary_personal_info_from_form():

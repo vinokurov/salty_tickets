@@ -40,8 +40,10 @@ class Purchase:
     person: Person = None
     product_key: str = None
     product_option_key: str = None
+    description: str = None
     amount: int = 0
     price: float = None
+    price_each: float = None
     paid_price: float = None
 
 
@@ -76,6 +78,13 @@ class Payment:
         if self.price and self.pay_all_now and not self.first_pay_amount:
             self.first_pay_amount = self.price
             self.first_pay_fee = self.transaction_fee
+
+    @property
+    def items(self):
+        for registration in self.registrations:
+            yield registration
+        for purchase in self.purchases:
+            yield purchase
 
     @property
     def total_amount(self):

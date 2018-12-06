@@ -225,8 +225,12 @@ class PartnerTokenCheckResult(DataClassJsonMixin):
 
 def get_payment_from_form(event: Event, form, extra_registrations=None):
     registrations = []
-    for prod_key, prod in event.tickets.items():
-        registrations += prod.parse_form(form)
+    for ticket_key, ticket in event.tickets.items():
+        registrations += ticket.parse_form(form)
+
+    purchases = []
+    for product_key, product in event.products.items():
+        purchases += product.parse_form(form)
 
     # apply extra registrations
     if extra_registrations is not None:
@@ -247,6 +251,7 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
     payment = Payment(
         paid_by=registrations[0].registered_by if len(registrations) else None,
         registrations=registrations,
+        purchases=purchases,
         status=NEW,
         info_items=[(event.tickets[r.ticket_key].item_info(r), r.price) for r in registrations],
         pay_all_now=form.pay_all.data,
@@ -468,7 +473,7 @@ def do_check_partner_token(dao: TicketsDAO):
 
 
 def set_payment_totals(payment: Payment):
-    payment.price = sum([r.price for r in payment.registrations if r.price] or [0])
+    payment.price = sum([r.price for r in payment.items if r.price] or [0])
     if payment.pay_all_now:
         payment.transaction_fee = transaction_fee(payment.price)
         payment.first_pay_amount = payment.price
