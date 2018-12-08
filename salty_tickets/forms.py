@@ -88,7 +88,7 @@ def get_primary_personal_info_from_form(form) -> Person:
             full_name=form.name.data,
             email=form.email.data,
             comment=form.comment.data,
-            location=form.location.data or None,
+            location=form.location.data or {},
         )
         form.primary_person_info = person
         return person

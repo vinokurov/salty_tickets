@@ -53,3 +53,28 @@ def test_product(app):
                                    price=50.0,
                                    price_each=25.0)]
     assert expected_purchases == product.parse_form(form)
+
+    form = create_event_form(event)()
+    form.get_item_by_key('bag').add.data = {'blue': 2}
+    form.name.data = 'Mr.X'
+    form.email.data = 'mr.x@gmail.com'
+    expected_purchases[0].person = Person('Mr.X', 'mr.x@gmail.com')
+    assert expected_purchases == product.parse_form(form)
+
+    form.get_item_by_key('bag').add.data = {'blue': 2, 'red': 1}
+    expected_purchases = [Purchase(person=Person('Mr.X', 'mr.x@gmail.com'),
+                                   product_key='bag',
+                                   product_option_key='blue',
+                                   amount=2,
+                                   description='Tote Bag / Navy Blue',
+                                   price=50.0,
+                                   price_each=25.0),
+                          Purchase(person=Person('Mr.X', 'mr.x@gmail.com'),
+                                   product_key='bag',
+                                   product_option_key='red',
+                                   amount=1,
+                                   description='Tote Bag / Burgundy Red',
+                                   price=25.0,
+                                   price_each=25.0)
+                          ]
+    assert expected_purchases == product.parse_form(form)
