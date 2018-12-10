@@ -131,3 +131,12 @@ class PaymentId(ItsdangerousMixin, Token):
     def _retrieve_object(self, dao: TicketsDAO, object_id):
         return dao.get_payment_by_id(object_id)
 
+
+class DiscountToken(HashidsMixin, Token):
+    """Serialise person id"""
+    prefix = 'dsc'
+    salt = SALT_PARTNER_TOKEN
+
+    def _retrieve_object(self, dao: TicketsDAO, object_id):
+        return dao.get_discount_code_by_id(object_id)
+

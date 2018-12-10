@@ -74,8 +74,12 @@ def create_event_form(event):
 
     for ticket_key, ticket in event.tickets.items():
         setattr(EventForm, ticket_key, FormField(ticket.get_form_class()))
+
     for product_key, product in event.products.items():
         setattr(EventForm, product_key, FormField(product.get_form_class()))
+
+    for discount_key, discount in event.discount_products.items():
+        setattr(EventForm, discount_key, FormField(discount.get_form_class()))
 
     return EventForm
 
@@ -102,7 +106,7 @@ def get_partner_personal_info_from_form(form) -> Person:
             full_name=form.partner_name.data,
             email=form.partner_email.data,
             comment=form.comment.data,
-            location=form.partner_location.data or None,
+            location=form.partner_location.data or {},
         )
         form.partner_person_info = person
         return person

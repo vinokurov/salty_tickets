@@ -48,6 +48,31 @@ class Purchase:
 
 
 @dataclass
+class DiscountCode:
+    discount_rule: str
+    applies_to_couple: bool = False
+    max_usages: int = 1
+    times_used: int = 0
+    full_name: str = None
+    email: str = None
+    info: str = None
+    active: bool = False
+
+    @property
+    def can_be_used(self):
+        return self.active and (self.max_usages > self.times_used)
+
+
+@dataclass
+class Discount:
+    person: Person
+    discount_key: str = None
+    discount_code: DiscountCode = None
+    value: float = 0
+    description: str = None
+
+
+@dataclass
 class PaymentStripeDetails:
     token_id: str = None
     customer_id: str = None
@@ -63,6 +88,7 @@ class Payment:
     transaction_fee: float = 0
     registrations: List[Registration] = field(default_factory=list)
     purchases: List[Purchase] = field(default_factory=list)
+    discounts: List[Discount] = field(default_factory=list)
 
     status: str = NEW
     stripe: PaymentStripeDetails = None

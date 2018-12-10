@@ -7,9 +7,10 @@ from bson import ObjectId
 from mongoengine import fields, connect
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER
+from salty_tickets.models.discounts import DiscountProduct, DiscountCode
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
-from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase
+from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount
 from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
@@ -49,6 +50,26 @@ class PurchaseDocument(fields.Document):
         return model
 
 
+@fields_from_dataclass(Discount, skip=['person', 'discount_code'])
+class DiscountDocument(fields.EmbeddedDocument):
+    person = fields.ReferenceField('PersonDocument', required=True)
+    discount_code = fields.ReferenceField('DiscountCodeDocument', required=False)
+
+    def to_dataclass(self):
+        model = self._to_dataclass()
+        model.person = self.person.to_dataclass()
+        model.discount_code = self.discount_code.to_dataclass()
+        return model
+
+    @classmethod
+    def from_dataclass(cls, model: Discount):
+        doc = cls._from_dataclass(model)
+        doc.person = model.person.id
+        if model.discount_code is not None:
+            doc.discount_code = model.discount_code.id
+        return doc
+
+
 @fields_from_dataclass(Ticket, skip=['registrations', 'ticket_class', 'ticket_class_parameters'])
 class TicketDocument(fields.EmbeddedDocument):
     image_url = fields.URLField()
@@ -81,7 +102,31 @@ class ProductDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Event, skip=['tickets', 'merchandise'])
+@fields_from_dataclass(DiscountProduct, skip=['discount_product_class', 'discount_product_parameters'])
+class DiscountProductDocument(fields.EmbeddedDocument):
+    discount_product_class = fields.StringField(required=True)
+    discount_product_parameters = fields.DictField()
+
+    @classmethod
+    def from_dataclass(cls, model_dataclass):
+        model_dict = dataclasses.asdict(model_dataclass)
+        base_fields = [f.name for f in dataclasses.fields(DiscountProduct)]
+        kwargs = {f: model_dict.pop(f) for f in base_fields if f in model_dict}
+        kwargs['discount_product_class'] = model_dataclass.__class__.__name__
+        kwargs['discount_product_parameters'] = model_dict
+        ticket_doc = cls(**kwargs)
+        return ticket_doc
+
+    def to_dataclass(self):
+        kwargs = self.discount_product_parameters
+        model_class = getattr(models.tickets, self.discount_product_class)
+        model_fields = [f.name for f in dataclasses.fields(DiscountProduct)]
+        kwargs.update({f: getattr(self, f) for f in model_fields})
+        ticket_model = model_class(**kwargs)
+        return ticket_model
+
+
+@fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products'])
 class EventDocument(fields.Document):
     meta = {
         'collection': 'events',
@@ -89,6 +134,7 @@ class EventDocument(fields.Document):
     key = fields.StringField()
     tickets = fields.MapField(fields.EmbeddedDocumentField(TicketDocument))
     products = fields.MapField(fields.EmbeddedDocumentField(ProductDocument))
+    discount_products = fields.MapField(fields.EmbeddedDocumentField(DiscountProductDocument))
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
@@ -97,6 +143,8 @@ class EventDocument(fields.Document):
                              for p_key, p in model_dataclass.tickets.items()}
         event_doc.products = {p_key: ProductDocument.from_dataclass(p)
                               for p_key, p in model_dataclass.products.items()}
+        event_doc.products = {p_key: DiscountProductDocument.from_dataclass(p)
+                              for p_key, p in model_dataclass.discount_products.items()}
         return event_doc
 
     def to_dataclass(self):
@@ -108,6 +156,10 @@ class EventDocument(fields.Document):
         for p_key, prd in self.products.items():
             product_doc = prd.to_dataclass()
             event_model.merchandise[p_key] = product_doc
+
+        for p_key, prd in self.discount_products.items():
+            discount_product_doc = prd.to_dataclass()
+            event_model.discount_products[p_key] = discount_product_doc
 
         return event_model
 
@@ -144,7 +196,7 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'extra_registrations'])
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'discounts', 'extra_registrations'])
 class PaymentDocument(fields.Document):
     meta = {
         'collection': 'payments'
@@ -174,6 +226,20 @@ class PaymentDocument(fields.Document):
         if doc.stripe is not None:
             doc.stripe = PaymentStripeDetailsDocument.from_dataclass(model.stripe)
         return doc
+
+
+@fields_from_dataclass(DiscountCode)
+class DiscountCodeDocument(fields.Document):
+    meta = {
+        'collection': 'discount_codes',
+    }
+    event = fields.ReferenceField(EventDocument)
+    int_id = fields.SequenceField()
+
+    def to_dataclass(self):
+        model = self._to_dataclass()
+        model.int_id = self.int_id
+        return model
 
 
 class TicketsDAO:
@@ -260,6 +326,16 @@ class TicketsDAO:
         registration_doc.save()
         registration.id = registration_doc.id
 
+    def add_purchase(self, purchase: Purchase, event):
+        if hasattr(purchase, 'id'):
+            raise ValueError(f'Purchase already exists: {purchase}')
+
+        purchase_doc = PurchaseDocument.from_dataclass(purchase)
+        purchase_doc.event = event.id
+        purchase_doc.person = self._get_or_create_new_person(purchase.person, event)
+        purchase_doc.save()
+        purchase.id = purchase_doc.id
+
     @timeit
     def add_payment(self, payment: Payment, event: Event, register=False):
         if hasattr(payment, 'id'):
@@ -277,6 +353,16 @@ class TicketsDAO:
             payment_doc.registrations.append(reg.id)
 
         payment_doc.extra_registrations = [r.id for r in payment.extra_registrations]
+
+        for prd in payment.purchases:
+            if not hasattr(prd, 'id'):
+                if not register:
+                    raise ValueError(f'Purchases need to be added first: {reg}')
+                else:
+                    self.add_purchase(prd, event)
+            payment_doc.registrations.append(prd.id)
+
+        payment_doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts]
 
         payment_doc.save()
         payment.id = payment_doc.id
@@ -393,6 +479,27 @@ class TicketsDAO:
         doc = RegistrationDocument.objects(**id_filter(object_id)).first()
         if doc:
             return doc.to_dataclass()
+
+    def get_discount_code_by_id(self, object_id) -> Person:
+        doc = DiscountCodeDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+    def add_discount_code(self, event: Event, discount_code: DiscountCode):
+        if hasattr(discount_code, 'id'):
+            raise ValueError(f'Discount code already exists: {discount_code}')
+        discount_code_doc = PaymentDocument.from_dataclass(discount_code)
+        discount_code_doc.event = event.id
+        discount_code_doc.save()
+        discount_code.id = discount_code_doc.id
+
+    def increment_discount_code_usages(self, discount_code: DiscountCode, usages=1):
+        if not hasattr(discount_code, 'id'):
+            raise ValueError(f'Discount code isn`t saved: {discount_code}')
+        discount_code_doc = self.get_discount_code_by_id(discount_code.id)
+        discount_code_doc.times_used += usages
+        discount_code_doc.save()
+        discount_code.times_used = discount_code_doc.times_used
 
 
 def id_filter(object_id):

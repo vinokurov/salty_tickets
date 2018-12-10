@@ -10,12 +10,13 @@ from salty_tickets.constants import NEW, SUCCESSFUL, FAILED, LEADER, FOLLOWER, C
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_registration_confirmation
 from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
+from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct, get_discount_rule_from_code
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
 from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
-from salty_tickets.tokens import PartnerToken, PaymentId
+from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken
 from salty_tickets.validators import validate_registrations
 
 """
@@ -223,7 +224,7 @@ class PartnerTokenCheckResult(DataClassJsonMixin):
                    roles={r.ticket_key: r.dance_role for r in active_registrations})
 
 
-def get_payment_from_form(event: Event, form, extra_registrations=None):
+def get_payment_from_form(event: Event, form, extra_registrations=None, discount_product: DiscountProduct=None):
     registrations = []
     for ticket_key, ticket in event.tickets.items():
         registrations += ticket.parse_form(form)
@@ -257,12 +258,33 @@ def get_payment_from_form(event: Event, form, extra_registrations=None):
         pay_all_now=form.pay_all.data,
     )
 
+    if discount_product:
+        payment.discounts = discount_product.get_discount(event.tickets, payment, form)
+
     set_payment_totals(payment)
 
     if applied_extra_registrations is not None:
         payment.extra_registrations = applied_extra_registrations
 
     return payment
+
+
+def get_discount_product_from_form(dao: TicketsDAO, event: Event, form):
+    for discount_product in event.discount_products:
+        if discount_product.is_added(form):
+            if isinstance(discount_product, CodeDiscountProduct):
+                discount_form = form.get_item_by_key(discount_product.key)
+                token_str = discount_form.code.data
+                discount_code = DiscountToken().deserialize(dao, token_str)
+                if discount_code.can_be_used:
+                    discount_rule = get_discount_rule_from_code(discount_code)
+                    return CodeDiscountProduct(
+                        name=discount_product.name,
+                        discount_rule=discount_rule,
+                        applies_to_couple=discount_code.applies_to_couple,
+                        discount_code=discount_code,
+                    )
+            return discount_product
 
 
 def get_extra_registrations_from_partner_token(dao: TicketsDAO, event: Event, form):
@@ -277,10 +299,11 @@ def do_price(dao: TicketsDAO, event_key: str):
     valid = form.validate_on_submit()
 
     extra_registrations = get_extra_registrations_from_partner_token(dao, event, form)
+    discount_product = get_discount_product_from_form(dao, event, form)
     if extra_registrations:
-        payment = get_payment_from_form(event, form, extra_registrations)
+        payment = get_payment_from_form(event, form, extra_registrations, discount_product)
     else:
-        payment = get_payment_from_form(event, form)
+        payment = get_payment_from_form(event, form, discount_product=discount_product)
 
     if payment:
         errors = {}
@@ -474,11 +497,20 @@ def do_check_partner_token(dao: TicketsDAO):
 
 def set_payment_totals(payment: Payment):
     payment.price = sum([r.price for r in payment.items if r.price] or [0])
+    discounts_value = sum([d.value for d in payment.discounts if d.value] or [0])
+    if discounts_value:
+        if discounts_value > payment.price:
+            payment.price = 0
+        else:
+            payment.price -= discounts_value
+        payment.pay_all_now = True
+
     if payment.pay_all_now:
         payment.transaction_fee = transaction_fee(payment.price)
         payment.first_pay_amount = payment.price
     else:
         accepted_prices = [r.price for r in payment.registrations if not r.wait_listed and r.price]
+        accepted_prices += [p.price for p in payment.purchases if p.price]
         payment.first_pay_amount = sum(accepted_prices or [0])
 
         # here we calculate sum of transaction fees for first payment and all waiting separately
