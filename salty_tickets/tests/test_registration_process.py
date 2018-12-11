@@ -7,6 +7,7 @@ from salty_tickets.dao import PaymentDocument, PersonDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import Registration, Payment, PaymentStripeDetails
 from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
+from salty_tickets.testutils import post_json_data
 from salty_tickets.tokens import PartnerToken, PaymentId
 
 
@@ -63,10 +64,6 @@ def sample_data(salty_recipes):
             'payment_id': '',
         }
     return SampleData()
-
-
-def post_json_data(client, url, data):
-    return client.post(url, data=json.dumps(data), content_type='application/json')
 
 
 def test_PartnerTokenCheckResult(test_dao, person_factory):

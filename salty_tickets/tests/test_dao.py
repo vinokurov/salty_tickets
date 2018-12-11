@@ -6,7 +6,7 @@ from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocumen
     PaymentDocument
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket
-from salty_tickets.models.registrations import Person, Registration, Payment, PaymentStripeDetails
+from salty_tickets.models.registrations import Person, Registration, Payment, PaymentStripeDetails, RegistrationGroup
 from salty_tickets.waiting_lists import RegistrationStats
 
 
@@ -317,3 +317,16 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
 
     assert stripe_details == PaymentDocument.objects(id=payment.id).first().stripe.to_dataclass()
     assert stripe_details == test_dao.get_payment_by_id(payment.id).stripe
+
+
+def test_check_registration_group_name_exists(test_dao, salty_recipes):
+    event = test_dao.get_event_by_key('salty_recipes', False)
+    registration_group = RegistrationGroup(
+        name='Test Group',
+        location={'country_code': 'gb'},
+        admin_email='test@gmail.com',
+    )
+    assert not test_dao.check_registration_group_name_exists(event, registration_group.name)
+    test_dao.add_registration_group(event, registration_group)
+    assert test_dao.check_registration_group_name_exists(event, registration_group.name)
+    assert not test_dao.check_registration_group_name_exists(event, 'Test Other Group')

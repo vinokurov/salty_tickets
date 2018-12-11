@@ -1,3 +1,4 @@
+import typing
 from datetime import datetime
 from typing import List, Dict
 
@@ -57,6 +58,7 @@ class DiscountCode:
     email: str = None
     info: str = None
     active: bool = False
+    included_tickets: typing.List = field(default_factory=list)
 
     @property
     def can_be_used(self):
@@ -65,9 +67,9 @@ class DiscountCode:
 
 @dataclass
 class Discount:
-    person: Person
+    person: Person = None
     discount_key: str = None
-    discount_code: DiscountCode = None
+    discount_code: str = None
     value: float = 0
     description: str = None
 
@@ -129,3 +131,13 @@ class Payment:
     @property
     def paid_price(self):
         return sum([r.paid_price or 0 for r in self.registrations] or [0])
+
+
+@dataclass
+class RegistrationGroup:
+    name: str
+    location: typing.Dict
+    admin_email: str
+    comment: str = None
+    admin: Person = None
+    members: typing.List = field(default_factory=list)

@@ -1,22 +1,26 @@
 import pickle
+import typing
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from flask import session
+from itsdangerous import BadSignature
 from salty_tickets import config
 from salty_tickets.constants import NEW, SUCCESSFUL, FAILED, LEADER, FOLLOWER, COUPLE
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_waiting_list_accept_email, send_registration_confirmation
-from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck
-from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct, get_discount_rule_from_code
+from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSignupForm, PartnerTokenCheck, \
+    CreateRegistrationGroupForm
+from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct, get_discount_rule_from_code, \
+    GroupDiscountProduct
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
-from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration
+from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
-from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken
+from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken
 from salty_tickets.validators import validate_registrations
 
 """
@@ -270,7 +274,7 @@ def get_payment_from_form(event: Event, form, extra_registrations=None, discount
 
 
 def get_discount_product_from_form(dao: TicketsDAO, event: Event, form):
-    for discount_product in event.discount_products:
+    for discount_product_key, discount_product in event.discount_products.items():
         if discount_product.is_added(form):
             if isinstance(discount_product, CodeDiscountProduct):
                 discount_form = form.get_item_by_key(discount_product.key)
@@ -318,10 +322,11 @@ def do_checkout(dao: TicketsDAO, event_key: str):
     valid = form.validate_on_submit()
 
     extra_registrations = get_extra_registrations_from_partner_token(dao, event, form)
+    discount_product = get_discount_product_from_form(dao, event, form)
     if extra_registrations:
-        payment = get_payment_from_form(event, form, extra_registrations)
+        payment = get_payment_from_form(event, form, extra_registrations, discount_product)
     else:
-        payment = get_payment_from_form(event, form)
+        payment = get_payment_from_form(event, form, discount_product=discount_product)
 
     if payment:
         errors = {}
@@ -466,11 +471,27 @@ def balance_event_waiting_lists(dao: TicketsDAO, event_key: str):
                     balanced_registrations.append(registration)
 
 
+def post_process_discounts(dao: TicketsDAO, payment: Payment, event: Event):
+    for discount in payment.discounts:
+        discount_product = event.discount_products[discount.discount_key]
+
+        # GroupDiscount -> add new members to the group
+        if isinstance(discount_product, GroupDiscountProduct):
+            registration_group = GroupToken().deserialize(dao, discount.discount_code)
+            dao.add_registration_group_member(registration_group, discount.person)
+
+        # Code discount -> increment code usages
+        elif isinstance(discount_product, CodeDiscountProduct):
+            discount_code = DiscountToken().deserialize(dao, discount.discount_code)
+            dao.increment_discount_code_usages(discount_code, 1)
+
+
 def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     send_registration_confirmation(payment, event)
     balance_event_waiting_lists(dao, event.key)
+    post_process_discounts(dao, payment, event)
 
 
 def do_check_partner_token(dao: TicketsDAO):
@@ -519,3 +540,90 @@ def set_payment_totals(payment: Payment):
         payment.transaction_fee = transaction_fee(*all_payments)
 
     payment.first_pay_fee = transaction_fee(payment.first_pay_amount)
+
+
+@dataclass
+class CreateRegistrationGroupResult(DataClassJsonMixin):
+    success: bool = False
+    errors: typing.Dict = field(default_factory=dict)
+    token: str = None
+
+
+@dataclass
+class TokenCheckResult(DataClassJsonMixin):
+    success: bool = False
+    info: str = None
+
+
+def do_create_registration_group(dao: TicketsDAO, event_key: str):
+    event = dao.get_event_by_key(event_key)
+    form = CreateRegistrationGroupForm()
+    errors = {}
+    if form.validate_on_submit():
+        name = form.name.data.strip()
+        if dao.check_registration_group_name_exists(event, name):
+            errors.update({'name': 'Group name already exists'})
+        else:
+            registration_group = RegistrationGroup(
+                name=name,
+                location=form.location.data,
+                admin_email=form.email.data,
+                comment=form.comment.data,
+            )
+            dao.add_registration_group(event, registration_group)
+            token_str = GroupToken().serialize(registration_group)
+            return CreateRegistrationGroupResult(success=True, token=token_str)
+    errors.update(form.errors)
+    return CreateRegistrationGroupResult(errors=errors)
+
+
+@dataclass
+class DiscountCodeTokenCheckResult(TokenCheckResult):
+    included_tickets: typing.List = field(default_factory=list)
+    name_override: str = None
+    email_override: str = None
+
+
+def do_validate_registration_group_token(dao, event_key):
+    event = dao.get_event_by_key(event_key)
+    form = create_event_form(event)()
+    valid = form.validate_on_submit()
+    if form.location.data is not None:
+        group_discount_form = form.get_item_by_key('group_discount')
+        if group_discount_form is not None:
+            token_str = group_discount_form.code.data
+            try:
+                registration_group = GroupToken().deserialize(dao, token_str)
+            except BadSignature:
+                return TokenCheckResult(success=False)
+            if registration_group:
+                if registration_group.location['country_code'] == form.location.data['country_code']:
+                    return TokenCheckResult(success=True, info=registration_group.name)
+
+    return TokenCheckResult(success=False)
+
+
+def do_validate_discount_code_token(dao, event_key):
+    event = dao.get_event_by_key(event_key)
+    form = create_event_form(event)()
+    valid = form.validate_on_submit()
+    discount_product = [d for k, d in event.discount_products.items() if isinstance(d, CodeDiscountProduct)][0]
+    discount_form = form.get_item_by_key(discount_product.key)
+    token_str = discount_form.code.data
+    try:
+        discount_code = DiscountToken().deserialize(dao, token_str)
+    except BadSignature:
+        return TokenCheckResult(success=False)
+    if discount_code.can_be_used:
+        return DiscountCodeTokenCheckResult(
+            success=True,
+            info=discount_code.info,
+            name_override=discount_code.full_name,
+            email_override=discount_code.email,
+            included_tickets=discount_code.included_tickets
+        )
+
+    return TokenCheckResult(success=False)
+
+
+

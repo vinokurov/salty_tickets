@@ -29,3 +29,9 @@ class Event:
 
     def append_tickets(self, ticket_list):
         self.tickets.update({p.key: p for p in ticket_list})
+
+    def append_products(self, product_list):
+        self.products.update({p.key: p for p in product_list})
+
+    def append_discount_products(self, discount_product_list):
+        self.discount_products.update({p.key: p for p in discount_product_list})

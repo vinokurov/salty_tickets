@@ -10,7 +10,8 @@ from salty_tickets.constants import FOLLOWER, LEADER
 from salty_tickets.models.discounts import DiscountProduct, DiscountCode
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
-from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount
+from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount, \
+    RegistrationGroup
 from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
@@ -50,23 +51,19 @@ class PurchaseDocument(fields.Document):
         return model
 
 
-@fields_from_dataclass(Discount, skip=['person', 'discount_code'])
+@fields_from_dataclass(Discount, skip=['person'])
 class DiscountDocument(fields.EmbeddedDocument):
     person = fields.ReferenceField('PersonDocument', required=True)
-    discount_code = fields.ReferenceField('DiscountCodeDocument', required=False)
 
     def to_dataclass(self):
         model = self._to_dataclass()
         model.person = self.person.to_dataclass()
-        model.discount_code = self.discount_code.to_dataclass()
         return model
 
     @classmethod
     def from_dataclass(cls, model: Discount):
         doc = cls._from_dataclass(model)
         doc.person = model.person.id
-        if model.discount_code is not None:
-            doc.discount_code = model.discount_code.id
         return doc
 
 
@@ -119,7 +116,7 @@ class DiscountProductDocument(fields.EmbeddedDocument):
 
     def to_dataclass(self):
         kwargs = self.discount_product_parameters
-        model_class = getattr(models.tickets, self.discount_product_class)
+        model_class = getattr(models.discounts, self.discount_product_class)
         model_fields = [f.name for f in dataclasses.fields(DiscountProduct)]
         kwargs.update({f: getattr(self, f) for f in model_fields})
         ticket_model = model_class(**kwargs)
@@ -143,7 +140,7 @@ class EventDocument(fields.Document):
                              for p_key, p in model_dataclass.tickets.items()}
         event_doc.products = {p_key: ProductDocument.from_dataclass(p)
                               for p_key, p in model_dataclass.products.items()}
-        event_doc.products = {p_key: DiscountProductDocument.from_dataclass(p)
+        event_doc.discount_products = {p_key: DiscountProductDocument.from_dataclass(p)
                               for p_key, p in model_dataclass.discount_products.items()}
         return event_doc
 
@@ -155,7 +152,7 @@ class EventDocument(fields.Document):
 
         for p_key, prd in self.products.items():
             product_doc = prd.to_dataclass()
-            event_model.merchandise[p_key] = product_doc
+            event_model.products[p_key] = product_doc
 
         for p_key, prd in self.discount_products.items():
             discount_product_doc = prd.to_dataclass()
@@ -164,18 +161,33 @@ class EventDocument(fields.Document):
         return event_model
 
 
-# class RegistrationGroupDocument(fields.Document):
-#     __meta__ = {
-#         'collection': 'registration_groups'
-#     }
-#     type = fields.StringField()
-#     parameters = fields.DictField()
-#     int_id = fields.SequenceField()
-#
-#     def to_dataclass(self):
-#         model = self._to_dataclass()
-#         model.int_id = self.int_id
-#         return model
+@fields_from_dataclass(RegistrationGroup, skip=['admin', 'members', 'event'])
+class RegistrationGroupDocument(fields.Document):
+    __meta__ = {
+        'collection': 'registration_groups'
+    }
+    int_id = fields.SequenceField()
+    event = fields.ReferenceField(EventDocument)
+    admin = fields.ReferenceField('PersonDocument')
+    members = fields.ListField(fields.ReferenceField('PersonDocument'))
+
+    def to_dataclass(self) -> RegistrationGroup:
+        model = self._to_dataclass()
+        model.int_id = self.int_id
+        if self.admin is not None:
+            model.admin = self.admin.to_dataclass()
+        model.members = [m.to_dataclass() for m in self.members]
+        return model
+
+    @classmethod
+    def from_dataclass(cls, model: RegistrationGroup):
+        doc = cls._from_dataclass(model)
+        if model.admin is not None:
+            doc.admin = model.admin.id
+        if model.members:
+            doc.members = [m.id for m in model.members]
+        return doc
+
 
 @fields_from_dataclass(Person, skip=['event'])
 class PersonDocument(fields.Document):
@@ -207,6 +219,7 @@ class PaymentDocument(fields.Document):
     registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
     extra_registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
     purchases = fields.ListField(fields.ReferenceField(PurchaseDocument))
+    discounts = fields.EmbeddedDocumentListField(DiscountDocument)
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
 
@@ -215,6 +228,7 @@ class PaymentDocument(fields.Document):
         model.registrations = [r.to_dataclass() for r in self.registrations]
         model.extra_registrations = [r.to_dataclass() for r in self.extra_registrations]
         model.purchases = [p.to_dataclass() for p in self.purchases]
+        model.discounts = [p.to_dataclass() for p in self.discounts]
         if self.stripe:
             model.stripe = self.stripe.to_dataclass()
         # model.int_id = self.int_id
@@ -360,7 +374,10 @@ class TicketsDAO:
                     raise ValueError(f'Purchases need to be added first: {reg}')
                 else:
                     self.add_purchase(prd, event)
-            payment_doc.registrations.append(prd.id)
+            payment_doc.purchases.append(prd.id)
+
+        for discount in payment.discounts:
+            payment_doc.discounts.append(DiscountDocument.from_dataclass(discount))
 
         payment_doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts]
 
@@ -488,18 +505,46 @@ class TicketsDAO:
     def add_discount_code(self, event: Event, discount_code: DiscountCode):
         if hasattr(discount_code, 'id'):
             raise ValueError(f'Discount code already exists: {discount_code}')
-        discount_code_doc = PaymentDocument.from_dataclass(discount_code)
+        discount_code_doc = DiscountCodeDocument.from_dataclass(discount_code)
         discount_code_doc.event = event.id
         discount_code_doc.save()
         discount_code.id = discount_code_doc.id
+        discount_code.int_id = discount_code_doc.int_id
 
     def increment_discount_code_usages(self, discount_code: DiscountCode, usages=1):
         if not hasattr(discount_code, 'id'):
             raise ValueError(f'Discount code isn`t saved: {discount_code}')
-        discount_code_doc = self.get_discount_code_by_id(discount_code.id)
+        discount_code_doc = DiscountCodeDocument.objects(**id_filter(discount_code.id)).first()
         discount_code_doc.times_used += usages
         discount_code_doc.save()
         discount_code.times_used = discount_code_doc.times_used
+
+    def add_registration_group(self, event: Event, registration_group: RegistrationGroup):
+        doc = RegistrationGroupDocument.from_dataclass(registration_group)
+        doc.event = event.id
+        doc.save()
+        registration_group.id = doc.id
+        registration_group.int_id = doc.int_id
+
+    def check_registration_group_name_exists(self, event: Event, name: str) -> bool:
+        res = RegistrationGroupDocument.objects(name=name, event=event.id).count()
+        return res > 0
+
+    def get_registration_group_by_id(self, object_id) -> RegistrationGroup:
+        doc = RegistrationGroupDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+    def add_registration_group_member(self, registration_group: RegistrationGroup, person: Person):
+        if not hasattr(person, 'id'):
+            raise ValueError('Person need to be saved first')
+        if not hasattr(registration_group, 'id'):
+            raise ValueError('Registration group need to be saved first')
+
+        doc = RegistrationGroupDocument.objects(**id_filter(registration_group.id)).first()
+        doc.members.append(person.id)
+        doc.save()
+        registration_group.members.append(person)
 
 
 def id_filter(object_id):

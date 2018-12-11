@@ -35,10 +35,10 @@ def festival_event():
         PartyTicket(name='P1', tags={'party'}, base_price=20),
         PartyTicket(name='P2', tags={'party'}, base_price=25),
         PartyTicket(name='P3', tags={'party'}, base_price=15),
-        FestivalPassTicket(name='Full Pass', tags={'full_pass', 'discount'}, base_price=120),
-        FestivalPassTicket(name='Fast Train', tags={'full_pass', 'discount'}, base_price=90),
-        FestivalPassTicket(name='Fast Train no parties', base_price=40),
-        FestivalPassTicket(name='Party Pass', tags={'party_pass'}, base_price=50),
+        FestivalPassTicket(name='Full Pass', tags={'pass', 'includes_parties', 'discount'}, base_price=120),
+        FestivalPassTicket(name='Fast Train', tags={'pass', 'includes_parties', 'discount'}, base_price=90),
+        FestivalPassTicket(name='Fast Train no parties', tags={'pass'}, base_price=40),
+        FestivalPassTicket(name='Party Pass', tags={'party_pass', 'includes_parties'}, base_price=50),
     ]
     event = Event(
         name='Test Festival',
@@ -139,7 +139,7 @@ def test_FreePartiesDiscountRule(app, festival_event, mr_x, ms_y,
 @pytest.mark.parametrize('x_registrations,y_registrations,x_discount,y_discount', [
     ([('full_pass', 120)], [], 120, None),
     ([('fast_train', 90)], [], 90, None),
-    ([('fast_train_no_parties', 40)], [], None, None),
+    ([('fast_train_no_parties', 40)], [], 40, None),
     ([('fast_train', 60)], [], 60, None),
     ([('fast_train', 120), ('w1', 25)], [], 120, None),
     ([('party_pass', 50)], [], None, None),
@@ -173,11 +173,11 @@ def discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
     form.get_item_by_key('test_discount').validated.data = True
     expected_discounts = []
     if x_discount is not None:
-        expected_discounts.append(Discount(person=mr_x, value=x_discount,
+        expected_discounts.append(Discount(person=mr_x, value=x_discount, discount_key=discount_product.key,
                                            description=discount_product.discount_rule.info))
     assert expected_discounts == discount_product.get_discount(festival_event.tickets, payment, form)
     discount_product.applies_to_couple = True
     if y_discount is not None:
-        expected_discounts.append(Discount(person=ms_y, value=y_discount,
+        expected_discounts.append(Discount(person=ms_y, value=y_discount, discount_key=discount_product.key,
                                            description=discount_product.discount_rule.info))
     assert expected_discounts == discount_product.get_discount(festival_event.tickets, payment, form)

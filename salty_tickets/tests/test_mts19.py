@@ -2,10 +2,16 @@ from datetime import datetime
 
 import pytest
 from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
-    do_check_partner_token
+    do_check_partner_token, do_create_registration_group, do_validate_registration_group_token, \
+    do_validate_discount_code_token
+from salty_tickets.constants import LEADER, COUPLE
+from salty_tickets.models.discounts import GroupDiscountProduct, FixedValueDiscountProduct, CodeDiscountProduct
 from salty_tickets.models.event import Event
+from salty_tickets.models.registrations import DiscountCode
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, FestivalPassTicket
 from salty_tickets.models.products import Product
+from salty_tickets.testutils import process_test_price_checkout_pay, post_json_data
+from salty_tickets.tokens import GroupToken, DiscountToken
 from salty_tickets.utils.utils import jsonify_dataclass
 
 
@@ -19,16 +25,21 @@ def mts(test_dao):
         info='Mind the Shag - London Shag Festival',
         pricing_rules=[
             {
-                "name": "combination",
+                "name": "mind_the_shag",
                 "kwargs": {
-                    "tag": "station",
-                    "count_prices": {
-                        "2": 55.0,
-                        "3": 75.0,
-                        "4": 90.0,
-                    }
+                    "price_station": 30.0,
+                    "price_clinic": 40.0,
+                    "price_station_extra": 25.0,
                 }
-            }
+            },
+            {
+                'name': 'tagged_base',
+                'kwargs': {'tag': 'pass'}
+            },
+            {
+                'name': 'tagged_base',
+                'kwargs': {'tag': 'party'}
+            },
         ],
         validation_rules=[
             {
@@ -46,7 +57,7 @@ def mts(test_dao):
         allow_first=5,
         max_available=30,
         base_price=27.5,
-        tags={'mts','station'}
+        tags={'station'}
     )
 
     kwargs_train = dict(
@@ -54,10 +65,10 @@ def mts(test_dao):
         allow_first=5,
         max_available=30,
         base_price=27.5,
-        tags={'mts', 'station', 'fast_train'}
+        tags={'station', 'train'}
     )
 
-    products = [
+    tickets = [
         WorkshopTicket(
             name='Rockabilly Bopper Shag',
             key='rockabilly_bopper',
@@ -89,9 +100,9 @@ def mts(test_dao):
             **kwargs_station,
         ),
         WorkshopTicket(
-            name='Savoy Shag',
-            key='savoy_shag',
-            info='Savoy Shag info',
+            name='Shag Boomerang',
+            key='shag_boomerang',
+            info='Shag Boomerang info',
             start_datetime=datetime(2019, 3, 30, 14, 0),
             end_datetime=datetime(2019, 3, 30, 16, 0),
             teachers='Teis & Maja',
@@ -109,8 +120,8 @@ def mts(test_dao):
             **kwargs_station,
         ),
         WorkshopTicket(
-            name='Shag Roots',
-            key='shag_roots',
+            name='Shag ABC',
+            key='shag_abc',
             info='Shag Roots info',
             start_datetime=datetime(2019, 3, 30, 11, 0),
             end_datetime=datetime(2019, 3, 30, 13, 0),
@@ -119,8 +130,8 @@ def mts(test_dao):
             **kwargs_train,
         ),
         WorkshopTicket(
-            name='Rising Shag',
-            key='rising_shag',
+            name='Shag Essentials',
+            key='shag_essentials',
             info='Rising Shag info',
             start_datetime=datetime(2019, 3, 30, 14, 0),
             end_datetime=datetime(2019, 3, 30, 16, 0),
@@ -141,6 +152,16 @@ def mts(test_dao):
             max_available=12,
             base_price=40.0,
             tags={'mts', 'station', 'clinic'},
+        ),
+        WorkshopTicket(
+            name='Shag Roller Coaster',
+            key='shag_roller_coaster',
+            info='Shag Roller Coaster info',
+            start_datetime=datetime(2019, 3, 31, 11, 0),
+            end_datetime=datetime(2019, 3, 31, 13, 0),
+            teachers='Filip & Cherry',
+            level='Collegiate Any',
+            **kwargs_station,
         ),
         PartyTicket(
             name='Friday Party',
@@ -176,52 +197,36 @@ def mts(test_dao):
             tags={'party'},
         ),
         FestivalPassTicket(
-            name='Full Weekend Ticket',
-            key='full_weekend_ticket',
+            name='Full Pass',
+            key='full_pass',
             info='Includes 3 stations and all parties',
             base_price=120.0,
-            includes={
-                'party': 3,
-                'station': 3,
-            },
+            tags={'pass', 'includes_parties', 'station_discount_3', 'group_discount', 'overseas_discount'},
         ),
         FestivalPassTicket(
-            name='Full Weekend Ticket w/o parties',
-            key='full_weekend_ticket_no_parties',
-            info='Includes 3 stations and no parties',
-            base_price=75.0,
-            includes={
-                'station': 3,
-            },
-        ),
-        FestivalPassTicket(
-            name='Fast Shag Train',
-            key='fast_shag_train',
+            name='Shag Novice Track',
+            key='shag_novice',
             info='Intensive beginner shag training and all parties',
             base_price=90.0,
-            includes={
-                'party': 3,
-                'train': 2,
-            },
+            tags={'pass', 'includes_parties', 'station_discount_2', 'group_discount', 'overseas_discount'},
         ),
         FestivalPassTicket(
-            name='Fast Shag Train w/o parties',
-            key='fast_shag_train_no_parties',
+            name='Shag Novice Track w/o parties',
+            key='shag_novice_no_parties',
             info='Intensive beginner shag and no parties',
             base_price=45.0,
-            includes={
-                'train': 2,
-            },
+            tags={'pass', 'station_discount_2'},
         ),
         FestivalPassTicket(
             name='Party Pass',
             key='party_pass',
             info='Includes all 3 parties',
             base_price=55.0,
-            includes={
-                'party': 3,
-            },
+            tags={'pass', 'includes_parties'},
         ),
+    ]
+
+    products = [
         Product(
             name='Tote bag',
             key='tote_bag',
@@ -236,7 +241,7 @@ def mts(test_dao):
             name='T-shirt',
             key='tshirt',
             tags={'merchandise'},
-            base_price=15.0,
+            base_price=20.0,
             options={
                 'male_s': 'Male (S)',
                 'male_m': 'Male (M)',
@@ -252,15 +257,37 @@ def mts(test_dao):
             name='Bottle',
             key='bottle',
             tags={'merchandise'},
-            base_price=4.0,
+            base_price=5.0,
             options={
                 'blue': 'Navy Blue',
             }
         ),
     ]
 
-    event.append_tickets(products)
+    discount_products = [
+        GroupDiscountProduct(
+            name='Group Discount',
+            info='Group Discount',
+            discount_value=10,
+            tag='group_discount',
+        ),
+        FixedValueDiscountProduct(
+            name='Overseas Discount',
+            info='Overseas Discount',
+            discount_value=20,
+            tag='overseas_discount',
+        ),
+        CodeDiscountProduct(
+            name='Discount Code',
+            info='Discount Code',
+        )
+    ]
+
+    event.append_tickets(tickets)
+    event.append_products(products)
+    event.append_discount_products(discount_products)
     test_dao.create_event(event)
+    return event
 
 
 @pytest.fixture
@@ -287,6 +314,483 @@ def mts_app_routes(app, test_dao):
     def _check_partner_token():
         return jsonify_dataclass(do_check_partner_token(test_dao))
 
-    @app.route('/user_order', methods=['GET'])
-    def user_order_index():
+    @app.route('/check_discount_token', methods=['POST'])
+    def _check_discount_token():
+        return jsonify_dataclass(do_validate_discount_code_token(test_dao, event_key))
+
+    @app.route('/check_registration_group_token', methods=['POST'])
+    def _check_registration_group_token():
+        return jsonify_dataclass(do_validate_registration_group_token(test_dao, event_key))
+
+    @app.route('/create_registration_group', methods=['POST'])
+    def _create_registration_group():
+        return jsonify_dataclass(do_create_registration_group(test_dao, event_key))
+
+    @app.route('/admin_create_discount_code', methods=['POST'])
+    def _admin_create_discount_code():
         pass
+
+
+def test_full_pass_registration_solo(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                     sample_stripe_card_error, sample_stripe_successful_charge,
+                                     sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'showmans_shag-add': LEADER,
+        'hurricane_shag-add': LEADER,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': LEADER,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 120.0 == payment.price
+
+
+def test_full_pass_registration_couple(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                       sample_stripe_card_error, sample_stripe_successful_charge,
+                                       sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 240.0 == payment.price
+
+
+def test_full_pass_with_estras_registration_solo(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                     sample_stripe_card_error, sample_stripe_successful_charge,
+                                     sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'shag_roller_coaster-add': LEADER,
+        'showmans_shag-add': LEADER,
+        'hurricane_shag-add': LEADER,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': LEADER,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 145.0 == payment.price
+
+
+def test_full_pass_with_clinic_registration_couple(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                       sample_stripe_card_error, sample_stripe_successful_charge,
+                                       sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'shag_clinic-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 270.0 == payment.price
+
+
+def test_full_pass_registration_couple_with_products(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                       sample_stripe_card_error, sample_stripe_successful_charge,
+                                       sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+        'tshirt-add': {'male_l': 1, 'female_s': 1},
+        'bottle-add': {'blue': 2}
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 290.0 == payment.price
+    assert 50 == sum([p.price for p in payment.purchases])
+
+
+def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                       sample_stripe_card_error, sample_stripe_successful_charge,
+                                       sample_stripe_customer, mock_send_email):
+    # stripe will return success
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+        'tshirt-add': {'male_l': 1, 'female_s': 1},
+        'bottle-add': {'blue': 2},
+        'overseas_discount-validated': 'checked',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 240 == sum([p.price for p in payment.registrations])
+    assert 50 == sum([p.price for p in payment.purchases])
+    assert 40 == sum([p.value for p in payment.discounts])
+    assert 240 + 50 - 40 == payment.price
+
+    # no discount if no full pass
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'overseas_discount-validated': 'checked',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 120 == payment.price
+    assert 120 == sum([p.price for p in payment.registrations])
+    assert not [p.price for p in payment.purchases]
+    assert not [p.value for p in payment.discounts]
+
+    # partner doesn't have full pass
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'showmans_shag-add': LEADER,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': COUPLE,
+        'tshirt-add': {'male_l': 1, 'female_s': 1},
+        'bottle-add': {'blue': 2},
+        'overseas_discount-validated': 'checked',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 120 + 30 + 15 == sum([p.price for p in payment.registrations])
+    assert 50 == sum([p.price for p in payment.purchases])
+    assert 20 == sum([p.value for p in payment.discounts])
+    assert 120 + 30 + 15 + 50 - 20 == payment.price
+
+
+def test_validate_registration_group(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                     sample_stripe_card_error, sample_stripe_successful_charge,
+                                     sample_stripe_customer, mock_send_email):
+    res = post_json_data(client, '/create_registration_group', {
+        'name': 'My Group',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+    })
+    assert res.json['success']
+    token = res.json['token']
+    assert token
+    assert len(token) < 10
+
+    res = post_json_data(client, '/check_registration_group_token', {
+        'name': 'Mr.X',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+        'group_discount-code': token,
+    })
+    assert res.json['success']
+    assert 'My Group' == res.json['info']
+
+    # same country, different city - OK
+    res = post_json_data(client, '/check_registration_group_token', {
+        'name': 'Mr.X',
+        'location': {"city": "London", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+        'group_discount-code': token,
+    })
+    assert res.json['success']
+
+    # wrong token
+    res = post_json_data(client, '/check_registration_group_token', {
+        'name': 'Mr.X',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+        'group_discount-code': 'wrong',
+    })
+    assert not res.json['success']
+
+    # disfferent country - not OK
+    res = post_json_data(client, '/check_registration_group_token', {
+        'name': 'Mr.X',
+        'location': {"city": "Eindhoven", "country": "Netherlands", "country_code": "nl"},
+        'email': 'test@gmail.com',
+        'group_discount-code': token,
+    })
+    assert not res.json['success']
+
+
+def test_registration_with_a_group(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                   sample_stripe_card_error, sample_stripe_successful_charge,
+                                   sample_stripe_customer, mock_send_email):
+    res = post_json_data(client, '/create_registration_group', {
+        'name': 'My Group',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+    })
+    group_token = res.json['token']
+    group = GroupToken().deserialize(test_dao, group_token)
+    assert not group.admin
+    assert not group.members
+    assert 'gb' == group.location['country_code']
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'showmans_shag-add': LEADER,
+        'hurricane_shag-add': LEADER,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': LEADER,
+        'group_discount-code': group_token,
+        'group_discount-validated': 'yes',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+
+    assert 10 == payment.discounts[0].value
+    group = GroupToken().deserialize(test_dao, group_token)
+    expected_members = [payment.paid_by]
+    assert expected_members == group.members
+
+    # trying to use group key, but don't have a full pass
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'showmans_shag-add': LEADER,
+        'group_discount-code': group_token,
+        'group_discount-validated': 'yes',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+
+    assert not payment.discounts
+    group = GroupToken().deserialize(test_dao, group_token)
+    # members not changed
+    assert expected_members == group.members
+
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+        'group_discount-code': group_token,
+        'group_discount-validated': 'yes',
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    group = GroupToken().deserialize(test_dao, group_token)
+    # members not changed
+    assert 3 == len(group.members)
+
+
+def test_validate_discount_code_token(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                   sample_stripe_card_error, sample_stripe_successful_charge,
+                                   sample_stripe_customer, mock_send_email):
+    discount_code = DiscountCode(
+        discount_rule='free_party_pass',
+        applies_to_couple=False,
+        max_usages=1,
+        times_used=0,
+        info='Free parties discount',
+        active=True,
+        included_tickets=['party_pass']
+    )
+    event = test_dao.get_event_by_key(mts.key)
+    test_dao.add_discount_code(event, discount_code)
+    token = DiscountToken().serialize(discount_code)
+
+    res = post_json_data(client, '/check_discount_token', {
+        'name': 'Mr.X',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+        'discount_code-code': token,
+    }).json
+    assert res['success']
+    assert 'Free parties discount' == res['info']
+    assert ['party_pass'] == res['included_tickets']
+    assert not res['name_override']
+    assert not res['email_override']
+
+    test_dao.increment_discount_code_usages(discount_code, 1)
+    res = post_json_data(client, '/check_discount_token', {
+        'name': 'Mr.X',
+        'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
+        'email': 'test@gmail.com',
+        'discount_code-code': token,
+    }).json
+    assert not res['success']
+
+
+def test_registration_with_discount_code_party_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                   sample_stripe_card_error, sample_stripe_successful_charge,
+                                   sample_stripe_customer, mock_send_email):
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    discount_code = DiscountCode(
+        discount_rule='free_party_pass',
+        applies_to_couple=False,
+        max_usages=1,
+        times_used=0,
+        info='Free parties discount',
+        active=True,
+        included_tickets=['party_pass'],
+        full_name=person.full_name,
+        email=person.email
+    )
+    event = test_dao.get_event_by_key(mts.key)
+    test_dao.add_discount_code(event, discount_code)
+    token = DiscountToken().serialize(discount_code)
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+        'discount_code-code': token,
+        'discount_code-validated': '',
+    }
+    assert post_json_data(client, '/check_discount_token', form_data).json['success']
+    form_data['discount_code-validated'] = 'yes'
+
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 55 == sum([p.value for p in payment.discounts])
+    assert 120 + 120 - 55 == payment.price
+
+
+def test_registration_with_discount_code_full_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                                   sample_stripe_card_error, sample_stripe_successful_charge,
+                                   sample_stripe_customer, mock_send_email):
+    person = person_factory.pop()
+    partner = person_factory.pop()
+    discount_code = DiscountCode(
+        discount_rule='free_full_pass',
+        applies_to_couple=False,
+        max_usages=1,
+        times_used=0,
+        info='Free full pass discount',
+        active=True,
+        included_tickets=['full_pass'],
+        full_name=person.full_name,
+        email=person.email
+    )
+    event = test_dao.get_event_by_key(mts.key)
+    test_dao.add_discount_code(event, discount_code)
+    token = DiscountToken().serialize(discount_code)
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'dance_role': LEADER,
+        'partner_name': partner.full_name,
+        'partner_email': partner.email,
+        'full_pass-add': COUPLE,
+        'rockabilly_bopper-add': COUPLE,
+        'showmans_shag-add': COUPLE,
+        'hurricane_shag-add': COUPLE,
+        'shag_roller_coaster-add': COUPLE,
+        'friday_party-add': COUPLE,
+        'saturday_party-add': COUPLE,
+        'sunday_party-add': COUPLE,
+        'discount_code-code': token,
+        'discount_code-validated': '',
+    }
+    assert post_json_data(client, '/check_discount_token', form_data).json['success']
+    form_data['discount_code-validated'] = 'yes'
+
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 120 == sum([p.value for p in payment.discounts])
+    assert 120 + 25 + 25 == payment.price

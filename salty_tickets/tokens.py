@@ -102,7 +102,7 @@ class GroupToken(HashidsMixin, Token):
     salt = SALT_GROUP_TOKEN
 
     def _retrieve_object(self, dao: TicketsDAO, object_id):
-        raise NotImplementedError()
+        return dao.get_registration_group_by_id(object_id)
 
 
 class PartnerToken(HashidsMixin, Token):

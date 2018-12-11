@@ -35,6 +35,13 @@ class PartnerTokenCheck(FlaskForm):
     event_key = StringField(validators=[DataRequired()])
 
 
+class CreateRegistrationGroupForm(FlaskForm):
+    name = StringField(u'Group name', validators=[DataRequired()])
+    email = StringField(u'Admin Email', validators=[Email(), DataRequired()])
+    location = RawField(u'Location', validators=[DataRequired()])
+    comment = TextAreaField('Comment')
+
+
 class FormWithTickets:
     ticket_keys = []
 

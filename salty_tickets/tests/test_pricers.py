@@ -150,11 +150,10 @@ def mts_tickets():
         PartyTicket(name='p1', base_price=20.0, tags={'party'}),
         PartyTicket(name='p2', base_price=30.0, tags={'party'}),
         PartyTicket(name='p3', base_price=15.0, tags={'party'}),
-        FestivalPassTicket(name='full_weekend_ticket', base_price=120.0, tags={'pass'}),
-        FestivalPassTicket(name='full_weekend_ticket_no_parties', base_price=75.0, tags={'pass'}),
-        FestivalPassTicket(name='fast_shag_train', base_price=90.0, tags={'pass'}),
-        FestivalPassTicket(name='fast_shag_train_no_parties', base_price=45.0, tags={'pass'}),
-        FestivalPassTicket(name='party_pass', base_price=55.0, tags={'pass'}),
+        FestivalPassTicket(name='full_weekend_ticket', base_price=120.0, tags={'pass', 'includes_parties', 'station_discount_3', 'includes_parties'}),
+        FestivalPassTicket(name='fast_shag_train', base_price=90.0, tags={'pass', 'includes_parties', 'station_discount_2', 'includes_parties'}),
+        FestivalPassTicket(name='fast_shag_train_no_parties', base_price=45.0, tags={'pass', 'station_discount_2'}),
+        FestivalPassTicket(name='party_pass', base_price=55.0, tags={'pass', 'includes_parties', 'includes_parties'}),
     ]
     return {p.key: p for p in tickets}
 
@@ -186,8 +185,6 @@ def ms_y():
     ("w1 clinic p3", [30, 40, 15]),
 
     ('w1 w2 w3 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 0, 0, 0, 120]),
-    ('w1 w2 w3 full_weekend_ticket_no_parties', [0, 0, 0, 75]),
-    ('w1 w2 w3 p1 p2 full_weekend_ticket_no_parties', [0, 0, 0, 20, 30, 75]),
 
     ('beg1 beg2 p1 p2 p3 fast_shag_train', [0, 0, 0, 0, 0, 90]),
     ('beg1 beg2 fast_shag_train_no_parties', [0, 0, 45]),
@@ -197,10 +194,8 @@ def ms_y():
     ('w1 p1 p2 p3 party_pass', [30, 0, 0, 0, 55]),
 
     ('w1 w2 w3 w4 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 0, 0, 0, 120]),
-    ('w1 w2 w3 w4 p2 p3 full_weekend_ticket_no_parties', [0, 0, 0, 25, 30, 15, 75]),
 
     ('w1 w2 w3 w4 w5 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 25, 0, 0, 0, 120]),
-    ('w1 w2 w3 w4 w5 p2 p3 full_weekend_ticket_no_parties', [0, 0, 0, 25, 25, 30, 15, 75]),
 
     ('w1 beg1 beg2 p1 p2 p3 fast_shag_train', [25, 0, 0, 0, 0, 0, 90]),
     ('w1 beg1 beg2 p2 p3 fast_shag_train_no_parties', [25, 0, 0, 30, 15, 45]),
@@ -209,14 +204,10 @@ def ms_y():
     ('w1 beg1 beg2 w2 p2 p3 fast_shag_train_no_parties', [25, 0, 0, 25, 30, 15, 45]),
 
     ('w1 w2 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 15, 0, 0, 0, 120]),
-    ('w1 w2 clinic full_weekend_ticket_no_parties', [0, 0, 15, 75]),
 
     ('w1 w2 clinic w3 p1 p2 p3 full_weekend_ticket', [0, 0, 15, 25, 0, 0, 0, 120]),
-    ('w1 w2 clinic w3 full_weekend_ticket_no_parties', [0, 0, 15, 25, 75]),
     ('w1 w2 w3 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 0, 40, 0, 0, 0, 120]),
-    ('w1 w2 w3 clinic full_weekend_ticket_no_parties', [0, 0, 0, 40, 75]),
     ('w1 w2 w3 w4 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 40, 0, 0, 0, 120]),
-    ('w1 w2 w3 w4 clinic full_weekend_ticket_no_parties', [0, 0, 0, 25, 40, 75]),
 
     ('w1 beg1 beg2 clinic p1 p2 p3 fast_shag_train', [25, 0, 0, 40, 0, 0, 0, 90]),
 ])

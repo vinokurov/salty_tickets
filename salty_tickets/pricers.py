@@ -1,3 +1,4 @@
+import typing
 from typing import List, Dict
 
 from dataclasses import dataclass, field
@@ -109,6 +110,10 @@ class MindTheShagPriceRule(BasePriceRule):
     tag_party: str = 'party'
     tag_clinic: str = 'clinic'
 
+    tag_station_discount_3: str = 'station_discount_3'
+    tag_station_discount_2: str = 'station_discount_2'
+    tag_includes_parties: str = 'includes_parties'
+
     def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
         person = registration.person
         if person:
@@ -127,7 +132,7 @@ class MindTheShagPriceRule(BasePriceRule):
         stations_priced_count = len([r for r in person_priced_registrations if r.ticket_key in station_keys])
 
         if registration.ticket_key in clinic_keys:
-            if 'full_weekend_ticket' in registration_keys or 'full_weekend_ticket_no_parties' in registration_keys:
+            if self._has_tags(registration_keys, event_tickets, {self.tag_station_discount_3}):
                 if stations_priced_count < 3:
                     return self.price_clinic - self.price_station_extra
                 else:
@@ -136,13 +141,13 @@ class MindTheShagPriceRule(BasePriceRule):
                 return self.price_clinic
 
         elif registration.ticket_key in station_keys:
-            if 'fast_shag_train' in registration_keys or 'fast_shag_train_no_parties' in registration_keys:
+            if self._has_tags(registration_keys, event_tickets, {self.tag_station_discount_2}):
                 if registration.ticket_key in fast_train_station_keys:
                     return 0.0
                 else:
                     return self.price_station_extra
 
-            elif 'full_weekend_ticket' in registration_keys or 'full_weekend_ticket_no_parties' in registration_keys:
+            elif self._has_tags(registration_keys, event_tickets, {self.tag_station_discount_3}):
                 if stations_priced_count < 3:
                     return 0
                 else:
@@ -151,8 +156,16 @@ class MindTheShagPriceRule(BasePriceRule):
                 return self.price_station
 
         elif registration.ticket_key in party_keys:
-            if any([x in registration_keys for x in ['fast_shag_train', 'full_weekend_ticket', 'party_pass']]):
+            if self._has_tags(registration_keys, event_tickets, {self.tag_includes_parties}):
                 return 0.0
+
+    @classmethod
+    def _has_tags(cls, registration_keys, event_tickets, tags):
+        if type(tags) == str:
+            tags = {tags}
+        for reg_key in registration_keys:
+            if tags.intersection(event_tickets[reg_key].tags):
+                return True
 
 
 PRICING_RULES = {

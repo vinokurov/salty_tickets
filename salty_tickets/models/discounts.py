@@ -98,6 +98,13 @@ class GroupDiscountProduct(FixedValueDiscountProduct):
     def get_form_class(cls):
         return GroupDiscountForm
 
+    def _get_discount(self, tickets: typing.Dict, payment: Payment, form) -> typing.List:
+        discounts = super(GroupDiscountProduct, self)._get_discount(tickets, payment, form)
+        discount_form = form.get_item_by_key(self.key)
+        for d in discounts:
+            d.discount_code = discount_form.code.data
+        return discounts
+
 
 @dataclass
 class DiscountRule:
@@ -143,9 +150,9 @@ class FreePartiesDiscountRule(DiscountRule):
         registrations = [r for r in payment.registrations if r.person == person]
         for reg in registrations:
             ticket = tickets[reg.ticket_key]
-            if ticket.tags.intersection({'party', 'party_pass'}):
+            if set(ticket.tags).intersection({'party', 'party_pass'}):
                 discount_price += reg.price
-            elif 'full_pass' in ticket.tags:
+            elif 'includes_parties' in ticket.tags:
                 if reg.price >= tickets['party_pass'].base_price:
                     discount_price += tickets['party_pass'].base_price
 
@@ -165,7 +172,7 @@ class FreeFullPassDiscountRule(DiscountRule):
         registrations = [r for r in payment.registrations if r.person == person]
         for reg in registrations:
             ticket = tickets[reg.ticket_key]
-            if 'full_pass' in ticket.tags:
+            if 'pass' in ticket.tags:
                 discount_price += reg.price
                 break
 
@@ -196,6 +203,8 @@ class CodeDiscountProduct(DiscountProduct):
 
         discount = self.discount_rule.get_discount(tickets, payment, payment.paid_by, form)
         if discount:
+            discount.discount_key = self.key
+            discount.discount_code = form.get_item_by_key(self.key).code.data
             discounts.append(discount)
 
         if self.applies_to_couple:
@@ -203,6 +212,8 @@ class CodeDiscountProduct(DiscountProduct):
             if partner:
                 discount = self.discount_rule.get_discount(tickets, payment, partner, form)
                 if discount:
+                    discount.discount_key = self.key
+                    discount.discount_code = form.get_item_by_key(self.key).code.data
                     discounts.append(discount)
         return discounts
 
