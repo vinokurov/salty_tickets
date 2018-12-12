@@ -290,6 +290,7 @@ class TicketsDAO:
     def create_event(self, event_model):
         event_doc = EventDocument.from_dataclass(event_model)
         event_doc.save()
+        event_model.id = event_doc.id
 
     def _get_event_doc(self, event) -> EventDocument:
         if isinstance(event, str):

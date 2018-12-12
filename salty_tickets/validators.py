@@ -54,7 +54,57 @@ def errors_if_overlapping(registrations: List[Registration],
                 return error_text
 
 
+def mind_the_shag_validator(registrations: List[Registration],
+                            tickets: Dict[str, Ticket],
+                            tag, error_text=None):
+    if registrations:
+        persons = []
+        primary = registrations[0].registered_by
+        persons.append(primary)
+        partner_registrations = [r for r in registrations if r.person!=primary]
+        if partner_registrations:
+            persons.append(partner_registrations[0].person)
+
+        for person in persons:
+            # add all parties if required
+            registration_keys = [r.ticket_key for r in registrations if r.person == person]
+            if _has_tags(registration_keys, tickets, 'includes_parties'):
+                for party_key in ['friday_party', 'saturday_party', 'sunday_party']:
+                    if party_key not in registration_keys:
+                        registrations.append(Registration(
+                            registered_by=primary,
+                            person=person,
+                            ticket_key=party_key,
+                        ))
+
+        for person in persons:
+            registration_keys = [r.ticket_key for r in registrations if r.person == person]
+            stations_count = len([k for k in registration_keys if 'station' in tickets[k].tags])
+            if _has_tags(registration_keys, tickets, 'station_discount_3'):
+                if stations_count < 3:
+                    return 'You need to choose at least 3 stations'
+            elif _has_tags(registration_keys, tickets, 'station_discount_2'):
+                if not {'shag_abc', 'shag_essentials'}.intersection(set(registration_keys)):
+                    return 'You need to select "Shag ABC" and "Shag Essentials"'
+            elif len({'shag_abc', 'shag_essentials'}.intersection(set(registration_keys))) == 2:
+                registrations.append(
+                    Registration(
+                        registered_by=primary,
+                        person=person,
+                        ticket_key='shag_novice_no_parties',
+                    )
+                )
+
+
+def _has_tags(registration_keys_list, tickets_dict, tags):
+    if type(tags) == str:
+        tags = {tags}
+    for ticket_key in registration_keys_list:
+        if set(tickets_dict[ticket_key].tags).intersection(tags):
+            return True
+
 VALIDATION_RULES = {
     'at_least_any_with_tag': errors_at_least_any_with_tag,
     'non_overlapping': errors_if_overlapping,
+    'mind_the_shag': mind_the_shag_validator,
 }

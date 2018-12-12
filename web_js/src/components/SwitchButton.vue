@@ -48,7 +48,7 @@ export default {
         } else {
           this.button_value = ''
         }
-    }
+    },
   }
 }
 </script>

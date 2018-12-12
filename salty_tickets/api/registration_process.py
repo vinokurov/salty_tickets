@@ -16,7 +16,8 @@ from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSign
 from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct, get_discount_rule_from_code, \
     GroupDiscountProduct
 from salty_tickets.models.event import Event
-from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
+from salty_tickets.models.products import Product
+from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket, Ticket
 from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
@@ -53,8 +54,8 @@ class TicketWaitingListInfo(DataClassJsonMixin):
 class TicketInfo(DataClassJsonMixin):
     key: str
     title: str
-    start_datetime: str
-    end_datetime: str
+    start_datetime: str = None
+    end_datetime: str = None
     time: str = None
     level: str = None
     teachers: str = None
@@ -62,28 +63,73 @@ class TicketInfo(DataClassJsonMixin):
     price: float = None
     info: str = None
     choice: str = None
+    tags: List = field(default_factory=[])
     waiting_list: Optional[TicketWaitingListInfo] = None
 
     @classmethod
-    def from_workshop(cls, workshop: WorkshopTicket):
-        available = workshop.max_available - workshop.waiting_list.total_accepted
-        waiting_stats = workshop.waiting_list.waiting_stats
-        return cls(
-            key=workshop.key,
-            title=workshop.name,
-            start_datetime=str(workshop.start_datetime),
-            end_datetime=str(workshop.end_datetime),
-            level=workshop.level,
-            teachers=workshop.teachers,
-            available=available,
-            price=workshop.base_price,
-            info=workshop.info,
-            waiting_list=TicketWaitingListInfo(
+    def from_workshop(cls, ticket: Ticket):
+        ticket_info = cls(
+            key=ticket.key,
+            title=ticket.name,
+            available=100,
+            # available=ticket.get_available_quantity(),
+            price=ticket.base_price,
+            info=ticket.info,
+            tags=list(ticket.tags)
+        )
+        if hasattr(ticket, 'start_datetime'):
+            ticket_info.start_datetime = str(ticket.start_datetime)
+
+        if hasattr(ticket, 'end_datetime'):
+            ticket_info.end_datetime = str(ticket.end_datetime)
+
+        if isinstance(ticket, WorkshopTicket):
+            available = ticket.max_available - ticket.waiting_list.total_accepted
+            waiting_stats = ticket.waiting_list.waiting_stats
+            ticket_info.waiting_list = TicketWaitingListInfo(
                 leader=int(waiting_stats[LEADER] * 100) if waiting_stats[LEADER] is not None else None,
                 follower=int(waiting_stats[FOLLOWER] * 100) if waiting_stats[FOLLOWER] is not None else None,
                 couple=int(waiting_stats[COUPLE] * 100) if waiting_stats[COUPLE] is not None else None,
             )
+            ticket_info.available = available
+            ticket_info.level = ticket.level
+            ticket_info.teachers = ticket.teachers
+        return ticket_info
+
+
+@dataclass
+class ProductInfo(DataClassJsonMixin):
+    key: str
+    title: str
+    options: Dict
+    available: int = None
+    price: float = None
+    info: str = None
+    choice: Dict = field(default_factory=dict)
+    image_urls: List = field(default_factory=list)
+
+    @classmethod
+    def from_product(cls, product: Product):
+        return cls(
+            title=product.name,
+            key=product.key,
+            options=product.options,
+            price=product.base_price,
+            info=product.info,
+            available=100,
+            image_urls=product.image_urls,
         )
+
+
+# @dataclass
+# class DiscountProductInfo(DataClassJsonMixin):
+#     key: str
+#     title: str
+#     options: Dict
+#     available: int = None
+#     price: float = None
+#     info: str = None
+#     choice: str = None
 
 
 @dataclass
@@ -91,6 +137,8 @@ class EventInfo(DataClassJsonMixin):
     name: str
     key: str
     tickets: List
+    products: List
+    # discount_products: List
     layout: Dict
 
     @classmethod
@@ -98,8 +146,10 @@ class EventInfo(DataClassJsonMixin):
         return cls(
             name=event.name,
             key=event.key,
-            tickets=[TicketInfo.from_workshop(p) for k, p in event.tickets.items()
-                     if isinstance(p, WorkshopTicket)],
+            tickets=[TicketInfo.from_workshop(p) for k, p in event.tickets.items()],
+            products=[ProductInfo.from_product(p) for k, p in event.products.items()],
+            # discount_products=[DiscountProductInfo.from_discount_product(p)
+            #                    for k, p in event.discount_products.items()],
             layout=event.layout
         )
 
@@ -138,6 +188,15 @@ class OrderSummary(DataClassJsonMixin):
                 partner=reg.partner.full_name if reg.partner else None,
                 dance_role=reg.dance_role,
                 wait_listed=reg.wait_listed
+            ))
+        for purchase in payment.purchases:
+            name = event.products[purchase.product_key].name
+            option_name = event.products[purchase.product_key].options[purchase.product_option_key]
+            amount = purchase.amount
+            name = f'{name} / {option_name} / {amount}'
+            items.append(OrderItem(
+                name=name,
+                price=purchase.price
             ))
 
         return cls(
@@ -233,6 +292,8 @@ def get_payment_from_form(event: Event, form, extra_registrations=None, discount
     for ticket_key, ticket in event.tickets.items():
         registrations += ticket.parse_form(form)
 
+    validate_registrations(event, registrations)
+
     purchases = []
     for product_key, product in event.products.items():
         purchases += product.parse_form(form)
@@ -308,6 +369,7 @@ def do_price(dao: TicketsDAO, event_key: str):
         payment = get_payment_from_form(event, form, extra_registrations, discount_product)
     else:
         payment = get_payment_from_form(event, form, discount_product=discount_product)
+    print(payment)
 
     if payment:
         errors = {}

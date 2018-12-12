@@ -12,6 +12,9 @@ Order Summary
     ITEM: {{ event.tickets[registration.ticket_key].name }} / {{registration.person.full_name}}
     ROLE: {{registration.dance_role }}
     PRICE: {{ registration.price }}{% endif %}
+{% endfor %}{% for purchase in payment.purchases %}
+    ITEM: {{ event.products[purchase.product_key].name }} / {{event.products[purchase.product_key].options[purchase.product_option_key]}} / {{purchase.amount}}
+    PRICE: {{ purchase.price }}
 {% endfor %}
 
     TOTAL: £{{ payment.price }}

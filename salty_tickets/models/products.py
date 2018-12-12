@@ -40,6 +40,7 @@ class Product:
         if self.is_added(product_form):
             person = get_primary_personal_info_from_form(form) or Person('You', '')
             for key, amount in product_form.add.data.items():
+                amount = int(amount)
                 purchases.append(Purchase(
                     person=person,
                     product_key=self.key,

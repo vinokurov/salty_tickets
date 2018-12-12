@@ -8,6 +8,7 @@ import VueStripeCheckout from 'vue-stripe-checkout';
 Vue.use(Vuex);
 
 const my_state = {
+  tickets: [],
   products: [],
   layout: {},
   event_name: '',
@@ -60,7 +61,7 @@ export default new Vuex.Store({
 
   mutations: {
     selectProduct (state, args) {
-      state.products.map((p) => {if(p.key==args.key){p.choice=args.choice}})
+      state.tickets.map((p) => {if(p.key==args.key){p.choice=args.choice}})
     },
     setPricingResponseDetails (state, pricing_details) {
       state['pricing_details'] = pricing_details;
@@ -103,19 +104,24 @@ export default new Vuex.Store({
     markThrottledRequestAsComplete (state, url) {
       state.throttled_calls[url].complete = true
     },
+    setProductChoice(state, args){
+      // console.log(args.key, this.getters.getProductByKey(args.key), args.choice)
+      this.getters.getProductByKey(args.key).choice = args.choice
+    },
     ...make.mutations(['registration']),
   },
 
   actions: {
     async initEvent ({context, state}) {
-      const url = '/event/salty_brizzle'
+      const url = '/event/mind_the_shag_2019'
       let response = await axios.get(url)
       state.layout = response.data.layout
+      state.tickets = response.data.tickets
       state.products = response.data.products
       state.event_name = response.data.name
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
-      const url = '/price/salty_brizzle'
+      const url = '/price/mind_the_shag_2019'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
@@ -125,7 +131,7 @@ export default new Vuex.Store({
     },
     async requestCheckout({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
-      const url = '/checkout/salty_brizzle'
+      const url = '/checkout/mind_the_shag_2019'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
@@ -189,6 +195,12 @@ export default new Vuex.Store({
   },
 
   getters: {
+    getTicketByKey: (state) => (key) => {
+      return state.tickets.filter((p) => p.key == key)[0]
+    },
+    getSelectedTickets: (state) => {
+      return state.tickets.filter((p) => p.choice).map((p) => ({key:p.key, choice:p.choice}))
+    },
     getProductByKey: (state) => (key) => {
       return state.products.filter((p) => p.key == key)[0]
     },
@@ -196,7 +208,7 @@ export default new Vuex.Store({
       return state.products.filter((p) => p.choice).map((p) => ({key:p.key, choice:p.choice}))
     },
     partnerRequired: (state) => {
-      return state.products.filter((p) => p.choice=='couple').length > 0
+      return state.tickets.filter((p) => p.choice=='couple').length > 0
     },
     getPricingSubmitData: (state, getters) => {
       let data = {
@@ -212,12 +224,21 @@ export default new Vuex.Store({
         pay_all: state.registration.pay_all,
       }
       // ...state.products.filter((p) => p.choice).map((p) => ({key:p.key, choice:p.choice}))
-      const selected = getters.getSelectedProducts
+      const selected = getters.getSelectedTickets
+      const selected_products = getters.getSelectedProducts
+
       if (selected) {
         Object.keys(selected).forEach(function(key,index) {
           // key: the name of the object key
           // index: the ordinal position of the key within the object
           data[selected[key].key + '-add'] = selected[key].choice;
+        });
+      }
+      if (selected_products) {
+        Object.keys(selected_products).forEach(function(key,index) {
+          // key: the name of the object key
+          // index: the ordinal position of the key within the object
+          data[selected_products[key].key + '-add'] = selected_products[key].choice;
         });
       }
       return data;

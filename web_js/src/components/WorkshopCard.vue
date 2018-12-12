@@ -1,10 +1,12 @@
 <template>
     <b-card no-body :bg-variant="cardStyle.bg" :text-variant="cardStyle.text"
                     :border-variant="cardStyle.border" class="text-left">
+        <div class="card-header text-light" :style="'background-color: '+headerColor">
+          <span class="close" :id="inputName + '-info'"><font-awesome icon="info-circle"/></span>
+          <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
+          <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
+        </div>
         <div class="card-body">
-            <span class="close" :id="inputName + '-info'"><font-awesome icon="info-circle"/></span>
-            <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
-            <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
             <switch-button
                   :name="inputName"
                   :options="buttonOptions"
@@ -15,15 +17,17 @@
                   v-if="!soldOut"
                   />
         </div>
-        <b-alert v-if="this.product.waiting_list.leader" show variant="warning">
-          <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.
-          Chances to get accepted: {{this.product.waiting_list.leader}}%.
-        </b-alert>
-        <b-alert v-if="this.product.waiting_list.follower" show variant="warning">
-          <font-awesome icon="exclamation-triangle"/> Waiting list for followers.
-          Chances to get accepted: {{this.product.waiting_list.follower}}%.
-        </b-alert>
-        <div class="card-footer">
+        <span v-if="this.product.key != 'shag_clinic'">
+          <b-alert v-if="this.product.waiting_list.leader" show variant="warning">
+            <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.
+            Chances to get accepted: {{this.product.waiting_list.leader}}%.
+          </b-alert>
+          <b-alert v-if="this.product.waiting_list.follower" show variant="warning">
+            <font-awesome icon="exclamation-triangle"/> Waiting list for followers.
+            Chances to get accepted: {{this.product.waiting_list.follower}}%.
+          </b-alert>
+        </span>
+        <div class="card-footer" >
             <p style="margin:0" v-if="time">
               <small class="text-muted"><font-awesome icon="clock-o"/> {{time}}</small>
             </p>
@@ -53,6 +57,7 @@ export default {
   props: {
     inputName: { type: String },
     icon: { default: 'ticket', type: String },
+    headerColor: { type: String, default: '#5D6D7E'},
   },
   data: function () {
     return {
@@ -67,7 +72,7 @@ export default {
   },
   computed: {
     product: function(){
-      return this.$store.getters.getProductByKey(this.inputName)
+      return this.$store.getters.getTicketByKey(this.inputName)
     },
     title: function() { return this.product.title },
     price: function() { return this.product.price },

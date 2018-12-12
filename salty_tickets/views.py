@@ -27,7 +27,7 @@ if app.debug:
 @app.route('/register')
 @app.route('/register/')
 def register_index():
-    return redirect(url_for('event_index', event_key='salty_brizzle'))
+    return redirect(url_for('event_index', event_key='mind_the_shag_2019'))
 
 
 @app.route('/register/<string:event_key>', methods=['GET'])
