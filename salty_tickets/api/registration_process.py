@@ -314,8 +314,15 @@ def get_payment_from_form(event: Event, form, extra_registrations=None, discount
     pricer = TicketPricer.from_event(event)
     pricer.price_all(registrations)
 
+    if len(registrations):
+        person = registrations[0].registered_by
+    elif len(purchases):
+        person = purchases[0].person
+    else:
+        person = None # ??? ACTUALLY CHECK
+
     payment = Payment(
-        paid_by=registrations[0].registered_by if len(registrations) else None,
+        paid_by=person,
         registrations=registrations,
         purchases=purchases,
         status=NEW,
