@@ -14,7 +14,7 @@ app.config.from_object('config')
 # app.secret_key = 'devtest'
 Session(app)
 app.config['SIMPLELOGIN_USERNAME'] = 'salty'
-app.config['SIMPLELOGIN_PASSWORD'] = 'jiterrrbugQ!2w'
+app.config['SIMPLELOGIN_PASSWORD'] = 'jiterrrbugHFRSJ'
 SimpleLogin(app)
 
 from salty_tickets import views
