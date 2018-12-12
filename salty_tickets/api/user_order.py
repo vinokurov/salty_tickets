@@ -12,8 +12,8 @@ from salty_tickets.tokens import PartnerToken, PaymentId
 @dataclass
 class RegistrationInfo(DataClassJsonMixin):
     title: str
-    start_datetime: str
-    end_datetime: str
+    start_datetime: str = ''
+    end_datetime: str = ''
     level: str = None
     teachers: str = None
     price: float = None

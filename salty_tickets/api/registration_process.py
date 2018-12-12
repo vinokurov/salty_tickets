@@ -39,7 +39,7 @@ Checkout:
     - check payment status (using) stripe
     - if payment failed: show response
     - if payment passed: update statuses, rebalance, send emails
-    - user polls status - ready -> thank you, order details 
+    - user polls status - ready -> thank you, order details
 """
 
 
@@ -198,6 +198,11 @@ class OrderSummary(DataClassJsonMixin):
                 name=name,
                 price=purchase.price
             ))
+        for discount in payment.discounts:
+            items.append(OrderItem(
+                name=discount.description,
+                price=-discount.value
+            ))
 
         return cls(
             total_price=payment.price,
@@ -335,6 +340,26 @@ def get_payment_from_form(event: Event, form, extra_registrations=None, discount
 
 
 def get_discount_product_from_form(dao: TicketsDAO, event: Event, form):
+    # DISCOUNTS HACK
+    # print(form.name)
+    name = form.name.data
+    print('name', name)
+    if name and len(name.split('|')) > 1:
+        comment = name.split('|')[1].strip()
+        full_name = name.split('|')[0].strip()
+        form.name.data = full_name
+        print(comment)
+
+        if comment == 'OVERSEAS':
+            form.get_item_by_key('overseas_discount').validated.data = 'yes'
+        elif comment.startswith('grp_'):
+            form.get_item_by_key('group_discount').validated.data = 'yes'
+            form.get_item_by_key('group_discount').code.data = comment.strip()
+        elif comment.startswith('dsc_'):
+            form.get_item_by_key('discount_code').validated.data = 'yes'
+            form.get_item_by_key('discount_code').code.data = comment.strip()
+
+
     for discount_product_key, discount_product in event.discount_products.items():
         if discount_product.is_added(form):
             if isinstance(discount_product, CodeDiscountProduct):
