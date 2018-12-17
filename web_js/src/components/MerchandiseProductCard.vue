@@ -1,5 +1,5 @@
 <template>
-    <b-card no-body class="text-left">
+    <b-card no-body class="text-left shadow ">
         <div class="card-header">
           <div class="d-flex justify-content-between">
             <h5 class="card-title"> {{title}}</h5>

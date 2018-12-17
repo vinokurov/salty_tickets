@@ -1,6 +1,6 @@
 <template>
     <b-card no-body :bg-variant="cardStyle.bg" :text-variant="cardStyle.text"
-                    :border-variant="cardStyle.border" class="text-left">
+                    :border-variant="cardStyle.border" class="text-left shadow ">
         <div class="card-body">
             <div class="d-flex justify-content-between">
               <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>

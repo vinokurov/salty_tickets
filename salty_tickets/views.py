@@ -10,6 +10,8 @@ from salty_tickets.api.registration_process import do_price, do_checkout, do_pay
     do_check_partner_token, EventInfo, balance_event_waiting_lists, do_validate_discount_code_token, \
     do_validate_registration_group_token, do_create_registration_group
 from salty_tickets.api.user_order import do_get_user_order_info
+from salty_tickets.models.registrations import Payment
+from salty_tickets.tokens import PaymentId
 from salty_tickets.utils.utils import jsonify_dataclass
 
 
@@ -120,6 +122,15 @@ def admin_event_index(event_key):
 def admin_event_info(event_key):
     dao = TicketsDAO(MONGO)
     return jsonify_dataclass(do_get_event_stats(dao, event_key))
+
+
+@app.route('/admin/order/<string:payment_id>', methods=['GET'])
+@login_required
+def admin_order(payment_id):
+    payment = Payment(paid_by=None)
+    payment.id = payment_id
+    pmt_token = PaymentId().serialize(payment)
+    return redirect(url_for('user_order_index', pmt_token=pmt_token))
 
 
 @app.route('/admin/balance_event/<string:event_key>', methods=['GET'])

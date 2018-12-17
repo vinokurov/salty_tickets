@@ -54,7 +54,7 @@
                 <b-card>
                   <ul>
                     <li v-for="(value, key) in row.item" :key="key">{{ key }}: {{ value}}</li>
-                    <li><a :href="'/order/' + row.item['pmt_token']"><b-badge>Order Info</b-badge></a></li>
+                    <li><a :href="'/admin/order/' + row.item['id']"><b-badge>Order Info</b-badge></a></li>
                   </ul>
                 </b-card>
               </template>

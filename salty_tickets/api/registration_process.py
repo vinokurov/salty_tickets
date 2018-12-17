@@ -243,6 +243,7 @@ class PricingResult(DataClassJsonMixin):
     disable_checkout: bool = True
     checkout_success: bool = False
     payment_id: str = ''
+    new_prices: Dict = field(default_factory=dict)
 
     @classmethod
     def from_payment(cls, event: Event, payment: Payment, errors: Dict):

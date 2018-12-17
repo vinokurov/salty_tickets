@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
 from salty_tickets.api.registration_process import TicketWaitingListInfo
-from salty_tickets.constants import LEADER, FOLLOWER
+from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WorkshopTicket
@@ -21,17 +21,19 @@ class SummaryInfo(DataClassJsonMixin):
     amount_due_later: float
 
     @classmethod
-    def from_event(cls, event: Event):
+    def from_event(cls, event: Event, payments: List[Payment]):
         registrations = []
         for p_key, p in event.tickets.items():
             registrations = registrations + p.registrations
         registrations = [r for r in registrations if r.active]
 
-        total_sales = sum([r.price for r in registrations if r.price] or [0])
-        amount_paid = sum([r.paid_price for r in registrations if r.paid_price] or [0])
+        total_sales = sum([p.price for p in payments if p.price and p.status == SUCCESSFUL] or [0])
+        amount_paid = sum([p.paid_price for p in payments if p.price and p.status == SUCCESSFUL] or [0])
+        # amount_paid = sum([r.paid_price for r in registrations if r.paid_price] or [0])
         return cls(
             persons_count=len(set([r.person.full_name for r in registrations])),
-            workshops_accepted=len([r for r in registrations if not r.wait_listed]),
+            workshops_accepted=len([r for r in registrations if not r.wait_listed
+                                    and isinstance(event.tickets[r.ticket_key], WorkshopTicket)]),
             workshops_wait_listed=len([r for r in registrations if r.wait_listed]),
             total_sales=total_sales,
             amount_paid=amount_paid,
@@ -47,7 +49,7 @@ class RegistrationInfo(DataClassJsonMixin):
     ticket: str
     ticket_key: str
     price: float
-    paid_price: float
+    # paid_price: float
     is_paid: bool
     wait_listed: bool
     active: bool
@@ -74,14 +76,14 @@ class RegistrationInfo(DataClassJsonMixin):
             active=registration.active,
             dance_role=registration.dance_role,
             partner=partner,
-            ptn_token=PartnerToken().serialize(registration.person),
+            # ptn_token=PartnerToken().serialize(registration.person),
         )
 
 
 @dataclass
 class PaymentInfo(DataClassJsonMixin):
     id: str
-    pmt_token: str
+    # pmt_token: str
     name: str
     email: str
     price: float
@@ -99,7 +101,7 @@ class PaymentInfo(DataClassJsonMixin):
             partner = None
         return cls(
             id=str(payment.id),
-            pmt_token=PaymentId().serialize(payment),
+            # pmt_token=PaymentId().serialize(payment),
             name=payment.paid_by.full_name,
             email=payment.paid_by.email,
             price=payment.price,
@@ -180,7 +182,7 @@ class EventInfo(DataClassJsonMixin):
                       if isinstance(p, WorkshopTicket)],
             layout=event.layout,
             payments=[PaymentInfo.from_payment(p) for p in payments],
-            summary=SummaryInfo.from_event(event)
+            summary=SummaryInfo.from_event(event, payments)
         )
 
 

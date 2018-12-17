@@ -12,7 +12,7 @@
 
       <div class="container-fluid">
           <div class="container">
-            <b-card no-body class="mb-4"  bg-variant="light">
+            <b-card no-body class="mb-4 shadow "  bg-variant="light">
               <h4 slot="header">Details</h4>
               <b-card>
                 <dl>
@@ -32,7 +32,7 @@
        <div class="container-fluid"  v-if="user_order_info.tickets && user_order_info.tickets.length">
          <div class="container">
           <h2 class="h2">Registrations</h2>
-          <b-card no-body v-for="ticket in user_order_info.tickets" bg-variant="light" class="mb-4">
+          <b-card no-body v-for="ticket in user_order_info.tickets" bg-variant="light" class="mb-4 shadow ">
             <h4 slot="header">{{ticket.title}} / {{ticket.person}}</h4>
             <b-card-body>
               <p class="card-text">{{ticket.info}}</p>
@@ -51,13 +51,19 @@
             </b-card>
             <b-card-footer>Price: £{{ticket.price}}, Paid: {{ticket.is_paid}}</b-card-footer>
          </b-card>
+
+         <b-card no-body v-for="discount in user_order_info.discounts" bg-variant="light" class="mb-4 shadow ">
+           <h4 slot="header">{{discount.info}} / {{discount.person}}</h4>
+           <b-card-footer>Price: -£{{discount.price}}</b-card-footer>
+        </b-card>
+
        </div>
      </div>
 
      <div class="container-fluid"  v-if="user_order_info.products && user_order_info.products.length">
        <div class="container">
         <h2 class="h2">Extras</h2>
-        <b-card no-body v-for="product in user_order_info.products" bg-variant="light" class="mb-4">
+        <b-card no-body v-for="product in user_order_info.products" bg-variant="light" class="mb-4 shadow ">
           <h4 slot="header">{{product.title}} x {{product.amount}}</h4>
           <b-card-footer>Price: £{{product.price}}, Paid: {{product.is_paid}}</b-card-footer>
        </b-card>

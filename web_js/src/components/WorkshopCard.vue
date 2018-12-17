@@ -1,6 +1,6 @@
 <template>
     <b-card no-body :bg-variant="cardStyle.bg" :text-variant="cardStyle.text"
-                    :border-variant="cardStyle.border" class="text-left">
+                    :border-variant="cardStyle.border" class="text-left shadow ">
         <div class="card-header text-light" :style="'background-color: '+headerColor">
           <span class="close" :id="inputName + '-info'"><font-awesome icon="info-circle"/></span>
           <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
