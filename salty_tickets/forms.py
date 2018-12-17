@@ -60,6 +60,7 @@ class DanceSignupForm(FormWithTickets, SignupForm):
     dance_role = SelectField('Your Dance Role in Couple',
                              choices=[(LEADER, 'Leader'), (FOLLOWER, 'Follower'), ('', 'None')],
                              default='')
+    generic_discount_code = StringField('Discount/Group code')
     partner_name = StringField(u'Partner\'s name')
     partner_email = StringField(u'Partner\'s email')
     partner_location = RawField('Partner Location')

@@ -4,14 +4,14 @@
         <div class="card-header text-light" :style="'background-color: '+headerColor">
           <span class="close" :id="inputName + '-info'"><font-awesome icon="info-circle"/></span>
           <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
-          <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
+          <h5 class="card-title"><font-awesome icon="lock" v-if="!product.editable"/> {{title}}</h5>
         </div>
         <div class="card-body">
             <switch-button
                   :name="inputName"
                   :options="buttonOptions"
-                  :editable="editable"
-                  value="workshopChoice"
+                  :editable="product.editable"
+                  :value="workshopChoice"
                   v-model="workshopChoice"
                   size="sm"
                   v-if="!soldOut"
@@ -27,21 +27,24 @@
             Chances to get accepted: {{this.product.waiting_list.follower}}%.
           </b-alert>
         </span>
-        <div class="card-footer" >
+        <div class="card-footer d-flex justify-content-between align-items-end" >
+          <span>
             <p style="margin:0" v-if="time">
-              <small class="text-muted"><font-awesome icon="clock-o"/> {{time}}</small>
+              <small class="text-muted"><font-awesome icon="clock"/> {{time}}</small>
             </p>
             <p style="margin:0" v-if="teachers">
               <small class="text-muted"><font-awesome icon="id-badge"/> {{teachers}}</small>
             </p>
             <p style="margin:0" v-if="level">
-              <small class="text-muted"><font-awesome icon="tachometer"/> {{capitalize(level)}}</small>
+              <small class="text-muted"><font-awesome icon="tachometer-alt"/> {{capitalize(level)}}</small>
             </p>
             <p style="margin:0" v-if="availableWarningText">
               <b-badge :variant="availableWarningStyle">
                 <font-awesome icon="exclamation-circle"/> {{availableWarningText}}
               </b-badge>
             </p>
+          </span>
+          <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
         </div>
     </b-card>
 </template>
@@ -95,9 +98,9 @@ export default {
       } else if (this.workshopChoice ) {
         let wl = this.product.waiting_list[this.workshopChoice]
         if (wl == null) {
-          return {bg: 'success', border: '', text: 'light'}
+          return {bg: 'gradient-success', border: '', text: 'light'}
         } else {
-          return {bg: 'warning', border: '', text: 'light'}
+          return {bg: 'gradient-warning', border: '', text: 'light'}
         }
       } else {
         return {bg: 'light', border:'', text: 'black'}
@@ -150,15 +153,15 @@ export default {
       }
 
       if (this.product.waiting_list.leader != null) {
-        buttons[0].variant = 'warning'
+        buttons[0].variant = 'dark-orange'
         buttons[0].chances = this.product.waiting_list.leader
       }
       if (this.product.waiting_list.follower != null) {
-        buttons[1].variant = 'warning'
+        buttons[1].variant = 'dark-orange'
         buttons[1].chances = this.product.waiting_list.follower
       }
       if (this.product.waiting_list.couple != null) {
-        buttons[2].variant = 'warning'
+        buttons[2].variant = 'dark-orange'
         buttons[2].chances = this.product.waiting_list.couple
       }
 

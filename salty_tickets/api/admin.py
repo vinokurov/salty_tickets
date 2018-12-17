@@ -48,6 +48,7 @@ class RegistrationInfo(DataClassJsonMixin):
     ticket_key: str
     price: float
     paid_price: float
+    is_paid: bool
     wait_listed: bool
     active: bool
     dance_role: str = None
@@ -67,7 +68,8 @@ class RegistrationInfo(DataClassJsonMixin):
             ticket=event.tickets[registration.ticket_key].name,
             ticket_key=registration.ticket_key,
             price=registration.price,
-            paid_price=registration.paid_price,
+            # paid_price=registration.paid_price,
+            is_paid=registration.is_paid,
             wait_listed=registration.wait_listed,
             active=registration.active,
             dance_role=registration.dance_role,

@@ -1,5 +1,5 @@
 from salty_tickets.constants import NEW, SUCCESSFUL
-from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails
+from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, TransactionDetails
 from salty_tickets.payments import stripe_charge, transaction_fee, stripe_amount, stripe_create_customer, \
     stripe_charge_customer
 from stripe import Charge, Customer
@@ -10,13 +10,20 @@ def test_stripe_charge_success(mock_stripe):
     payment = Payment(price=10, transaction_fee=0.5, description='DESCR', status=NEW,
                       stripe=PaymentStripeDetails(token_id='tok_123'),
                       info_items=['a', 'b'], paid_by=Person(full_name='Alex', email='alex@a.b'))
+    transaction = TransactionDetails(
+        price=10,
+        transaction_fee=0.5,
+        description='Card payment'
+    )
     payment.id = 'a123b'
     charge = Charge(id='ch_123')
     mock_stripe.Charge.create.return_value = Charge(id='ch_123')
-    res = stripe_charge(payment, stripe_pk)
+    res = stripe_charge(transaction, payment, stripe_pk)
     assert res
     assert payment.status == SUCCESSFUL
     assert payment.stripe.charges == [charge.to_dict()['id']]
+    assert 1 == len(payment.transactions)
+    assert payment.transactions[0].success
     mock_stripe.Charge.create.assert_called_with(amount=1050, currency='gbp', description='DESCR',
                                                  metadata={'payment_id': 'a123b'},
                                                  source='tok_123', receipt_email='alex@a.b')
@@ -46,13 +53,20 @@ def test_stripe_charge_customer(mock_stripe):
     payment = Payment(price=10, transaction_fee=0.5, description='DESCR', status=NEW,
                       stripe=PaymentStripeDetails(token_id='tok_123', customer_id='cus_123'),
                       info_items=['a', 'b'], paid_by=Person(full_name='Alex', email='alex@a.b'))
+    transaction = TransactionDetails(
+        price=10,
+        transaction_fee=0.5,
+        description='Card payment'
+    )
     payment.id = 'a123b'
     charge = Charge(id='ch_123')
     mock_stripe.Charge.create.return_value = Charge(id='ch_123')
-    res = stripe_charge_customer(payment, stripe_pk)
+    res = stripe_charge_customer(transaction, payment, stripe_pk)
     assert res
     assert payment.status == SUCCESSFUL
     assert payment.stripe.charges == [charge.to_dict()['id']]
+    assert 1 == len(payment.transactions)
+    assert payment.transactions[0].success
     mock_stripe.Charge.create.assert_called_with(amount=1050, currency='gbp', description='DESCR',
                                                  metadata={'payment_id': 'a123b'},
                                                  customer='cus_123', receipt_email='alex@a.b')

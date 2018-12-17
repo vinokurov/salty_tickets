@@ -27,6 +27,7 @@ class Registration:
     details: Dict = field(default_factory=dict)
     price: float = None
     paid_price: float = None
+    is_paid: bool = False
     date: datetime = None
     ticket_key: str = None
     active: bool = False
@@ -46,6 +47,8 @@ class Purchase:
     price: float = None
     price_each: float = None
     paid_price: float = None
+    is_paid: bool = False
+    active: bool = False
 
 
 @dataclass
@@ -83,6 +86,17 @@ class PaymentStripeDetails:
 
 
 @dataclass
+class TransactionDetails:
+    date: datetime = field(default_factory=datetime.utcnow)
+    price: float = 0
+    transaction_fee: float = 0
+    description: str = ''
+    stripe_charge_id: str = ''
+    success: bool = False
+    error_response: Dict = field(default_factory=dict)
+
+
+@dataclass
 class Payment:
     paid_by: Person
     price: float = 0
@@ -97,6 +111,7 @@ class Payment:
     date: datetime = field(default_factory=datetime.utcnow)
     info_items: List = field(default_factory=list)
     extra_registrations: List[Registration] = field(default_factory=list)
+    transactions: List[TransactionDetails] = field(default_factory=list)
 
     pay_all_now: bool = True
     first_pay_amount: float = 0
@@ -130,7 +145,7 @@ class Payment:
 
     @property
     def paid_price(self):
-        return sum([r.paid_price or 0 for r in self.registrations] or [0])
+        return sum([p.price or 0 for p in self.transactions if p.success] or [0])
 
 
 @dataclass

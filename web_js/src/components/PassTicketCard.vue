@@ -2,7 +2,10 @@
     <b-card no-body :bg-variant="cardStyle.bg" :text-variant="cardStyle.text"
                     :border-variant="cardStyle.border" class="text-left">
         <div class="card-body">
-            <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
+            <div class="d-flex justify-content-between">
+              <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
+              <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
+            </div>
             <slot></slot>
             <switch-button
                   :name="inputName"

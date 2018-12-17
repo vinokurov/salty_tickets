@@ -1,7 +1,11 @@
 <template>
     <b-card no-body class="text-left">
         <div class="card-header">
-          <h5 class="card-title"> {{title}}</h5>
+          <div class="d-flex justify-content-between">
+            <h5 class="card-title"> {{title}}</h5>
+            <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
+          </div>
+
         </div>
 
         <div>
@@ -22,23 +26,24 @@
 
         <div class="card-body">
             <slot></slot>
-            <b-list-group v-if="choice">
-              <b-list-group-item v-for="opt_amount, opt in choice">
-                {{options[opt]}} - {{opt_amount}}
-                <b-btn size="sm" @click="remove(opt)">remove</b-btn>
-              </b-list-group-item>
-            </b-list-group>
-
             <b-input-group class="my-2">
-              <b-form-select v-model="selected">
-                <option :value="null">Please select an option</option>
+              <b-form-select v-model="selected" style="background-image: none">
+                <option :value="null">Select an option</option>
                 <option :value="opt" v-for="text, opt in options">{{text}}</option>
               </b-form-select>
-              <b-form-input type="number" v-model="amount"></b-form-input>
+              <!-- <b-form-input type="number" v-model="amount"></b-form-input> -->
               <b-btn size="sm" @click="add" :disabled="!selected">Add</b-btn>
             </b-input-group>
         </div>
         <div class="card-footer">
+          <b-list-group v-if="choice">
+            <b-list-group-item variant="success" size="sm" class="text-small" v-for="opt_amount, opt in choice">
+              {{options[opt]}} x {{opt_amount}}
+              <b-btn size="sm" @click="remove(opt)" class="close">
+                <font-awesome icon="times"/>
+              </b-btn>
+            </b-list-group-item>
+          </b-list-group>
         </div>
     </b-card>
 </template>
@@ -57,12 +62,13 @@ export default {
   },
   data: function () {
     return {
-      // workshopChoice: this.choice,
-      // title: 'Test',
-      // editable: true,
       selected: null,
       amount: 1,
-      // choice: {},
+    }
+  },
+  mounted() {
+    if(Object.keys(this.options).length == 1) {
+      this.selected = Object.keys(this.options)[0]
     }
   },
   computed: {
@@ -80,9 +86,14 @@ export default {
   methods: {
     add: function(){
       let choice_copy = this.choice
-      choice_copy[this.selected] = this.amount
+      if (choice_copy[this.selected]) choice_copy[this.selected] += 1
+      else choice_copy[this.selected] = 1
+      // choice_copy[this.selected] = this.amount
+      let optionKey = this.selected
       this.$store.commit('setProductChoice', {key:this.inputName, choice:choice_copy})
       this.selected = null
+      this.$store.dispatch('requestPrice');
+      this.selected = optionKey
     },
     remove: function(key) {
       let choice_copy = this.choice
@@ -90,6 +101,8 @@ export default {
       // this.choice = choice_copy
       console.log(choice_copy)
       this.$store.commit('setProductChoice', {key:this.inputName, choice:choice_copy})
+      this.selected = null
+      this.$store.dispatch('requestPrice');
       this.selected = key
     },
 
@@ -100,6 +113,6 @@ export default {
     //   this.choices = this.choices.splice(this.choices.indexOf(item), 1)
     // }
 
-  }
+  },
 }
 </script>

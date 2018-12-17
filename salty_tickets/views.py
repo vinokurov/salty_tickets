@@ -15,11 +15,11 @@ from salty_tickets.utils.utils import jsonify_dataclass
 
 __author__ = 'vnkrv'
 
-# if app.debug:
-#     @app.route('/static/dist/<path:path>')
-#     def catch_all(path):
-#         import requests
-#         return requests.get('http://localhost:8080/{}'.format(path)).text
+if app.debug:
+    @app.route('/static/dist/<path:path>')
+    def catch_all(path):
+        import requests
+        return requests.get('http://localhost:8080/{}'.format(path)).text
 
 
 @app.route('/')

@@ -5,16 +5,17 @@ Thank you for signing up for the {{event.name}}!
 Order Summary
 
 {% for registration in payment.registrations %}{% if registration.wait_listed %}
-    ITEM: Waiting list: {{ event.tickets[registration.ticket_key].name }} / {{registration.person.full_name}}
-    ROLE: {{registration.dance_role }}
-    PRICE: {{ registration.price }}
-    PAID: {{ registration.paid_price }}{% else %}
-    ITEM: {{ event.tickets[registration.ticket_key].name }} / {{registration.person.full_name}}
-    ROLE: {{registration.dance_role }}
-    PRICE: {{ registration.price }}{% endif %}
+    ITEM: Waiting list: {{ event.tickets[registration.ticket_key].item_info(registration) }}
+    PRICE: £{{ registration.price }}
+    PAID: {{ 'Yes' if registration.is_paid else 'No' }}{% else %}
+    ITEM: {{ event.tickets[registration.ticket_key].item_info(registration) }}
+    PRICE: £{{ registration.price }}{% endif %}
 {% endfor %}{% for purchase in payment.purchases %}
     ITEM: {{ event.products[purchase.product_key].name }} / {{event.products[purchase.product_key].options[purchase.product_option_key]}} / {{purchase.amount}}
-    PRICE: {{ purchase.price }}
+    PRICE: £{{ purchase.price }}
+{% endfor %}{% for discount in payment.discounts %}
+    ITEM: {{ discount.description }}
+    PRICE: -£{{ discount.value }}
 {% endfor %}
 
     TOTAL: £{{ payment.price }}

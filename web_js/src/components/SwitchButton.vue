@@ -1,15 +1,15 @@
 <template>
   <div>
-    <!-- <b-button-group :size="size"> -->
+    <b-button-group :size="size">
       <toggle-button v-for="btn in button_options"
                 :variant="btn.variant"
-                :disabled="btn.disabled"
+                :disabled="!editable"
                 :pressed="btn.state"
                 v-model="btn.state"
                 @input="toggle(btn.value, btn.state)"
       >{{ btn.caption }}
     </toggle-button>
-    <!-- </b-button-group> -->
+    </b-button-group>
     <input type="hidden" :name="name" :value="button_value" v-if="button_value">
   </div>
 </template>
@@ -40,6 +40,9 @@ export default {
       this.$emit('input', this.button_value);
       this.$emit('change', this.button_value);
     },
+    value: function() {
+      this.button_value = this.value;
+    }
   },
   methods: {
     toggle: function (value, state){

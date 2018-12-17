@@ -6,12 +6,12 @@ import dataclasses
 from bson import ObjectId
 from mongoengine import fields, connect
 from salty_tickets import models
-from salty_tickets.constants import FOLLOWER, LEADER
+from salty_tickets.constants import FOLLOWER, LEADER, SUCCESSFUL
 from salty_tickets.models.discounts import DiscountProduct, DiscountCode
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount, \
-    RegistrationGroup
+    RegistrationGroup, TransactionDetails
 from salty_tickets.models.tickets import Ticket
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
@@ -35,6 +35,13 @@ class RegistrationDocument(fields.Document):
         model.registered_by = self.registered_by.to_dataclass()
         if self.partner:
             model.partner = self.partner.to_dataclass()
+
+        # migration
+        if not self.is_paid and self.price == self.paid_price:
+            self.is_paid = True
+            self.save()
+            model.is_paid = True
+
         return model
 
 
@@ -44,10 +51,18 @@ class PurchaseDocument(fields.Document):
         'collection': 'purchases',
     }
     person = fields.ReferenceField('PersonDocument', required=True)
+    event = fields.ReferenceField('EventDocument', required=True)
 
     def to_dataclass(self):
         model = self._to_dataclass()
         model.person = self.person.to_dataclass()
+
+        # migration
+        if not self.is_paid and self.price == self.paid_price:
+            self.is_paid = True
+            self.save()
+            model.is_paid = True
+
         return model
 
 
@@ -208,7 +223,13 @@ class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
     pass
 
 
-@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'discounts', 'extra_registrations'])
+@fields_from_dataclass(TransactionDetails)
+class TransactionDocument(fields.EmbeddedDocument):
+    pass
+
+
+@fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'discounts',
+                                      'extra_registrations', 'transactions'])
 class PaymentDocument(fields.Document):
     meta = {
         'collection': 'payments'
@@ -222,6 +243,7 @@ class PaymentDocument(fields.Document):
     discounts = fields.EmbeddedDocumentListField(DiscountDocument)
     stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
+    transactions = fields.EmbeddedDocumentListField(TransactionDocument, null=True)
 
     def to_dataclass(self) -> Payment:
         model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
@@ -232,6 +254,9 @@ class PaymentDocument(fields.Document):
         if self.stripe:
             model.stripe = self.stripe.to_dataclass()
         # model.int_id = self.int_id
+
+        model.transactions = [t.to_dataclass() for t in self.transactions or []]
+
         return model
 
     @classmethod
@@ -380,7 +405,10 @@ class TicketsDAO:
         for discount in payment.discounts:
             payment_doc.discounts.append(DiscountDocument.from_dataclass(discount))
 
-        payment_doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts]
+        for transaction in payment.transactions:
+            payment_doc.transactions.append(TransactionDocument.from_dataclass(transaction))
+
+        # payment_doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts]
 
         payment_doc.save()
         payment.id = payment_doc.id
@@ -463,9 +491,24 @@ class TicketsDAO:
 
         self._update_doc(RegistrationDocument, registration, **extra_updates)
 
+    def update_purchase(self, purchase: Purchase):
+        purchase_0 = self.get_purchase_by_id(purchase.id)
+        extra_updates = {}
+        event = PurchaseDocument.objects(id=purchase.id).first().event.key
+        if purchase.person != purchase_0.person:
+            extra_updates['person'] = self._get_or_create_new_person(purchase.person, event)
+
+        self._update_doc(PurchaseDocument, purchase, **extra_updates)
+
     @timeit
     def update_payment(self, payment: Payment):
         self._update_doc(PaymentDocument, payment)
+
+        doc = PaymentDocument.objects(**id_filter(payment.id)).first()
+        transactions = [t.to_dataclass() for t in doc.transactions or []]
+        if payment.transactions != transactions:
+            doc.transactions = [TransactionDocument.from_dataclass(t) for t in payment.transactions or []]
+            doc.save()
 
     def mark_registrations_as_couple(self, registration_1: Registration, registration_2: Registration):
         registration_1.partner = registration_2.person
@@ -495,6 +538,11 @@ class TicketsDAO:
 
     def get_ticket_registration_by_id(self, object_id) -> Registration:
         doc = RegistrationDocument.objects(**id_filter(object_id)).first()
+        if doc:
+            return doc.to_dataclass()
+
+    def get_purchase_by_id(self, object_id) -> Purchase:
+        doc = PurchaseDocument.objects(**id_filter(object_id)).first()
         if doc:
             return doc.to_dataclass()
 

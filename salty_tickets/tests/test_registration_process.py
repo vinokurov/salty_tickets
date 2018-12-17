@@ -405,7 +405,8 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
     first_waiting_follower_payment_id = res.json['payment_id']
     first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
-    assert not first_waiting_follower.paid_price
+    assert not first_waiting_follower.is_paid
+    print('before balancing', test_dao.get_payment_by_id(first_waiting_follower_payment_id).transactions)
 
     # now create leaders until we can balance
     waiting_list = event.tickets['sunday'].waiting_list
@@ -423,9 +424,11 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     waiting_list = event.tickets['sunday'].waiting_list
 
     assert waiting_list.current_ratio <= waiting_list.ratio
-    first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
+    follower_payment = test_dao.get_payment_by_id(first_waiting_follower_payment_id)
+    first_waiting_follower = follower_payment.registrations[0]
     assert not first_waiting_follower.wait_listed
-    assert 25 == first_waiting_follower.paid_price
+    assert [(25, True)] == [(t.price, t.success) for t in follower_payment.transactions]
+    assert 25 == follower_payment.paid_price
 
 
 def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
@@ -536,7 +539,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Charge.create.side_effect = [sample_stripe_successful_charge]
     assert process_first_payment(payment)
     assert 50 == payment.paid_price
-    assert [25, 25, None] == [r.paid_price for r in payment.registrations]
+    assert [True, True, True] == [r.is_paid for r in payment.registrations]
+    assert [(50, True)] == [(t.price, t.success) for t in payment.transactions]
     assert SUCCESSFUL == payment.status
 
     # Pay now, all accepted, stripe - charge ERROR
@@ -548,7 +552,9 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error]
     assert not process_first_payment(payment)
     assert not payment.paid_price
-    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert [False, False] == [r.is_paid for r in payment.registrations]
+    assert [(50, False)] == [(t.price, t.success) for t in payment.transactions]
+    assert payment.transactions[0].error_response
     assert FAILED == payment.status
 
     # Pay later, but all accepted, stripe - OK
@@ -561,7 +567,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
     assert process_first_payment(payment)
     assert 50 == payment.paid_price
-    assert [25, 25] == [r.paid_price for r in payment.registrations]
+    assert [True, True] == [r.is_paid for r in payment.registrations]
+    assert [(50, True)] == [(t.price, t.success) for t in payment.transactions]
     assert SUCCESSFUL == payment.status
 
     # Pay now, one wait listed, stripe - OK
@@ -575,7 +582,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
     assert process_first_payment(payment)
     assert 50 == payment.paid_price
-    assert [25, 25, None] == [r.paid_price for r in payment.registrations]
+    assert [True, True, True] == [r.is_paid for r in payment.registrations]
+    assert [(50, True)] == [(t.price, t.success) for t in payment.transactions]
     assert SUCCESSFUL == payment.status
 
     # Pay later, one wait listed, stripe - OK
@@ -589,7 +597,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
     assert process_first_payment(payment)
     assert 25 == payment.paid_price
-    assert [25, None, None] == [r.paid_price for r in payment.registrations]
+    assert [True, False, True] == [r.is_paid for r in payment.registrations]
+    assert [(25, True)] == [(t.price, t.success) for t in payment.transactions]
     assert SUCCESSFUL == payment.status
 
     # Pay later, all wait listed, stripe - OK
@@ -602,7 +611,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
     assert process_first_payment(payment)
     assert 0 == payment.paid_price
-    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert [False, False] == [r.is_paid for r in payment.registrations]
+    assert [] == [(t.price, t.success) for t in payment.transactions]
     assert SUCCESSFUL == payment.status
 
     # Pay later, one wait listed, stripe - charge failure
@@ -615,7 +625,8 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_customer]
     assert not process_first_payment(payment)
     assert not payment.paid_price
-    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert [False, False] == [r.is_paid for r in payment.registrations]
+    assert [(25, False)] == [(t.price, t.success) for t in payment.transactions]
     assert FAILED == payment.status
 
     # Pay later, one wait listed, stripe - customer failure
@@ -628,6 +639,7 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     mock_stripe.Customer.create.side_effect = [sample_stripe_card_error]
     assert not process_first_payment(payment)
     assert not payment.paid_price
-    assert [None, None] == [r.paid_price for r in payment.registrations]
+    assert [False, False] == [r.is_paid for r in payment.registrations]
+    assert [] == [(t.price, t.success) for t in payment.transactions]
     assert FAILED == payment.status
 

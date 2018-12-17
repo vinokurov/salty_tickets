@@ -94,13 +94,13 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday'),
+                     ticket_key='saturday', price=20),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday'),
+                     ticket_key='saturday', price=20),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunay'),
+                     ticket_key='sunay', price=20),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunday'),
+                     ticket_key='sunday', price=20),
         Registration(person=mr_x, registered_by=mr_x, ticket_key='party'),
     ]
     for r in registrations:
@@ -116,6 +116,7 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
     assert ms_y.id == registration_doc.partner.id
 
     sat_registrations = test_dao.get_registrations_for_ticket(event, 'saturday')
+    print(sat_registrations)
     assert registrations[1] in sat_registrations
     assert registrations[0] == sat_registrations[-2]
     assert registrations[0].id == sat_registrations[-2].id
@@ -146,14 +147,14 @@ def test_add_retrieve_payments(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunay', price=25, paid_price=25),
+                     ticket_key='sunay', price=25, is_paid=True),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunday', price=25, paid_price=25),
-        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, paid_price=5),
+                     ticket_key='sunday', price=25, is_paid=True),
+        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, is_paid=True),
     ]
 
     for r in registrations:
@@ -178,14 +179,14 @@ def test_add_retrieve_payments_auto_regester(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunay', price=25, paid_price=25),
+                     ticket_key='sunay', price=25, is_paid=True),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=LEADER,
-                     ticket_key='sunday', price=25, paid_price=25),
-        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, paid_price=5),
+                     ticket_key='sunday', price=25, is_paid=True),
+        Registration(person=mr_x, registered_by=mr_x, ticket_key='party', price=5, is_paid=True),
     ]
 
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
@@ -225,9 +226,9 @@ def test_update_statuses(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, partner=ms_y, registered_by=mr_x, dance_role=LEADER, active=False,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=ms_y, partner=mr_x, registered_by=mr_x, dance_role=FOLLOWER, active=False,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
     ]
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5, registrations=registrations, status=NEW,
                       date=datetime(2018, 9, 3, 17, 0))
@@ -261,9 +262,9 @@ def test_dao_mark_registrations_as_couple(test_dao, salty_recipes):
 
     registrations = [
         Registration(person=mr_x, registered_by=mr_x, dance_role=LEADER, active=False,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
         Registration(person=ms_y, registered_by=ms_y, dance_role=FOLLOWER, active=False,
-                     ticket_key='saturday', price=25, paid_price=25),
+                     ticket_key='saturday', price=25, is_paid=True),
     ]
     for r in registrations:
         test_dao.add_registration(r, event=event)
@@ -304,7 +305,7 @@ def test_get_payments_with_stripe_details(test_dao, salty_recipes):
     payment = Payment(price=105, paid_by=mr_x, transaction_fee=1.5,
                       registrations=[
                             Registration(person=mr_x, registered_by=mr_x, dance_role=LEADER,
-                                         ticket_key='saturday', price=25, paid_price=25),
+                                         ticket_key='saturday', price=25, is_paid=True),
                         ],
                       status=NEW, date=datetime(2018, 9, 3, 17, 0))
     test_dao.add_payment(payment, event, register=True)

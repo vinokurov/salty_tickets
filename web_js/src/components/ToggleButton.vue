@@ -41,11 +41,12 @@ export default {
 }
 </script>
 
-<style>
+<!-- /* <style>
 .toggle-on {
-  margin-left: 6px; margin-right:6px; margin-top:6px; margin-bottom:6px;
+  /* margin-left: 6px; margin-right:6px; margin-top:6px; margin-bottom:6px; */
+  margin-left: 4px; margin-right:4px; margin-top:6px; margin-bottom:6px;
 }
 .toggle-off {
   margin-left: 4px; margin-right:4px; margin-top:6px; margin-bottom:6px;
 }
-</style>
+</style> */ -->

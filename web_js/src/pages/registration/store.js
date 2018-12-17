@@ -86,17 +86,17 @@ export default new Vuex.Store({
     },
     queueThrottledRequest (state, {url, params}) {
       if (url in state.throttled_calls) {
-          if (state.throttled_calls[url].params != params) {
+          if (JSON.stringify(state.throttled_calls[url].params) != JSON.stringify(params)) {
             state.throttled_calls[url] = {
               url: url,
-              params: params,
+              params: JSON.parse(JSON.stringify(params)),
               complete: false
             }
           }
       } else {
         state.throttled_calls[url] = {
           url: url,
-          params: params,
+          params: JSON.stringify(params),
           complete: false
         }
       }
@@ -144,7 +144,7 @@ export default new Vuex.Store({
       return new Promise((resolve, reject) => {
         setTimeout(async () => {
           if (!state.throttled_calls[url].complete){
-            if (params == state.throttled_calls[url].params){
+            if (JSON.stringify(params) === JSON.stringify(state.throttled_calls[url].params)){
               let response = await axios.post(url, state.throttled_calls[url].params)
               commit('markThrottledRequestAsComplete', url)
               resolve(response)
@@ -217,6 +217,7 @@ export default new Vuex.Store({
         location: state.registration.primary.location || '',
         comment: state.registration.primary.comment || '',
         dance_role: state.registration.primary.dance_role || '',
+        generic_discount_code: state.registration.primary.discount_code || '',
         partner_name: state.registration.partner.name || '',
         partner_email: state.registration.partner.email || '',
         partner_location: state.registration.partner.location || '',

@@ -4,7 +4,7 @@ from salty_tickets import config
 # from salty_tickets.to_delete.database import db_session
 # from salty_tickets.to_delete.sql_models import ORDER_STATUS_PAID, PAYMENT_STATUS_PAID, Payment, PaymentItem
 from salty_tickets.constants import SUCCESSFUL, FAILED
-from salty_tickets.models.registrations import Payment
+from salty_tickets.models.registrations import Payment, TransactionDetails
 from stripe.error import CardError
 
 
@@ -31,9 +31,8 @@ def stripe_session(stripe_sk):
     stripe.api_key = None
 
 
-def stripe_charge(payment: Payment, stripe_sk, amount=None):
-    if amount is None:
-        amount = payment.first_pay_total
+def stripe_charge(transaction: TransactionDetails, payment: Payment, stripe_sk):
+    amount = transaction.price + transaction.transaction_fee
     try:
         with stripe_session(stripe_sk) as sp:
             charge = sp.Charge.create(
@@ -49,10 +48,16 @@ def stripe_charge(payment: Payment, stripe_sk, amount=None):
             )
         payment.stripe.charges.append(charge.get('id'))
         payment.status = SUCCESSFUL
+        transaction.success = True
+        transaction.stripe_charge_id = charge.get('id')
+        payment.transactions.append(transaction)
         return True
     except CardError as e:
         payment.stripe.error_response = e.json_body
         payment.status = FAILED
+        transaction.success = False
+        transaction.error_response = e.json_body
+        payment.transactions.append(transaction)
         return False
 
 
@@ -80,9 +85,8 @@ def stripe_create_customer(payment: Payment, stripe_sk):
         return False
 
 
-def stripe_charge_customer(payment: Payment, stripe_sk, amount=None):
-    if amount is None:
-        amount = payment.first_pay_total
+def stripe_charge_customer(transaction: TransactionDetails, payment: Payment, stripe_sk):
+    amount = transaction.price + transaction.transaction_fee
     try:
         with stripe_session(stripe_sk) as sp:
             charge = sp.Charge.create(
@@ -100,10 +104,17 @@ def stripe_charge_customer(payment: Payment, stripe_sk, amount=None):
 
         payment.stripe.charges.append(charge.get('id'))
         payment.status = SUCCESSFUL
+        transaction.success = True
+        transaction.stripe_charge_id = charge.get('id')
+        payment.transactions.append(transaction)
         return True
     except CardError as e:
-        payment.stripe.error_response = e.json_body
-        payment.status = FAILED
+        if not payment.transactions:
+            payment.stripe.error_response = e.json_body
+            payment.status = FAILED
+        transaction.success = False
+        transaction.error_response = e.json_body
+        payment.transactions.append(transaction)
         return False
 
 

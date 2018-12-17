@@ -34,7 +34,7 @@ def test_e2e_follower_wait_listed_pay_all(e2e_vars):
     payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
-    assert 25 == payment.registrations[0].paid_price
+    assert payment.registrations[0].is_paid
     assert 25 == payment.price
     assert 25 == payment.paid_price
     assert SUCCESSFUL == payment.status
@@ -57,11 +57,11 @@ def test_e2e_follower_wait_listed_some_pay_all(e2e_vars):
 
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
-    assert 25 == payment.registrations[0].paid_price
+    assert payment.registrations[0].is_paid
 
     assert not payment.registrations[1].wait_listed
     assert payment.registrations[1].active
-    assert 25 == payment.registrations[1].paid_price
+    assert payment.registrations[1].is_paid
 
     assert 50 == payment.price
     assert 50 == payment.paid_price
@@ -82,7 +82,7 @@ def test_e2e_follower_wait_listed_pay_later(e2e_vars):
     payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
-    assert not payment.registrations[0].paid_price
+    assert not payment.registrations[0].is_paid
     assert 25 == payment.price
     assert 0 == payment.paid_price
     assert SUCCESSFUL == payment.status
@@ -106,11 +106,11 @@ def test_e2e_follower_wait_listed_some_pay_later(e2e_vars):
 
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
-    assert not payment.registrations[0].paid_price
+    assert not payment.registrations[0].is_paid
 
     assert not payment.registrations[1].wait_listed
     assert payment.registrations[1].active
-    assert 25 == payment.registrations[1].paid_price
+    assert payment.registrations[1].is_paid
 
     assert 50 == payment.price
     assert 25 == payment.paid_price
@@ -243,7 +243,7 @@ def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
     assert follower_payment.registrations[0].active
     assert not follower_payment.registrations[0].partner
     assert 25 == follower_payment.registrations[0].price
-    assert 25 == follower_payment.registrations[0].paid_price
+    assert follower_payment.registrations[0].is_paid
     assert follower_payment.price == follower_payment.paid_price
 
     # LEADER

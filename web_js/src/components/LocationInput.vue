@@ -6,7 +6,7 @@
     >
         <b-input-group>
             <b-input-group-text>
-              <font-awesome icon="map-marker"/>
+              <font-awesome icon="map-marker-alt"/>
             </b-input-group-text>
             <b-form-input placeholder="Location (country, state, city, etc.)" v-model="queryText"></b-form-input>
         </b-input-group>

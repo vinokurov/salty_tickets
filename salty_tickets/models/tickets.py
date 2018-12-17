@@ -237,8 +237,21 @@ class PartyTicket(PartnerTicket):
     end_datetime: datetime = None
     location: str = None
 
+    def item_info(self, registration: Registration) -> str:
+        info_list = [self.name]
+        if registration.person:
+            info_list.append(registration.person.full_name)
+
+        return ' / '.join(info_list)
+
 
 @dataclass
 class FestivalPassTicket(PartnerTicket):
     includes: typing.Dict = field(default_factory=dict)
 
+    def item_info(self, registration: Registration) -> str:
+        info_list = [self.name]
+        if registration.person:
+            info_list.append(registration.person.full_name)
+
+        return ' / '.join(info_list)

@@ -18,7 +18,8 @@ from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct,
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket, Ticket
-from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup
+from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup, \
+    TransactionDetails
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken
@@ -59,7 +60,9 @@ class TicketInfo(DataClassJsonMixin):
     time: str = None
     level: str = None
     teachers: str = None
+    location: str = None
     available: int = None
+    editable: bool = True
     price: float = None
     info: str = None
     choice: str = None
@@ -82,6 +85,9 @@ class TicketInfo(DataClassJsonMixin):
 
         if hasattr(ticket, 'end_datetime'):
             ticket_info.end_datetime = str(ticket.end_datetime)
+
+        if hasattr(ticket, 'location'):
+            ticket_info.location = ticket.location
 
         if isinstance(ticket, WorkshopTicket):
             available = ticket.max_available - ticket.waiting_list.total_accepted
@@ -347,25 +353,17 @@ def get_payment_from_form(event: Event, form, extra_registrations=None, discount
 
 
 def get_discount_product_from_form(dao: TicketsDAO, event: Event, form):
-    # DISCOUNTS HACK
-    # print(form.name)
-    name = form.name.data
-    print('name', name)
-    if name and len(name.split('|')) > 1:
-        comment = name.split('|')[1].strip()
-        full_name = name.split('|')[0].strip()
-        form.name.data = full_name
-        print(comment)
-
-        if comment == 'OVERSEAS':
+    discount_code = form.generic_discount_code.data
+    if discount_code:
+        discount_code = discount_code.strip()
+        if discount_code == 'OVERSEAS':
             form.get_item_by_key('overseas_discount').validated.data = 'yes'
-        elif comment.startswith('grp_'):
+        elif discount_code.startswith('grp_'):
             form.get_item_by_key('group_discount').validated.data = 'yes'
-            form.get_item_by_key('group_discount').code.data = comment.strip()
-        elif comment.startswith('dsc_'):
+            form.get_item_by_key('group_discount').code.data = discount_code
+        elif discount_code.startswith('dsc_'):
             form.get_item_by_key('discount_code').validated.data = 'yes'
-            form.get_item_by_key('discount_code').code.data = comment.strip()
-
+            form.get_item_by_key('discount_code').code.data = discount_code
 
     for discount_product_key, discount_product in event.discount_products.items():
         if discount_product.is_added(form):
@@ -486,6 +484,10 @@ def do_pay(dao: TicketsDAO):
         reg.active = True
         dao.update_registration(reg)
 
+    for purchase in payment.purchases:
+        purchase.active = True
+        dao.update_purchase(purchase)
+
     # TODO: make it nicer - with emails, etc.
     if payment.extra_registrations:
         for reg in payment.registrations:
@@ -498,21 +500,31 @@ def do_pay(dao: TicketsDAO):
     return PaymentResult.from_paid_payment(payment)
 
 
-def process_first_payment(payment):
+def process_first_payment(payment: Payment):
     if payment.pay_all_now or (payment.first_pay_amount == payment.price):
-        if stripe_charge(payment, config.STRIPE_SK, payment.total_amount):
+        transaction = TransactionDetails(
+            price=payment.price,
+            transaction_fee=payment.transaction_fee,
+            description='Card payment'
+        )
+        if stripe_charge(transaction, payment, config.STRIPE_SK):
             # update paid prices on all registrations
-            for reg in payment.registrations:
-                reg.paid_price = reg.price
+            for item in payment.items:
+                item.is_paid = True
             return True
     else:
         if stripe_create_customer(payment, config.STRIPE_SK):
             if payment.first_pay_amount > 0:
-                if stripe_charge_customer(payment, config.STRIPE_SK, payment.first_pay_total):
+                transaction = TransactionDetails(
+                    price=payment.first_pay_amount,
+                    transaction_fee=payment.first_pay_fee,
+                    description='Card payment'
+                )
+                if stripe_charge_customer(transaction, payment, config.STRIPE_SK):
                     # update paid prices on accepted registrations
-                    for reg in payment.registrations:
-                        if not reg.wait_listed:
-                            reg.paid_price = reg.price
+                    for item in payment.items:
+                        if not (hasattr(item, 'wait_listed') and item.wait_listed):
+                            item.is_paid = True
                     return True
             else:
                 payment.status = SUCCESSFUL
@@ -521,12 +533,16 @@ def process_first_payment(payment):
 
 def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: Registration,
                                                 new_partner: Person=None):
-    if (registration.paid_price or 0) < registration.price:
+    if not registration.is_paid:
         payment = dao.get_payment_by_registration(registration)
-        price = registration.price - (registration.paid_price or 0)
-        fee = transaction_fee(price)
-        if stripe_charge_customer(payment, config.STRIPE_SK, price + fee):
-            registration.paid_price = price
+        transaction = TransactionDetails(
+            price=registration.price,
+            transaction_fee=transaction_fee(registration.price),
+            description='Automatic payment'
+        )
+        if stripe_charge_customer(transaction, payment, config.STRIPE_SK):
+            # registration.paid_price = price
+            registration.is_paid = True
             dao.update_payment(payment)
         else:
             # TODO: better notification

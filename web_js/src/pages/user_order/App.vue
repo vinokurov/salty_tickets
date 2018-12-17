@@ -3,23 +3,22 @@
 
      <div class="container-fluid">
          <div class="container">
-
-
            <div class="jumbotron text-center">
-
-             <!--Title-->
-             <h1 class="card-title h2-responsive mt-2"><strong>Salty Brizzle ☆ Shag Weekend</strong></h1>
-             <!--Subtitle-->
-             <p class="blue-text mb-4 font-bold">17-18 November, 2018</p>
+             <h1 class="card-title h2-responsive mt-2"><strong>Mind the Shag ☆ London Shag Festival</strong></h1>
+             <p class="blue-text mb-4 font-bold">29-31 March, 2019</p>
            </div>
+         </div>
+       </div>
 
+      <div class="container-fluid">
+          <div class="container">
             <b-card no-body class="mb-4"  bg-variant="light">
               <h4 slot="header">Details</h4>
               <b-card>
                 <dl>
                   <dd><strong>Name:</strong> {{user_order_info.name}}</dd>
                   <dd><strong>Email:</strong> {{user_order_info.email}}</dd>
-                  <dd><strong>Token:</strong> {{user_order_info.ptn_token}}</dd>
+                  <!-- <dd><strong>Token:</strong> {{user_order_info.ptn_token}}</dd> -->
                 </dl>
               </b-card>
               <b-card-footer>
@@ -27,28 +26,41 @@
                 <strong>Total Paid:</strong> £{{user_order_info.paid_price || 0}}
               </b-card-footer>
            </b-card>
+         </div>
+       </div>
 
-          <h2>Registrations</h2>
-          <b-card no-body v-for="product in user_order_info.products" bg-variant="light" class="mb-4">
-            <h4 slot="header">{{product.title}} / {{product.person}}</h4>
+       <div class="container-fluid"  v-if="user_order_info.tickets && user_order_info.tickets.length">
+         <div class="container">
+          <h2 class="h2">Registrations</h2>
+          <b-card no-body v-for="ticket in user_order_info.tickets" bg-variant="light" class="mb-4">
+            <h4 slot="header">{{ticket.title}} / {{ticket.person}}</h4>
             <b-card-body>
-              <p class="card-text">{{product.info}}</p>
-              <b-badge variant="success" v-if="!product.wait_listed">ACCEPTED</b-badge>
-              <b-badge variant="warning" v-if="product.wait_listed">WAITING LIST</b-badge>
+              <p class="card-text">{{ticket.info}}</p>
+              <b-badge variant="success" v-if="!ticket.wait_listed">ACCEPTED</b-badge>
+              <b-badge variant="warning" v-if="ticket.wait_listed">WAITING LIST</b-badge>
             </b-card-body>
-            <b-card>
+            <b-card v-if="ticket.ticket_class == 'WorkshopTicket'">
               <dl>
-                <dd><strong>Dance role:</strong> {{product.dance_role}}</dd>
-                <dd><strong>Start:</strong> {{product.start_datetime.replace(':00', '')}}</dd>
-                <dd><strong>End:</strong> {{product.end_datetime.replace(':00', '')}}</dd>
-                <dd><strong>Teachers:</strong> {{product.teachers}}</dd>
-                <dd><strong>Level:</strong> {{product.level}}</dd>
-                <dd v-if="product.partner"><strong>Your partner:</strong> {{product.partner}}</dd>
+                <dd><strong>Dance role:</strong> {{ticket.dance_role}}</dd>
+                <dd><strong>Start:</strong> {{ticket.start_datetime.replace(':00', '')}}</dd>
+                <dd><strong>End:</strong> {{ticket.end_datetime.replace(':00', '')}}</dd>
+                <dd><strong>Teachers:</strong> {{ticket.teachers}}</dd>
+                <dd><strong>Level:</strong> {{ticket.level}}</dd>
+                <dd v-if="ticket.partner"><strong>Your partner:</strong> {{ticket.partner}}</dd>
               </dl>
             </b-card>
-            <b-card-footer>Price: £{{product.price}}, Paid: £{{product.paid_price || 0}}</b-card-footer>
+            <b-card-footer>Price: £{{ticket.price}}, Paid: {{ticket.is_paid}}</b-card-footer>
          </b-card>
+       </div>
+     </div>
 
+     <div class="container-fluid"  v-if="user_order_info.products && user_order_info.products.length">
+       <div class="container">
+        <h2 class="h2">Extras</h2>
+        <b-card no-body v-for="product in user_order_info.products" bg-variant="light" class="mb-4">
+          <h4 slot="header">{{product.title}} x {{product.amount}}</h4>
+          <b-card-footer>Price: £{{product.price}}, Paid: {{product.is_paid}}</b-card-footer>
+       </b-card>
         </div>
       </div>
   </div>
@@ -68,3 +80,8 @@ export default {
   },
 };
 </script>
+
+<style lang="scss">
+@import '../../../style/custom-bootstrap.scss';
+@import '../../../node_modules/bootstrap/scss/bootstrap.scss';
+</style>
