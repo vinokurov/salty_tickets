@@ -156,7 +156,6 @@ def test_probability_waiting_list():
     assert wl[LEADER] is None
     assert wl[FOLLOWER] < 0.5
     assert wl[COUPLE] is None
-    print(wl)
 
 
 def test_probability_waiting_list_can_add():
@@ -184,7 +183,6 @@ def test_probability_waiting_list__empty():
     assert waiting_list.current_ratio is None
     assert not waiting_list.has_waiting_list
     assert [None, None, None] == list(waiting_list.waiting_stats.values())
-    print(waiting_list.waiting_stats)
 
 
 def test_probability_waiting_list__not_reached_first_5_no_leads():
@@ -205,7 +203,6 @@ def test_probability_waiting_list__not_reached_first_5_no_leads():
     assert waiting_list.current_ratio is None
     assert not waiting_list.has_waiting_list
 
-    print(waiting_list.waiting_stats)
     assert [None, None, None] == list(waiting_list.waiting_stats.values())
 
 
@@ -228,7 +225,6 @@ def test_probability_waiting_list__just_reached_first_5_no_leads():
     assert waiting_list.current_ratio is None
     assert not waiting_list.has_waiting_list
 
-    print(waiting_list.waiting_stats)
     assert waiting_list.waiting_stats[LEADER] is None
     assert waiting_list.waiting_stats[FOLLOWER] < 0.98
 
@@ -307,7 +303,6 @@ def test_waiting_probability_poisson():
         p1 = waiting_probability_poisson(30, 1.4, i, 5, 10)
         assert p1 <= p
         p = p1
-        print(p)
 
     # monotonously increases if other role increases
     p = waiting_probability_poisson(30, 1.4, 10, 0, 10)

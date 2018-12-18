@@ -116,7 +116,6 @@ def test_add_multiple_registrations(test_dao, salty_recipes):
     assert ms_y.id == registration_doc.partner.id
 
     sat_registrations = test_dao.get_registrations_for_ticket(event, 'saturday')
-    print(sat_registrations)
     assert registrations[1] in sat_registrations
     assert registrations[0] == sat_registrations[-2]
     assert registrations[0].id == sat_registrations[-2].id

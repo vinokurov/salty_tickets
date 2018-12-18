@@ -164,6 +164,7 @@ class EventInfo(DataClassJsonMixin):
 class OrderItem(DataClassJsonMixin):
     name: str
     price: float
+    key: str
     dance_role: str = None
     wait_listed: bool = False
     person: str = None
@@ -189,6 +190,7 @@ class OrderSummary(DataClassJsonMixin):
         for reg in payment.registrations:
             items.append(OrderItem(
                 name=event.tickets[reg.ticket_key].name,
+                key=reg.ticket_key,
                 price=reg.price,
                 person=reg.person.full_name,
                 partner=reg.partner.full_name if reg.partner else None,
@@ -202,12 +204,14 @@ class OrderSummary(DataClassJsonMixin):
             name = f'{name} / {option_name} / {amount}'
             items.append(OrderItem(
                 name=name,
-                price=purchase.price
+                price=purchase.price,
+                key=purchase.product_key,
             ))
         for discount in payment.discounts:
             items.append(OrderItem(
                 name=discount.description,
-                price=-discount.value
+                price=-discount.value,
+                key=''
             ))
 
         return cls(
@@ -400,7 +404,6 @@ def do_price(dao: TicketsDAO, event_key: str):
         payment = get_payment_from_form(event, form, extra_registrations, discount_product)
     else:
         payment = get_payment_from_form(event, form, discount_product=discount_product)
-    print(payment)
 
     if payment:
         errors = {}

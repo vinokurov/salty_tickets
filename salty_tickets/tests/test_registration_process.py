@@ -174,7 +174,6 @@ def test_do_price(test_dao, app_routes, client, sample_data):
     expected = sample_data.pricing_results.copy()
     expected['checkout_success'] = False
     expected['disable_checkout'] = False
-    print(res.json)
     assert expected == res.json
 
 
@@ -406,7 +405,6 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     first_waiting_follower_payment_id = res.json['payment_id']
     first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
     assert not first_waiting_follower.is_paid
-    print('before balancing', test_dao.get_payment_by_id(first_waiting_follower_payment_id).transactions)
 
     # now create leaders until we can balance
     waiting_list = event.tickets['sunday'].waiting_list

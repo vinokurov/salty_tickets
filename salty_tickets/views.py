@@ -13,15 +13,24 @@ from salty_tickets.api.user_order import do_get_user_order_info
 from salty_tickets.models.registrations import Payment
 from salty_tickets.tokens import PaymentId
 from salty_tickets.utils.utils import jsonify_dataclass
-
+from werkzeug.exceptions import abort
 
 __author__ = 'vnkrv'
 
-if app.debug:
-    @app.route('/static/dist/<path:path>')
-    def catch_all(path):
-        import requests
-        return requests.get('http://localhost:8080/{}'.format(path)).text
+
+# @app.route('/', defaults={'path': ''})
+# @app.route('/<path:path>')
+# def catch_all(path):
+#     return 'Temporary unavailable'
+#
+# """
+
+
+# if app.debug:
+#     @app.route('/static/dist/<path:path>')
+#     def catch_all(path):
+#         import requests
+#         return requests.get('http://localhost:8080/{}'.format(path)).text
 
 
 @app.route('/')
@@ -36,6 +45,8 @@ def register_index():
 def event_index(event_key):
     dao = TicketsDAO(MONGO)
     event = dao.get_event_by_key(event_key, get_registrations=False)
+    if event is None:
+        abort(404)
     form = FlaskForm()
     return render_template("event.html", event=event, form=form, stripe_pk=config.STRIPE_PK)
 
@@ -44,6 +55,8 @@ def event_index(event_key):
 def register_event_details(event_key):
     dao = TicketsDAO(MONGO)
     event = dao.get_event_by_key(event_key, get_registrations=True)
+    if event is None:
+        abort(404)
     return jsonify_dataclass(EventInfo.from_event(event))
 
 
@@ -139,3 +152,5 @@ def admin_balance_event(event_key):
     dao = TicketsDAO(MONGO)
     balance_event_waiting_lists(dao, event_key)
     return ''
+
+# """
