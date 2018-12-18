@@ -62,6 +62,7 @@ class DiscountCode:
     info: str = None
     active: bool = False
     included_tickets: typing.List = field(default_factory=list)
+    comment: str = None
 
     @property
     def can_be_used(self):

@@ -207,7 +207,12 @@ class CodeDiscountProduct(DiscountProduct):
             discount.discount_code = form.get_item_by_key(self.key).code.data
             discounts.append(discount)
 
-        if self.applies_to_couple:
+        if self.discount_code is not None:
+            applies_to_couple = self.discount_code.applies_to_couple
+        else:
+            applies_to_couple = self.applies_to_couple
+
+        if applies_to_couple:
             partner = get_partner_from_payment_registrations(payment)
             if partner:
                 discount = self.discount_rule.get_discount(tickets, payment, partner, form)
@@ -222,4 +227,5 @@ DISCOUNT_RULES = {
     'free_full_pass': FreeFullPassDiscountRule,
     'free_registration': FreeRegistrationDiscountRule,
     'free_party_pass': FreePartiesDiscountRule,
+    'all_free': FreeAllDiscountRule,
 }

@@ -247,7 +247,7 @@ class PricingResult(DataClassJsonMixin):
     disable_checkout: bool = True
     checkout_success: bool = False
     payment_id: str = ''
-    new_prices: Dict = field(default_factory=dict)
+    # new_prices: Dict = field(default_factory=dict)
 
     @classmethod
     def from_payment(cls, event: Event, payment: Payment, errors: Dict):
@@ -384,7 +384,8 @@ def get_discount_product_from_form(dao: TicketsDAO, event: Event, form):
                         applies_to_couple=discount_code.applies_to_couple,
                         discount_code=discount_code,
                     )
-            return discount_product
+            else:
+                return discount_product
 
 
 def get_extra_registrations_from_partner_token(dao: TicketsDAO, event: Event, form):
@@ -505,7 +506,7 @@ def do_pay(dao: TicketsDAO):
 
 
 def process_first_payment(payment: Payment):
-    if payment.pay_all_now or (payment.first_pay_amount == payment.price):
+    if payment.price and (payment.pay_all_now or (payment.first_pay_amount == payment.price)):
         transaction = TransactionDetails(
             price=payment.price,
             transaction_fee=payment.transaction_fee,

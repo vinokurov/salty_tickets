@@ -142,6 +142,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
+                 'key': 'saturday',
                  'partner': None,
                  'person': 'Princess Sande',
                  'price': 25.0,
@@ -163,6 +164,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
+                 'key': 'saturday',
                  'partner': 'Tammi Speier',     # this is new
                  'person': 'Princess Sande',
                  'price': 25.0,
