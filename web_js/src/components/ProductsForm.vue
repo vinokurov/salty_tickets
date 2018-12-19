@@ -54,10 +54,9 @@
                       <workshop-card
                         :inputName="productKey"
                         :headerColor="level_color_codes[getTicketByKey(productKey).level]"
-                        v-if="productKey">
-                        {{getTicketByKey(productKey).info}}
-                        <!-- {{productKey}} -->
-                      </workshop-card>
+                        v-if="productKey"
+                        :special_price="getSpecialPrice(productKey)"
+                        />
                     </td>
                 </tr>
                 </tbody>
@@ -137,10 +136,31 @@ export default {
         'Collegiate Shag Novice': '#5499C7',
         'Collegiate Shag Veteran': '#922B21'
       },
-      selected_workshops_by_category: {}
+      selected_workshops_by_category: {},
+      extra_station_price: 25,
     }
   },
   computed: {
+    has_full_pass: function(){
+      return this.getSelectedTickets.filter((t) => t.key=='full_pass').length > 0
+    },
+    selected_stations_count: function() {
+      return this.getSelectedTickets.filter((t) => this.getTicketByKey(t.key).level).length
+    },
+    station_discounted_price: function(){
+      if(this.getSelectedTickets.filter((t) => t.key=='full_pass').length > 0) {
+        if(this.selected_stations_count < 3) {
+          return 0
+        } else {
+          return this.extra_station_price;
+        }
+      } else if (this.getSelectedTickets.filter((t) => (t.key.indexOf('shag_novice') > -1)).length > 0) {
+          return this.extra_station_price
+      }
+    },
+    clinic_discounted_price: function() {
+      if(this.station_discounted_price == 0) return 15
+    },
     ...mapState(['tickets', 'products', 'layout']),
     ...mapGetters(['getSelectedTickets', 'getTicketByKey',
                   'getSelectedProducts', 'getProductByKey',
@@ -218,7 +238,14 @@ export default {
         }
       }
 
-    }
+    },
+    getSpecialPrice(ticket_key){
+      if(ticket_key == 'shag_clinic'){
+        return this.clinic_discounted_price
+      } else {
+        return this.station_discounted_price
+      }
+    },
   },
 }
 </script>

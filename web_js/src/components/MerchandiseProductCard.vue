@@ -3,7 +3,8 @@
         <div class="card-header">
           <div class="d-flex justify-content-between">
             <h5 class="card-title"> {{title}}</h5>
-            <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
+            <!-- <span class="h4" v-if="paid_price != null">£{{paid_price}}</span> -->
+            <span class="h4">£{{price}}</span>
           </div>
 
         </div>

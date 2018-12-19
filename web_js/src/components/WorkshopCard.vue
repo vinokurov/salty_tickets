@@ -3,7 +3,7 @@
                     :border-variant="cardStyle.border" class="text-left shadow ">
         <div class="card-header text-light" :style="'background-color: '+headerColor">
           <span class="close" :id="inputName + '-info'"><font-awesome icon="info-circle"/></span>
-          <b-popover :target="inputName + '-info'" triggers="click blur"><slot></slot></b-popover>
+          <b-popover :target="inputName + '-info'" triggers="click blur">{{product.info}}</b-popover>
           <h5 class="card-title"><font-awesome icon="lock" v-if="!product.editable"/> {{title}}</h5>
         </div>
         <div class="card-body">
@@ -44,7 +44,9 @@
               </b-badge>
             </p>
           </span>
-          <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
+          <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
+          <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
+          <span class="h4" v-else>£{{price}}</span>
         </div>
     </b-card>
 </template>
@@ -53,6 +55,7 @@
 import BootstrapVue from 'bootstrap-vue'
 import FontAwesome from './FontAwesome.vue'
 import SwitchButton from './SwitchButton.vue'
+import { mapState, mapActions,mapGetters } from 'vuex'
 
 export default {
   name: 'WorkshopCard',
@@ -61,6 +64,7 @@ export default {
     inputName: { type: String },
     icon: { default: 'ticket', type: String },
     headerColor: { type: String, default: '#5D6D7E'},
+    special_price: {type: Number, default: null}
   },
   data: function () {
     return {
@@ -181,7 +185,12 @@ export default {
       }
 
       return buttons
-    }
+    },
+    paid_price: function(){
+      var item = this.getOrderedItemByKey(this.inputName)
+      if (item != null) return item.price
+    },
+    ...mapGetters(['getOrderedItemByKey']),
   },
   watch: {
     choice: function() {

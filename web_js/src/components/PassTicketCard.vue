@@ -4,7 +4,8 @@
         <div class="card-body">
             <div class="d-flex justify-content-between">
               <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
-              <span class="h5"><b-badge pill variant="secondary">£ {{price}}</b-badge></span>
+              <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
+              <span class="h4" v-else>£{{price}}</span>
             </div>
             <slot></slot>
             <switch-button
@@ -26,6 +27,7 @@
 import BootstrapVue from 'bootstrap-vue'
 import FontAwesome from './FontAwesome.vue'
 import SwitchButton from './SwitchButton.vue'
+import { mapState, mapActions,mapGetters } from 'vuex'
 
 export default {
   name: 'PassTicketCard',
@@ -130,7 +132,12 @@ export default {
       }
 
       return buttons
-    }
+    },
+    paid_price: function(){
+      var item = this.getOrderedItemByKey(this.inputName)
+      if (item != null) return item.price
+    },
+    ...mapGetters(['getOrderedItemByKey']),
   },
   watch: {
     choice: function() {
