@@ -10,8 +10,8 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import DiscountCode
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, FestivalPassTicket
 from salty_tickets.models.products import Product
-from salty_tickets.testutils import process_test_price_checkout_pay, post_json_data
-from salty_tickets.tokens import GroupToken, DiscountToken
+from salty_tickets.testutils import process_test_price_checkout_pay, post_json_data, process_test_price
+from salty_tickets.tokens import GroupToken, DiscountToken, RegistrationToken
 from salty_tickets.utils.utils import jsonify_dataclass
 
 
@@ -794,3 +794,75 @@ def test_registration_with_discount_code_full_pass(mts_app_routes, mts, test_dao
     assert payment is not None
     assert 120 == sum([p.value for p in payment.discounts])
     assert 120 + 25 + 25 == payment.price
+
+
+def test_update_mts_order_add_extra_station(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                          sample_stripe_card_error, sample_stripe_successful_charge,
+                          sample_stripe_customer, mock_send_email):
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'showmans_shag-add': LEADER,
+        'hurricane_shag-add': LEADER,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': LEADER,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+
+    reg_token = RegistrationToken().serialize(payment.paid_by)
+    print(reg_token)
+
+    form_data = {
+        'registration_token': reg_token,
+        'shag_roller_coaster-add': LEADER,
+    }
+    res = process_test_price(client, form_data, assert_disable_checkout=False)
+    print(res)
+    payment2 = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment2 is not None
+    assert payment.paid_by == payment2.paid_by
+    assert 25 == payment2.price
+
+
+def test_update_mts_order_add_upgrade_to_full_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+                          sample_stripe_card_error, sample_stripe_successful_charge,
+                          sample_stripe_customer, mock_send_email):
+
+    mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
+    person = person_factory.pop()
+    form_data = {
+        'name': person.full_name,
+        'email': person.email,
+        'party_pass-add': LEADER,
+        'hurricane_shag-add': LEADER,
+        'friday_party-add': LEADER,
+        'saturday_party-add': LEADER,
+        'sunday_party-add': LEADER,
+    }
+    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment is not None
+    assert 85 == payment.price
+
+    reg_token = RegistrationToken().serialize(payment.paid_by)
+    print(reg_token)
+
+    form_data = {
+        'registration_token': reg_token,
+        'full_pass-add': LEADER,
+        'rockabilly_bopper-add': LEADER,
+        'showmans_shag-add': LEADER,
+    }
+    res = process_test_price(client, form_data, assert_disable_checkout=False)
+    payment2 = process_test_price_checkout_pay(test_dao, client, form_data)
+    assert payment2 is not None
+    assert payment.paid_by == payment2.paid_by
+    assert 35 == payment2.price
+
+

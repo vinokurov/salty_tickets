@@ -8,7 +8,7 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.tickets import Ticket, WorkshopTicket
 from salty_tickets.models.registrations import Payment, Registration, Purchase, Discount
-from salty_tickets.tokens import PartnerToken, PaymentId
+from salty_tickets.tokens import PartnerToken, PaymentId, RegistrationToken
 
 
 @dataclass
@@ -95,37 +95,60 @@ class PurchaseInfo(DataClassJsonMixin):
 
 
 @dataclass
+class PaymentInfo(DataClassJsonMixin):
+    date: str = None
+    price: float = None
+    paid_price: float = None
+
+    @classmethod
+    def from_payment(cls, payment: Payment):
+        return cls(
+            date=str(payment.date.date()),
+            price=payment.price,
+            paid_price=payment.paid_price,
+        )
+
+
+@dataclass
 class UserOrderInfo(DataClassJsonMixin):
     name: str
     email: str
     ptn_token: str = None
-    pmt_token: str = None
+    reg_token: str = None
     event_name: str = None
     event_info: str = None
-    price: float = None
-    paid_price: float = None
+    payments: List[PaymentInfo] = field(default_factory=list)
     tickets: List[RegistrationInfo] = field(default_factory=list)
     products: List[PurchaseInfo] = field(default_factory=list)
     discounts: List[DiscountInfo] = field(default_factory=list)
 
     @classmethod
-    def from_payment(cls, payment: Payment, event: Event):
+    def from_payment(cls, all_payments: List[Payment], event: Event):
+        person = all_payments[0].paid_by
+        tickets = []
+        products = []
+        discounts = []
+        for payment in all_payments:
+            tickets += [RegistrationInfo.from_registration(r, event.tickets) for r in payment.registrations]
+            products += [PurchaseInfo.from_purchase(r, event.products) for r in payment.purchases]
+            discounts += [DiscountInfo.from_discount(r, event.discount_products) for r in payment.discounts]
         return cls(
-            name=payment.paid_by.full_name,
-            email=payment.paid_by.email,
-            ptn_token=PartnerToken().serialize(payment.paid_by),
-            pmt_token=PaymentId().serialize(payment),
-            tickets=[RegistrationInfo.from_registration(r, event.tickets) for r in payment.registrations],
-            products=[PurchaseInfo.from_purchase(r, event.products) for r in payment.purchases],
-            discounts=[DiscountInfo.from_discount(r, event.discount_products) for r in payment.discounts],
+            name=person.full_name,
+            email=person.email,
+            ptn_token=PartnerToken().serialize(person),
+            reg_token=RegistrationToken().serialize(person),
+            # pmt_token=PaymentId().serialize(payment),
             event_name=event.name,
             event_info=event.info,
-            price=payment.price,
-            paid_price=payment.paid_price,
+            payments=[PaymentInfo.from_payment(p) for p in all_payments],
+            tickets=tickets,
+            products=products,
+            discounts=discounts,
         )
 
 
 def do_get_user_order_info(dao: TicketsDAO, pmt_token: str):
     payment = PaymentId().deserialize(dao, pmt_token)
     event = dao.get_payment_event(payment, get_registrations=False)
-    return UserOrderInfo.from_payment(payment, event)
+    all_payments = dao.get_payments_by_person(event, payment.paid_by)
+    return UserOrderInfo.from_payment(all_payments, event)

@@ -18,12 +18,28 @@
                 <dl>
                   <dd><strong>Name:</strong> {{user_order_info.name}}</dd>
                   <dd><strong>Email:</strong> {{user_order_info.email}}</dd>
+                  <dd><strong>Registration Token:</strong> {{user_order_info.reg_token}}</dd>
                   <!-- <dd><strong>Token:</strong> {{user_order_info.ptn_token}}</dd> -->
                 </dl>
               </b-card>
               <b-card-footer>
-                <strong>Total Price:</strong> £{{user_order_info.price}}<br>
-                <strong>Total Paid:</strong> £{{user_order_info.paid_price || 0}}
+
+                <table class="table">
+                  <thead>
+                    <th>Date</th>
+                    <th>Price</th>
+                    <th>Paid Price</th>
+                  </thead>
+                  <tbody>
+                    <tr v-for="payment in user_order_info.payments">
+                      <td>{{payment.date}}</td>
+                      <td>{{payment.price}}</td>
+                      <td>{{payment.paid_price}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- <strong>Total Price:</strong> £{{user_order_info.price}}<br>
+                <strong>Total Paid:</strong> £{{user_order_info.paid_price || 0}} -->
               </b-card-footer>
            </b-card>
          </div>

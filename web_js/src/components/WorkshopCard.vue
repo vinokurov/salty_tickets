@@ -14,10 +14,10 @@
                   :value="workshopChoice"
                   v-model="workshopChoice"
                   size="sm"
-                  v-if="!soldOut"
+                  v-if="!disabled"
                   />
         </div>
-        <span v-if="this.product.key != 'shag_clinic'">
+        <span v-if="(this.product.key != 'shag_clinic') && (!disabled)">
           <b-alert v-if="this.product.waiting_list.leader" show variant="warning">
             <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.
             Chances to get accepted: {{this.product.waiting_list.leader}}%.
@@ -30,13 +30,13 @@
         <div class="card-footer d-flex justify-content-between align-items-end" >
           <span>
             <p style="margin:0" v-if="time">
-              <small class="text-muted"><font-awesome icon="clock"/> {{time}}</small>
+              <small :class="'text-' + cardStyle.text_footer"><font-awesome icon="clock"/> {{time}}</small>
             </p>
             <p style="margin:0" v-if="teachers">
-              <small class="text-muted"><font-awesome icon="id-badge"/> {{teachers}}</small>
+              <small :class="'text-' + cardStyle.text_footer"><font-awesome icon="id-badge"/> {{teachers}}</small>
             </p>
             <p style="margin:0" v-if="level">
-              <small class="text-muted"><font-awesome icon="tachometer-alt"/> {{capitalize(level)}}</small>
+              <small :class="'text-' + cardStyle.text_footer"><font-awesome icon="tachometer-alt"/> {{capitalize(level)}}</small>
             </p>
             <p style="margin:0" v-if="availableWarningText">
               <b-badge :variant="availableWarningStyle">
@@ -44,9 +44,11 @@
               </b-badge>
             </p>
           </span>
-          <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
-          <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
-          <span class="h4" v-else>£{{price}}</span>
+          <span v-if="!disabled">
+            <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
+            <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
+            <span class="h4" v-else>£{{price}}</span>
+          </span>
         </div>
     </b-card>
 </template>
@@ -97,17 +99,17 @@ export default {
     editable: function() { return this.product.editable || true },
 
     cardStyle: function () {
-      if (this.soldOut) {
-        return {bg: 'secondary', border: '', text: 'black'}
+      if (this.disabled) {
+        return {bg: 'secondary', border: '', text: 'black', text_footer:'black'}
       } else if (this.workshopChoice ) {
         let wl = this.product.waiting_list[this.workshopChoice]
         if (wl == null) {
-          return {bg: 'gradient-success', border: '', text: 'light'}
+          return {bg: 'gradient-success', border: '', text: 'light', text_footer:'light'}
         } else {
-          return {bg: 'gradient-warning', border: '', text: 'light'}
+          return {bg: 'gradient-warning', border: '', text: 'light', text_footer:'light'}
         }
       } else {
-        return {bg: 'light', border:'', text: 'black'}
+        return {bg: 'light', border:'', text: 'black', text_footer:'muted'}
       }
     },
     availableWarningStyle: function () {
@@ -118,7 +120,7 @@ export default {
       }
     },
     availableWarningText: function () {
-      if (this.available > 5) {
+      if (this.available > 10) {
         return ''
       } else if (this.available <= 0) {
         return 'SOLD OUT...'
@@ -130,6 +132,9 @@ export default {
     },
     soldOut: function () {
       return this.available <= 0
+    },
+    disabled: function() {
+      return this.soldOut || ((this.choice == null) && this.product.editable == false )
     },
     buttonOptions: function () {
       if (this.partnerMode == 'single') {

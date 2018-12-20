@@ -30,7 +30,7 @@ def process_pay(assert_success, client, stripe_token='ch_test'):
 
 
 def process_test_price_checkout_pay(dao: TicketsDAO, client, form_data, assert_pay_success=True) -> Payment:
-    process_test_price(client, form_data)
+    res = process_test_price(client, form_data)
     res = process_test_checkout(client, form_data)
     res = process_pay(assert_pay_success, client, stripe_token='ch_12_leader')
 

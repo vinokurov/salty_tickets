@@ -8,7 +8,7 @@ from salty_tickets.config import MONGO
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
     do_check_partner_token, EventInfo, balance_event_waiting_lists, do_validate_discount_code_token, \
-    do_validate_registration_group_token, do_create_registration_group
+    do_validate_registration_group_token, do_create_registration_group, do_get_prior_registrations
 from salty_tickets.api.user_order import do_get_user_order_info
 from salty_tickets.models.registrations import Payment
 from salty_tickets.tokens import PaymentId
@@ -26,11 +26,11 @@ __author__ = 'vnkrv'
 # """
 
 
-# if app.debug:
-#     @app.route('/static/dist/<path:path>')
-#     def catch_all(path):
-#         import requests
-#         return requests.get('http://localhost:8080/{}'.format(path)).text
+if app.debug:
+    @app.route('/static/dist/<path:path>')
+    def catch_all(path):
+        import requests
+        return requests.get('http://localhost:8080/{}'.format(path)).text
 
 
 @app.route('/')
@@ -117,6 +117,12 @@ def check_registration_group_token(event_key):
 def create_registration_group(event_key):
     dao = TicketsDAO(MONGO)
     return jsonify_dataclass(do_create_registration_group(dao, event_key))
+
+
+@app.route('/prior_registrations/<string:event_key>', methods=['POST'])
+def prior_registrations(event_key):
+    dao = TicketsDAO(MONGO)
+    return jsonify_dataclass(do_get_prior_registrations(dao, event_key))
 
 
 #####################################################################

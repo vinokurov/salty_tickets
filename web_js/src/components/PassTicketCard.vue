@@ -5,9 +5,10 @@
             <div class="d-flex justify-content-between">
               <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
               <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
+              <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
               <span class="h4" v-else>£{{price}}</span>
             </div>
-            <slot></slot>
+            {{product.info}}
             <switch-button
                   :name="inputName"
                   :options="buttonOptions"
@@ -15,7 +16,7 @@
                   value="workshopChoice"
                   v-model="workshopChoice"
                   size="sm"
-                  v-if="!soldOut"
+                  v-if="!disabled"
                   />
         </div>
         <div class="card-footer">
@@ -35,6 +36,7 @@ export default {
   props: {
     inputName: { type: String },
     icon: { default: 'ticket', type: String },
+    special_price: {type: Number, default: null}
   },
   data: function () {
     return {
@@ -60,12 +62,12 @@ export default {
     editable: function() { return this.product.editable || true },
 
     cardStyle: function () {
-      if (this.soldOut) {
-        return {bg: 'secondary', border: '', text: 'black'}
+      if (this.disabled) {
+        return {bg: 'secondary', border: '', text: 'black', text_footer:'black'}
       } else if (this.workshopChoice ) {
-        return {bg: 'success', border: '', text: 'light'}
+        return {bg: 'gradient-success', border: '', text: 'light', text_footer:'light'}
       } else {
-        return {bg: 'light', border:'', text: 'black'}
+        return {bg: 'light', border:'', text: 'black', text_footer:'muted'}
       }
     },
     availableWarningStyle: function () {
@@ -88,6 +90,9 @@ export default {
     },
     soldOut: function () {
       return this.available <= 0
+    },
+    disabled: function() {
+      return this.soldOut || ((this.choice == null) && this.product.editable == false )
     },
     buttonOptions: function () {
       if (this.partnerMode == 'single') {

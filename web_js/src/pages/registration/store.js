@@ -17,6 +17,7 @@ const my_state = {
               dance_role:null, comments:null},
     partner: {name:null, email:null, location: null},
     partner_token:null,
+    registration_token: null,
     pay_all: 'y',
   },
   cart: {
@@ -27,6 +28,7 @@ const my_state = {
     transaction_fee:0,
     pay_now_total: 0,
   },
+  new_ticket_prices: [],
   stripe: {},
   errors: {},
   throttled_calls: {},
@@ -37,6 +39,11 @@ const my_state = {
     payment_id: null,
     payee_id: null,
     error_message: null,
+  },
+  prior_registrations: {
+    person: null,
+    partner: null,
+    registrations: [],
   },
 }
 
@@ -72,6 +79,8 @@ export default new Vuex.Store({
 
       state.cart.pay_now_total = pricing_details.order_summary.pay_now_total
 
+      state.new_ticket_prices = pricing_details.new_prices;
+
       state.errors = pricing_details.errors;
       if('csrf_token' in state.errors){window.location.reload();}
 
@@ -80,6 +89,9 @@ export default new Vuex.Store({
       } else {
         state.stripe = {}
       }
+    },
+    setPriorRegistrations (state, prior_registrations) {
+      state['prior_registrations'] = prior_registrations;
     },
     setPaymentResponseDetails (state, payment_response) {
       state.payment_response = payment_response
@@ -96,7 +108,7 @@ export default new Vuex.Store({
       } else {
         state.throttled_calls[url] = {
           url: url,
-          params: JSON.stringify(params),
+          params: JSON.parse(JSON.stringify(params)),
           complete: false
         }
       }
@@ -137,6 +149,15 @@ export default new Vuex.Store({
       if (response) {
         commit('setPricingResponseDetails', response.data)
         // state['pricing_details'] = response.data
+      }
+    },
+    async requestPriorRegistrations({context, commit, state, getters, dispatch}) {
+      // const url = 'http://127.0.0.1:5000/price/salty_breezle'
+      const url = '/prior_registrations/mind_the_shag_2019'
+      let params = getters.getPricingSubmitData
+      let response = await dispatch('postRequest', {url, params})
+      if (response) {
+        commit('setPriorRegistrations', response.data)
       }
     },
     async postRequest ({ commit, state }, {url, params}) {
@@ -207,6 +228,15 @@ export default new Vuex.Store({
     getSelectedProducts: (state) => {
       return state.products.filter((p) => p.choice).map((p) => ({key:p.key, choice:p.choice}))
     },
+    getTicketNewPrice: (state) => (key) => {
+      let price_items = state.new_ticket_prices.filter((p) => p.ticket_key == key)
+      if(price_items.length > 0){
+        return price_items[0].price
+      }
+    },
+    getOrderedItemByKey: (state) => (key) => {
+      return state.cart.items.filter((p) => p.key == key)[0]
+    },
     partnerRequired: (state) => {
       return state.tickets.filter((p) => p.choice=='couple').length > 0
     },
@@ -217,6 +247,7 @@ export default new Vuex.Store({
         location: state.registration.primary.location || '',
         comment: state.registration.primary.comment || '',
         dance_role: state.registration.primary.dance_role || '',
+        registration_token: state.registration.registration_token || '',
         generic_discount_code: state.registration.primary.discount_code || '',
         partner_name: state.registration.partner.name || '',
         partner_email: state.registration.partner.email || '',
@@ -248,6 +279,21 @@ export default new Vuex.Store({
       let element = document.getElementById("csrf_token");
       let content = element && element.getAttribute("value");
       return content
+    },
+    getPriorTickets: (state, getters) => {
+      let data = {}
+      state.prior_registrations.registrations.forEach((reg) => {
+        if(data[reg.ticket_key]){
+          data[reg.ticket_key]['amount'] = 2
+        } else {
+          data[reg.ticket_key] = {
+            ticket_key: reg.ticket_key,
+            title: getters.getTicketByKey(reg.ticket_key).title,
+            amount: 1
+          }
+        }
+      })
+      return data
     },
   }
 });

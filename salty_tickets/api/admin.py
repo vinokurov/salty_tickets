@@ -94,7 +94,7 @@ class PaymentInfo(DataClassJsonMixin):
 
     @classmethod
     def from_payment(cls, payment: Payment):
-        regs = [r.partner for r in payment.registrations if r.partner and r.partner!=r.registered_by]
+        regs = [r.partner for r in payment.registrations if r.partner and r.partner != r.registered_by]
         if regs:
             partner = regs[0].full_name
         else:

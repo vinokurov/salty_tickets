@@ -17,10 +17,14 @@ class TicketPricer:
         if not self.price_rules:
             self.price_rules.append(BasePriceRule())
 
-    def price_all(self, registrations: List[Registration]):
+    def price_all(self, registrations: List[Registration],
+                  prior_registrations: List[Registration] = None):
+        if prior_registrations is None:
+            prior_registrations = []
         priced_regs = []
         for reg in registrations:
-            reg.price = self.optimal_price(reg, registrations, priced_registrations=priced_regs)
+            reg.price = self.optimal_price(reg, registrations + prior_registrations,
+                                           priced_registrations=priced_regs + prior_registrations)
             priced_regs.append(reg)
 
     def optimal_price(self, registration: Registration,
@@ -114,7 +118,7 @@ class MindTheShagPriceRule(BasePriceRule):
     tag_station_discount_2: str = 'station_discount_2'
     tag_includes_parties: str = 'includes_parties'
 
-    def price(self, registration, registration_list, event_tickets, priced_registrations) -> float:
+    def price(self, registration, registration_list, event_tickets, priced_registrations, skip_prior=False) -> float:
         person = registration.person
         if person:
             person_registrations = [r for r in registration_list if r.person == person]
@@ -158,6 +162,37 @@ class MindTheShagPriceRule(BasePriceRule):
         elif registration.ticket_key in party_keys:
             if self._has_tags(registration_keys, event_tickets, {self.tag_includes_parties}):
                 return 0.0
+
+        elif 'pass' in event_tickets[registration.ticket_key].tags:
+            if skip_prior:
+                prior_registrations = []
+            else:
+                prior_registrations = [r for r in person_priced_registrations if r.active]
+
+            if not prior_registrations:
+                return event_tickets[registration.ticket_key].base_price
+            else:
+                # get actual price of the prior registrations
+                priced_regs = []
+                prior_total_price = 0
+                for reg in prior_registrations:
+                    prior_total_price += self.price(reg, prior_registrations, event_tickets,
+                                                    priced_regs, skip_prior=True) or 0
+                    priced_regs.append(reg)
+
+                # get price of the prior registrations with the new pass
+                prior_registrations_with_new_pass = [registration] + [r for r in prior_registrations
+                                                                      if not 'pass' in event_tickets[r.ticket_key].tags]
+                priced_regs = []
+                prior_total_price_new = 0
+                for reg in prior_registrations_with_new_pass:
+                    prior_total_price_new += self.price(reg, prior_registrations_with_new_pass,
+                                                        event_tickets, priced_regs, skip_prior=True) or 0
+                    priced_regs.append(reg)
+
+                return max(0, prior_total_price_new - prior_total_price)
+
+
 
     @classmethod
     def _has_tags(cls, registration_keys, event_tickets, tags):

@@ -23,6 +23,7 @@ class SignupForm(FlaskForm):
     email = StringField(u'Email', validators=[Email(), DataRequired()])
     location = RawField(u'Location')
     comment = TextAreaField('Comment')
+    registration_token = StringField()
 
 
 class StripeCheckoutForm(FlaskForm):
@@ -66,6 +67,7 @@ class DanceSignupForm(FormWithTickets, SignupForm):
     partner_location = RawField('Partner Location')
     registration_token = StringField('Registration Code')
     partner_token = StringField('Registration Code')
+    partner_registration_token = StringField()
     pay_all = BooleanField(default="checked")
 
 
@@ -92,9 +94,17 @@ def create_event_form(event):
     return EventForm
 
 
-def get_primary_personal_info_from_form(form) -> Person:
-    if hasattr(form, 'primary_person_info'):
-        return form.primary_person_info
+def add_primary_person_to_form_cache(form: DanceSignupForm, person: Person):
+    form.primary_person = person
+
+
+def add_partner_person_to_form_cache(form: DanceSignupForm, person: Person):
+    form.partner_person = person
+
+
+def get_primary_personal_info_from_form(form: DanceSignupForm) -> Person:
+    if hasattr(form, 'primary_person'):
+        return form.primary_person
     else:
         person = Person(
             full_name=form.name.data,
@@ -102,13 +112,13 @@ def get_primary_personal_info_from_form(form) -> Person:
             comment=form.comment.data,
             location=form.location.data or {},
         )
-        form.primary_person_info = person
+        add_primary_person_to_form_cache(form, person)
         return person
 
 
-def get_partner_personal_info_from_form(form) -> Person:
-    if hasattr(form, 'partner_person_info'):
-        return form.partner_person_info
+def get_partner_personal_info_from_form(form: DanceSignupForm) -> Person:
+    if hasattr(form, 'partner_person'):
+        return form.partner_person
     else:
         person = Person(
             full_name=form.partner_name.data,
@@ -116,7 +126,7 @@ def get_partner_personal_info_from_form(form) -> Person:
             comment=form.comment.data,
             location=form.partner_location.data or {},
         )
-        form.partner_person_info = person
+        add_partner_person_to_form_cache(form, person)
         return person
 
 

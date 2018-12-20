@@ -8,26 +8,30 @@
           <tbody>
             <tr>
               <td style="border:none">
-                <PassTicketCard inputName='full_pass'>
-                  {{getTicketByKey('full_pass').info}}
-                </PassTicketCard>
+                <PassTicketCard
+                  inputName='full_pass'
+                  :special_price="getSpecialPrice('full_pass')"
+                />
               </td>
               <td style="border:none">
-                <PassTicketCard inputName='party_pass'>
-                  {{getTicketByKey('party_pass').info}}
-                </PassTicketCard>
+                <PassTicketCard
+                  inputName='party_pass'
+                  :special_price="getSpecialPrice('party_pass')"
+                />
               </td>
             </tr>
             <tr>
               <td style="border:none">
-                <PassTicketWithRoleCard inputName='shag_novice'>
-                  {{getTicketByKey('shag_novice').info}}
-                </PassTicketWithRoleCard>
+                <PassTicketWithRoleCard
+                  inputName='shag_novice'
+                  :special_price="getSpecialPrice('shag_novice')"
+                />
               </td>
               <td style="border:none">
-                <PassTicketWithRoleCard inputName='shag_novice_no_parties'>
-                  {{getTicketByKey('shag_novice_no_parties').info}}
-                </PassTicketWithRoleCard>
+                <PassTicketWithRoleCard
+                  inputName='shag_novice_no_parties'
+                  :special_price="getSpecialPrice('shag_novice_no_parties')"
+                />
               </td>
             </tr>
           </tbody>
@@ -73,13 +77,13 @@
           <tbody>
             <tr>
               <td style="border:none">
-                <PartyTicketCard inputName='friday_party'/>
+                <PartyTicketCard inputName='friday_party' :special_price="getSpecialPrice('friday_party')"/>
               </td>
               <td style="border:none">
-                <PartyTicketCard inputName='saturday_party'/>
+                <PartyTicketCard inputName='saturday_party' :special_price="getSpecialPrice('saturday_party')"/>
               </td>
               <td style="border:none">
-                <PartyTicketCard inputName='sunday_party'/>
+                <PartyTicketCard inputName='sunday_party' :special_price="getSpecialPrice('saturday_party')"/>
               </td>
             </tr>
           </tbody>
@@ -161,10 +165,10 @@ export default {
     clinic_discounted_price: function() {
       if(this.station_discounted_price == 0) return 15
     },
-    ...mapState(['tickets', 'products', 'layout']),
+    ...mapState(['tickets', 'products', 'layout', 'prior_registrations']),
     ...mapGetters(['getSelectedTickets', 'getTicketByKey',
                   'getSelectedProducts', 'getProductByKey',
-                  'getPricingSubmitData']),
+                  'getPricingSubmitData','getTicketNewPrice']),
   },
   watch: {
     getSelectedTickets: function() {
@@ -172,8 +176,34 @@ export default {
       this.removeOverlapping();
       this.applyPassesAutoselect()
     },
+    prior_registrations: function() {
+      this.disablePrior()
+    }
   },
   methods: {
+    disablePrior: function() {
+      let keys_to_disable = []
+      this.prior_registrations.registrations.forEach((reg) => {
+        keys_to_disable.push(reg.ticket_key)
+        this.tickets.forEach((t) => {
+          if(t.start_datetime == this.getTicketByKey(reg.ticket_key).start_datetime) {
+            keys_to_disable.push(t.key)
+          }
+        })
+      })
+      if(keys_to_disable.indexOf('shag_abc') > -1 || keys_to_disable.indexOf('shag_essentials') > -1) {
+        keys_to_disable.push('shag_novice')
+        keys_to_disable.push('shag_novice_no_parties')
+      }
+
+      keys_to_disable.forEach((ticket_key) => {
+        this.getTicketByKey(ticket_key).choice = null;
+        this.getTicketByKey(ticket_key).editable = false;
+      })
+
+      this.$store.dispatch('requestPrice');
+
+    },
     removeOverlapping: function() {
       var new_mapping = {}
 
@@ -217,13 +247,17 @@ export default {
         if(['shag_novice', 'shag_novice_no_parties'].indexOf(pass_key)>-1) {
           for(var i=0;i< novice_stations.length; i++){
             var station = this.getTicketByKey(novice_stations[i])
-            station.choice = pass.choice;
-            station.editable = false;
+            if(!(station.choice == null && station.editable == false)){
+              station.choice = pass.choice;
+              station.editable = false;
+            }
           }
         } else {
           for(var i=0;i< novice_stations.length; i++){
             var station = this.getTicketByKey(novice_stations[i])
-            station.editable = true;
+            if(!(station.choice == null && station.editable == false)){
+              station.editable = true;
+            }
           }
         }
 
@@ -240,11 +274,14 @@ export default {
 
     },
     getSpecialPrice(ticket_key){
-      if(ticket_key == 'shag_clinic'){
-        return this.clinic_discounted_price
-      } else {
-        return this.station_discounted_price
-      }
+      // if(ticket_key == 'shag_clinic'){
+      //   return this.clinic_discounted_price
+      // } else {
+      //   return this.station_discounted_price
+      // }
+      let new_price = this.getTicketNewPrice(ticket_key)
+      let base_price = this.getTicketByKey(ticket_key).price
+      if ((new_price != null) && (new_price < base_price)) return new_price
     },
   },
 }

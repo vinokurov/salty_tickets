@@ -3,6 +3,7 @@
        <div class="container">
            <div class="card bg-light">
                <div class="card-body">
+                 <span v-if="!priorPrimaryName">
                    <h2> Your details</h2>
                    <form id="registration">
                    <b-input-group class="my-2">
@@ -15,6 +16,8 @@
                    </b-input-group>
                    <location-input v-on:input="primaryLocation = $event" name="location"/>
                  </form>
+               </span>
+               <span v-if="!priorPartnerName">
                    <b-form-select  v-if="partnerRequired" v-model="primaryDanceRole" :options="dance_role_options" class="mb-3" style="background-image: none"/>
 
                    <div v-if="partnerRequired">
@@ -30,6 +33,8 @@
                        </b-input-group>
                        <location-input v-model.lazy="partnerLocation" name="partner_location"/>
                    </div>
+                 </span>
+                 <span v-if="!priorPrimaryName">
                     <hr>
                    <textarea v-model="primaryComment" class="form-control" id="comment"
                                   name="comment" placeholder="Any comments"></textarea>
@@ -46,6 +51,24 @@
                     <b-popover target="overseas-info" triggers="click blur">
                       For those who travel to Mind the Shag from another continent or require a visa to enter the UK.
                     </b-popover>
+                  </span>
+
+                    <h3 class="h3 my-4">Already registered?</h3>
+                    <b-input-group class="my-2">
+                         <b-input-group-text><font-awesome icon="key"></font-awesome></b-input-group-text>
+                         <b-form-input v-model="registrationToken" class="form-control" placeholder="Prior Registration Token" id="registration_token" name="registration_token"></b-form-input>
+                    </b-input-group>
+
+                    <div v-if="priorPrimaryName">
+                      <p><font-awesome icon="user"/> {{priorPrimaryName}}</p>
+                      <p v-if="priorPartnerName"><font-awesome icon="user"/> {{priorPartnerName}}</p>
+                      <b-list-group>
+                        <b-list-group-item v-for="ticket in getPriorTickets">
+                          <font-awesome icon="ticket-alt"/> {{ticket.title}} x {{ticket.amount}}
+                        </b-list-group-item>
+                      </b-list-group>
+                    </div>
+
 
                </div>
            </div>
@@ -82,9 +105,13 @@ export default {
       primaryDiscountCode: 'registration@primary.discount_code',
       partnerName: 'registration@partner.name',
       partnerEmail: 'registration@partner.email',
-      partnerLocation: 'registration@partner.location'
+      partnerLocation: 'registration@partner.location',
+      registrationToken: 'registration@registration_token',
+      priorPrimaryName: 'prior_registrations@person',
+      priorPartnerName: 'prior_registrations@partner',
+      priorRegistrations: 'prior_registrations@registrations',
     }),
-    ...mapGetters(['partnerRequired']),
+    ...mapGetters(['partnerRequired','getPriorTickets']),
   },
   watch: {
     registration () {
@@ -92,7 +119,10 @@ export default {
     },
     primaryDiscountCode () {
       this.$store.dispatch('requestPrice');
-    }
+    },
+    registrationToken() {
+      this.$store.dispatch('requestPriorRegistrations');
+    },
   }
 }
 </script>

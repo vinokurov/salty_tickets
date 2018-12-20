@@ -437,13 +437,13 @@ class TicketsDAO:
             if payment_doc:
                 return payment_doc.to_dataclass()
 
-    def query_registrations(self, event: Event, person: Person=None, paid_by: Person=None,
+    def query_registrations(self, event: Event, person: Person=None, registered_by: Person=None,
                             partner: Person=None, ticket=None) -> List[Registration]:
         filters = {'event': self._get_event_id(event)}
         if person is not None:
             filters['person'] = self._get_doc(PersonDocument, person)
-        if paid_by is not None:
-            filters['paid_by'] = self._get_doc(PersonDocument, paid_by)
+        if registered_by is not None:
+            filters['registered_by'] = self._get_doc(PersonDocument, registered_by)
         if partner is not None:
             filters['partner'] = self._get_doc(PersonDocument, partner)
         if ticket is not None:
