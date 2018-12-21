@@ -100,7 +100,6 @@ export default {
       let choice_copy = this.choice
       delete choice_copy[key]
       // this.choice = choice_copy
-      console.log(choice_copy)
       this.$store.commit('setProductChoice', {key:this.inputName, choice:choice_copy})
       this.selected = null
       this.$store.dispatch('requestPrice');

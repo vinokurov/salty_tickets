@@ -150,9 +150,9 @@ def mts_tickets():
         PartyTicket(name='p1', base_price=20.0, tags={'party'}),
         PartyTicket(name='p2', base_price=30.0, tags={'party'}),
         PartyTicket(name='p3', base_price=15.0, tags={'party'}),
-        FestivalPassTicket(name='full_weekend_ticket', base_price=120.0, tags={'pass', 'includes_parties', 'station_discount_3', 'includes_parties'}),
-        FestivalPassTicket(name='fast_shag_train', base_price=90.0, tags={'pass', 'includes_parties', 'station_discount_2', 'includes_parties'}),
-        FestivalPassTicket(name='fast_shag_train_no_parties', base_price=45.0, tags={'pass', 'station_discount_2'}),
+        FestivalPassTicket(name='full_pass', base_price=120.0, tags={'pass', 'includes_parties', 'station_discount_3', 'includes_parties'}),
+        FestivalPassTicket(name='shag_novice', base_price=90.0, tags={'pass', 'includes_parties', 'station_discount_2', 'includes_parties'}),
+        FestivalPassTicket(name='shag_novice_no_parties', base_price=45.0, tags={'pass', 'station_discount_2'}),
         FestivalPassTicket(name='party_pass', base_price=55.0, tags={'pass', 'includes_parties', 'includes_parties'}),
     ]
     return {p.key: p for p in tickets}
@@ -184,32 +184,32 @@ def ms_y():
     ("w1 w2 p3", [30, 30, 15]),
     ("w1 clinic p3", [30, 40, 15]),
 
-    ('w1 w2 w3 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 0, 0, 0, 120]),
+    ('w1 w2 w3 p1 p2 p3 full_pass', [0, 0, 0, 0, 0, 0, 120]),
 
-    ('beg1 beg2 p1 p2 p3 fast_shag_train', [0, 0, 0, 0, 0, 90]),
-    ('beg1 beg2 fast_shag_train_no_parties', [0, 0, 45]),
-    ('beg1 beg2 p1 p2 fast_shag_train_no_parties', [0, 0, 20, 30, 45]),
+    ('beg1 beg2 p1 p2 p3 shag_novice', [0, 0, 0, 0, 0, 90]),
+    ('beg1 beg2 shag_novice_no_parties', [0, 0, 45]),
+    ('beg1 beg2 p1 p2 shag_novice_no_parties', [0, 0, 20, 30, 45]),
 
     ('p1 p2 p3 party_pass', [0, 0, 0, 55]),
     ('w1 p1 p2 p3 party_pass', [30, 0, 0, 0, 55]),
 
-    ('w1 w2 w3 w4 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 0, 0, 0, 120]),
+    ('w1 w2 w3 w4 p1 p2 p3 full_pass', [0, 0, 0, 25, 0, 0, 0, 120]),
 
-    ('w1 w2 w3 w4 w5 p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 25, 0, 0, 0, 120]),
+    ('w1 w2 w3 w4 w5 p1 p2 p3 full_pass', [0, 0, 0, 25, 25, 0, 0, 0, 120]),
 
-    ('w1 beg1 beg2 p1 p2 p3 fast_shag_train', [25, 0, 0, 0, 0, 0, 90]),
-    ('w1 beg1 beg2 p2 p3 fast_shag_train_no_parties', [25, 0, 0, 30, 15, 45]),
+    ('w1 beg1 beg2 p1 p2 p3 shag_novice', [25, 0, 0, 0, 0, 0, 90]),
+    ('w1 beg1 beg2 p2 p3 shag_novice_no_parties', [25, 0, 0, 30, 15, 45]),
 
-    ('w1 beg1 beg2 w2 p1 p2 p3 fast_shag_train', [25, 0, 0, 25, 0, 0, 0, 90]),
-    ('w1 beg1 beg2 w2 p2 p3 fast_shag_train_no_parties', [25, 0, 0, 25, 30, 15, 45]),
+    ('w1 beg1 beg2 w2 p1 p2 p3 shag_novice', [25, 0, 0, 25, 0, 0, 0, 90]),
+    ('w1 beg1 beg2 w2 p2 p3 shag_novice_no_parties', [25, 0, 0, 25, 30, 15, 45]),
 
-    ('w1 w2 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 15, 0, 0, 0, 120]),
+    ('w1 w2 clinic p1 p2 p3 full_pass', [0, 0, 15, 0, 0, 0, 120]),
 
-    ('w1 w2 clinic w3 p1 p2 p3 full_weekend_ticket', [0, 0, 15, 25, 0, 0, 0, 120]),
-    ('w1 w2 w3 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 0, 40, 0, 0, 0, 120]),
-    ('w1 w2 w3 w4 clinic p1 p2 p3 full_weekend_ticket', [0, 0, 0, 25, 40, 0, 0, 0, 120]),
+    ('w1 w2 clinic w3 p1 p2 p3 full_pass', [0, 0, 15, 25, 0, 0, 0, 120]),
+    ('w1 w2 w3 clinic p1 p2 p3 full_pass', [0, 0, 0, 40, 0, 0, 0, 120]),
+    ('w1 w2 w3 w4 clinic p1 p2 p3 full_pass', [0, 0, 0, 25, 40, 0, 0, 0, 120]),
 
-    ('w1 beg1 beg2 clinic p1 p2 p3 fast_shag_train', [25, 0, 0, 40, 0, 0, 0, 90]),
+    ('w1 beg1 beg2 clinic p1 p2 p3 shag_novice', [25, 0, 0, 40, 0, 0, 0, 90]),
 ])
 def test_mind_the_shag_price_rule(mts_tickets, mts_pricing_rules, mr_x, ms_y, registration_keys, expected_prices):
     pricer = TicketPricer(mts_tickets, mts_pricing_rules)
@@ -238,3 +238,52 @@ def test_mind_the_shag_price_rule(mts_tickets, mts_pricing_rules, mr_x, ms_y, re
     expected_prices_couple = expected_prices + [30]
     assert sum(expected_prices_couple) == sum([r.price for r in registrations_couple])
     assert expected_prices_couple == [r.price for r in registrations_couple]
+
+
+@pytest.mark.parametrize("prior_registration_keys,registration_keys,expected_prices", [
+    ("w1 w2", "w3", [30]),
+    ("w1 w2", "party_pass", [55]),
+    ("w1 w2 p1", "party_pass", [35]),  # party is 20, hence party_pass upgrade is 55-20=35
+    ("w1 w2", "full_pass", [60]),  # full_pass=120, station=30, upgrade=120-2*30=60
+    ("w1 w2 p1", "full_pass", [40]),  # full_pass=120, station=30, upgrade=120-2*30=60
+    ("p1 p2 p3 party_pass", "full_pass", [65]),  # full_pass=120, party_pass=55
+    ("w1 p1 p2 p3 party_pass", "full_pass", [35]),  # full_pass=120, party_pass=55
+    ("w1 w2 p1 p2 p3 party_pass", "full_pass", [5]),  # full_pass=120, party_pass=55
+    ("w1", "shag_novice_no_parties", [40]),  # shag_novice_no_parties=45
+    ("w1 p1", "shag_novice", [65]),  # shag_novice=90. 90-5-20=65
+    ("beg1", "shag_novice_no_parties", [15]),  # shag_novice_no_parties=45, beg1=30
+    ("beg1 p1", "shag_novice", [40]),  # 90 - 30 - 20 = 40
+])
+def test_mind_the_shag_price_rule_with_prior(mts_tickets, mts_pricing_rules, mr_x, ms_y,
+                                             prior_registration_keys, registration_keys, expected_prices):
+    pricer = TicketPricer(mts_tickets, mts_pricing_rules)
+
+    # solo registration
+    prior_registrations = [Registration(person=mr_x, registered_by=mr_x, ticket_key=k, active=True)
+                     for k in prior_registration_keys.split(' ')]
+    registrations = [Registration(person=mr_x, registered_by=mr_x, ticket_key=k)
+                     for k in registration_keys.split(' ')]
+    pricer.price_all(registrations, prior_registrations=prior_registrations)
+    assert sum(expected_prices) == sum([r.price for r in registrations])
+    assert expected_prices == [r.price for r in registrations]
+
+    # couple registration
+    prior_registrations_x = [Registration(person=mr_x, registered_by=mr_x, ticket_key=k, active=True)
+                       for k in prior_registration_keys.split(' ')]
+    prior_registrations_y = [Registration(person=ms_y, registered_by=mr_x, ticket_key=k, active=True)
+                       for k in prior_registration_keys.split(' ')]
+    prior_registrations_couple = prior_registrations_x + prior_registrations_y
+    registrations_x = [Registration(person=mr_x, registered_by=mr_x, ticket_key=k)
+                       for k in registration_keys.split(' ')]
+    registrations_y = [Registration(person=ms_y, registered_by=mr_x, ticket_key=k)
+                       for k in registration_keys.split(' ')]
+    registrations_couple = registrations_x + registrations_y
+    pricer.price_all(registrations_couple, prior_registrations=prior_registrations_couple)
+    expected_prices_couple = expected_prices + expected_prices
+    assert sum(expected_prices_couple) == sum([r.price for r in registrations_couple])
+    assert expected_prices_couple == [r.price for r in registrations_couple]
+
+    # prior was couple, now solo
+    pricer.price_all(registrations_x, prior_registrations=prior_registrations_couple)
+    assert sum(expected_prices) == sum([r.price for r in registrations_x])
+    assert expected_prices == [r.price for r in registrations_x]

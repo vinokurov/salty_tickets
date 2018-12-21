@@ -162,6 +162,8 @@ class MindTheShagPriceRule(BasePriceRule):
         elif registration.ticket_key in party_keys:
             if self._has_tags(registration_keys, event_tickets, {self.tag_includes_parties}):
                 return 0.0
+            else:
+                return event_tickets[registration.ticket_key].base_price
 
         elif 'pass' in event_tickets[registration.ticket_key].tags:
             if skip_prior:

@@ -313,7 +313,7 @@ def get_payment_from_form(event: Event, form, extra_registrations=None,
     for ticket_key, ticket in event.tickets.items():
         registrations += ticket.parse_form(form)
 
-    validate_registrations(event, registrations + prior_registrations)
+    validate_registrations(event, registrations + (prior_registrations or []))
 
     purchases = []
     for product_key, product in event.products.items():
