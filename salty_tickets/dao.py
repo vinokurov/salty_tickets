@@ -509,6 +509,9 @@ class TicketsDAO:
         if payment.transactions != transactions:
             doc.transactions = [TransactionDocument.from_dataclass(t) for t in payment.transactions or []]
             doc.save()
+        if payment.discounts != [d.to_dataclass() for d in doc.discounts or []]:
+            doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts or []]
+            doc.save()
 
     def mark_registrations_as_couple(self, registration_1: Registration, registration_2: Registration):
         registration_1.partner = registration_2.person

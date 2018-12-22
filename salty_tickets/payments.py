@@ -118,6 +118,22 @@ def stripe_charge_customer(transaction: TransactionDetails, payment: Payment, st
         return False
 
 
+def stripe_refund(transaction: TransactionDetails, payment: Payment, stripe_sk, reason: str = 'requested_by_customer'):
+    amount = transaction.price + transaction.transaction_fee
+    with stripe_session(stripe_sk) as sp:
+        charge_id = payment.stripe.charges[0]
+        refund = sp.Refund.create(
+            charge=charge_id,
+            amount=stripe_amount(amount),
+            reason=reason,
+        )
+        payment.stripe.charges.append(refund.get('id'))
+        transaction.success = True
+        transaction.stripe_charge_id = refund.get('id')
+        payment.transactions.append(transaction)
+        return True
+
+
 def update_payment_total(payment):
     # amount = sum([item.amount for item in payment.payment_items if item.amount])
     # payment.amount = amount
