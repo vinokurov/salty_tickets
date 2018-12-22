@@ -172,6 +172,7 @@ def test_do_price(test_dao, app_routes, client, sample_data):
     res = post_json_data(client, '/price', sample_data.form_data)
 
     expected = sample_data.pricing_results.copy()
+    expected['new_prices'] = [{'ticket_key': 'party', 'price': 10}]
     expected['checkout_success'] = False
     expected['disable_checkout'] = False
     assert expected == res.json
@@ -224,6 +225,7 @@ def test_do_checkout(test_dao, app_routes, client, sample_data):
     expected = sample_data.pricing_results.copy()
     expected['payment_id'] = ''
     expected['checkout_success'] = True
+    expected['new_prices'] = [{'ticket_key': 'party', 'price': 10}]
     assert expected == res.json
 
     # payment is saved in the session
