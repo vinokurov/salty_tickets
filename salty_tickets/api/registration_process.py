@@ -403,7 +403,7 @@ def get_extra_registrations_from_partner_token(dao: TicketsDAO, event: Event, fo
 def try_resolve_person_tokens_in_form(form: DanceSignupForm, dao: TicketsDAO) -> Person:
     if form.partner_registration_token.data:
         try:
-            partner_person = RegistrationToken().deserialize(dao, form.partner_registration_token.data)
+            partner_person = RegistrationToken().deserialize(dao, form.partner_registration_token.data.strip())
             if partner_person is not None:
                 form.partner_name.data = partner_person.full_name
                 form.partner_email.data = partner_person.email
@@ -413,7 +413,7 @@ def try_resolve_person_tokens_in_form(form: DanceSignupForm, dao: TicketsDAO) ->
             pass
     if form.registration_token.data:
         try:
-            primary_person = RegistrationToken().deserialize(dao, form.registration_token.data)
+            primary_person = RegistrationToken().deserialize(dao, form.registration_token.data.strip())
             if primary_person is not None:
                 form.name.data = primary_person.full_name
                 form.email.data = primary_person.email
@@ -441,7 +441,7 @@ def do_price(dao: TicketsDAO, event_key: str):
         errors = {}
         errors.update(validate_registrations(event, payment.registrations + prior_registrations))
         errors.update(form.errors)
-        new_prices = get_new_prices(event, payment.paid_by,
+        new_prices = get_new_prices(event, payment.paid_by or prior_registred_by,
                                     payment.registrations + prior_registrations)
         return PricingResult.from_payment(event, payment, errors, new_prices=new_prices)
 
@@ -473,7 +473,7 @@ def do_checkout(dao: TicketsDAO, event_key: str):
         errors = {}
         errors.update(validate_registrations(event, payment.registrations + prior_registrations))
         errors.update(form.errors)
-        new_prices = get_new_prices(event, payment.paid_by,
+        new_prices = get_new_prices(event, payment.paid_by or prior_registred_by,
                                     payment.registrations + prior_registrations)
         pricing_result = PricingResult.from_payment(event, payment, errors, new_prices=new_prices)
         if valid and not errors and not pricing_result.disable_checkout:
@@ -814,18 +814,15 @@ class PriorRegistrationsInfo(DataClassJsonMixin):
     new_prices: typing.List = field(default_factory=list)
 
     @classmethod
-    def from_registration_list(cls, registrations: typing.List[Registration]):
+    def from_registration_list(cls, registrations: typing.List[Registration], person: Person):
+        regs_info = cls(person=person.full_name)
         if registrations:
-            person = registrations[0].registered_by
-            regs_info = cls(
-                person=person.full_name,
-                registrations=[RegistrationInfo.from_registration(r) for r in registrations]
-            )
+            regs_info.registrations = [RegistrationInfo.from_registration(r) for r in registrations]
             for reg in registrations:
                 if reg.person != person:
                     regs_info.partner = reg.person.full_name
                     break
-            return regs_info
+        return regs_info
 
 
 def do_get_prior_registrations(dao: TicketsDAO, event_key: str):
@@ -836,7 +833,7 @@ def do_get_prior_registrations(dao: TicketsDAO, event_key: str):
     person = try_resolve_person_tokens_in_form(form, dao)
     if person:
         registrations = get_prior_registrations(dao, event, person)
-        regs_info = PriorRegistrationsInfo.from_registration_list(registrations)
+        regs_info = PriorRegistrationsInfo.from_registration_list(registrations, person)
         regs_info.new_prices = get_new_prices(event, person, registrations)
 
         return regs_info

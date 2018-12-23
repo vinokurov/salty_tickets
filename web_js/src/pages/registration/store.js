@@ -92,6 +92,7 @@ export default new Vuex.Store({
     },
     setPriorRegistrations (state, prior_registrations) {
       state['prior_registrations'] = prior_registrations;
+      state['new_ticket_prices'] = prior_registrations.new_prices;
     },
     setPaymentResponseDetails (state, payment_response) {
       state.payment_response = payment_response

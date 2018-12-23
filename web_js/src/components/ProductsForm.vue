@@ -186,7 +186,7 @@ export default {
       this.prior_registrations.registrations.forEach((reg) => {
         keys_to_disable.push(reg.ticket_key)
         this.tickets.forEach((t) => {
-          if(t.start_datetime == this.getTicketByKey(reg.ticket_key).start_datetime) {
+          if(t.start_datetime && (t.start_datetime == this.getTicketByKey(reg.ticket_key).start_datetime)) {
             keys_to_disable.push(t.key)
           }
         })
@@ -195,6 +195,20 @@ export default {
         keys_to_disable.push('shag_novice')
         keys_to_disable.push('shag_novice_no_parties')
       }
+
+      if (keys_to_disable.indexOf('full_pass') > -1) {
+        keys_to_disable.push('party_pass')
+        keys_to_disable.push('shag_novice')
+        keys_to_disable.push('shag_novice_no_parties')
+      }
+      if (keys_to_disable.indexOf('party_pass') > -1) {
+        keys_to_disable.push('shag_novice')
+      }
+      if (keys_to_disable.indexOf('shag_novice') > -1) {
+        keys_to_disable.push('party_pass')
+        keys_to_disable.push('shag_novice_no_parties')
+      }
+
 
       keys_to_disable.forEach((ticket_key) => {
         this.getTicketByKey(ticket_key).choice = null;
@@ -274,11 +288,6 @@ export default {
 
     },
     getSpecialPrice(ticket_key){
-      // if(ticket_key == 'shag_clinic'){
-      //   return this.clinic_discounted_price
-      // } else {
-      //   return this.station_discounted_price
-      // }
       let new_price = this.getTicketNewPrice(ticket_key)
       let base_price = this.getTicketByKey(ticket_key).price
       if ((new_price != null) && (new_price < base_price)) return new_price
