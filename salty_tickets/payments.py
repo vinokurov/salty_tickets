@@ -124,7 +124,7 @@ def stripe_refund(transaction: TransactionDetails, payment: Payment, stripe_sk, 
         charge_id = payment.stripe.charges[0]
         refund = sp.Refund.create(
             charge=charge_id,
-            amount=stripe_amount(amount),
+            amount=-stripe_amount(amount),
             reason=reason,
         )
         payment.stripe.charges.append(refund.get('id'))

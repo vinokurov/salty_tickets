@@ -47,7 +47,7 @@ def refund_payment(payment, refund_amount, description='Refund'):
         print(f'Invalid refund amount: {refund_amount}')
         return False
 
-    transaction = TransactionDetails(price=refund_amount, description=description)
+    transaction = TransactionDetails(price=-refund_amount, description=description)
     if not stripe_refund(transaction, payment, STRIPE_SK):
         print('Stripe refund failed')
         return False
