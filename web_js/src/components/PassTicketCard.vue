@@ -4,9 +4,11 @@
         <div class="card-body">
             <div class="d-flex justify-content-between">
               <h5 class="card-title"><font-awesome icon="lock" v-if="!editable"/> {{title}}</h5>
-              <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
-              <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
-              <span class="h4" v-else>£{{price}}</span>
+              <span v-if="!disabled">
+                <span class="h4" v-if="paid_price != null">£{{paid_price}}</span>
+                <span v-else-if="special_price != null"><span class="h4">£{{special_price}}</span><br/><small><strike>£{{price}}</strike></small></span>
+                <span class="h4" v-else>£{{price}}</span>
+              </span>
             </div>
             {{product.info}}
             <switch-button
