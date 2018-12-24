@@ -41,6 +41,7 @@
                     <b-input-group class="my-2">
                          <b-input-group-text><font-awesome icon="key"></font-awesome></b-input-group-text>
                          <b-form-input v-model="primaryDiscountCode" class="form-control" placeholder="Discount/Group code" id="discount_code" name="discount_code"></b-form-input>
+                         <b-btn @click="primaryDiscountCode=''" v-if="primaryDiscountCode"><font-awesome icon="times"/></b-btn>
                     </b-input-group>
                     <b-button-group>
                       <b-button @click="primaryDiscountCode='OVERSEAS'">
@@ -57,6 +58,7 @@
                     <b-input-group class="my-2">
                          <b-input-group-text><font-awesome icon="key"></font-awesome></b-input-group-text>
                          <b-form-input v-model="registrationToken" class="form-control" placeholder="Prior Registration Token" id="registration_token" name="registration_token"></b-form-input>
+                         <b-btn @click="registrationToken=''" v-if="registrationToken"><font-awesome icon="times"/></b-btn>
                     </b-input-group>
 
                     <div v-if="priorPrimaryName">

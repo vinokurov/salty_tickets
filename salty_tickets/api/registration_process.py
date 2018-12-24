@@ -808,8 +808,9 @@ class RegistrationInfo(DataClassJsonMixin):
 
 @dataclass
 class PriorRegistrationsInfo(DataClassJsonMixin):
-    person: str
+    person: str = None
     partner: str = None
+    partner_reg_token: str = None
     registrations: typing.List[RegistrationInfo] = field(default_factory=list)
     new_prices: typing.List = field(default_factory=list)
 
@@ -821,6 +822,7 @@ class PriorRegistrationsInfo(DataClassJsonMixin):
             for reg in registrations:
                 if reg.person != person:
                     regs_info.partner = reg.person.full_name
+                    regs_info.partner_reg_token = RegistrationToken().serialize(reg.person)
                     break
         return regs_info
 
@@ -837,6 +839,8 @@ def do_get_prior_registrations(dao: TicketsDAO, event_key: str):
         regs_info.new_prices = get_new_prices(event, person, registrations)
 
         return regs_info
+
+    return PriorRegistrationsInfo()
 
 
 def get_new_prices(event: Event, person: Person, registrations: typing.List[Registration]):

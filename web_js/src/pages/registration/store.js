@@ -18,6 +18,7 @@ const my_state = {
     partner: {name:null, email:null, location: null},
     partner_token:null,
     registration_token: null,
+    partner_registration_token: null,
     pay_all: 'y',
   },
   cart: {
@@ -93,6 +94,7 @@ export default new Vuex.Store({
     setPriorRegistrations (state, prior_registrations) {
       state['prior_registrations'] = prior_registrations;
       state['new_ticket_prices'] = prior_registrations.new_prices;
+      state.registration.partner_registration_token = prior_registrations.partner_reg_token;
     },
     setPaymentResponseDetails (state, payment_response) {
       state.payment_response = payment_response
@@ -249,6 +251,7 @@ export default new Vuex.Store({
         comment: state.registration.primary.comment || '',
         dance_role: state.registration.primary.dance_role || '',
         registration_token: state.registration.registration_token || '',
+        partner_registration_token: state.registration.partner_registration_token || '',
         generic_discount_code: state.registration.primary.discount_code || '',
         partner_name: state.registration.partner.name || '',
         partner_email: state.registration.partner.email || '',

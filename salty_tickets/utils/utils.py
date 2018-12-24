@@ -21,7 +21,10 @@ def string_to_key(str_var):
 
 
 def jsonify_dataclass(dataclass_inst: DataClassJsonMixin):
-    return jsonify(json.loads(dataclass_inst.to_json()))
+    if dataclass_inst is not None:
+        return jsonify(json.loads(dataclass_inst.to_json()))
+    else:
+        return "{}"
 
 
 def crossdomain(origin=None, methods=None, headers=None,

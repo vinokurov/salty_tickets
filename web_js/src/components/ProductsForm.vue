@@ -209,10 +209,13 @@ export default {
         keys_to_disable.push('shag_novice_no_parties')
       }
 
-
-      keys_to_disable.forEach((ticket_key) => {
-        this.getTicketByKey(ticket_key).choice = null;
-        this.getTicketByKey(ticket_key).editable = false;
+      this.tickets.forEach((t) => {
+        if (keys_to_disable.indexOf(t.key) > -1 ) {
+          t.choice = null
+          t.editable = false
+        } else if (! (t.choice && t.etitable)) {
+          t.editable = true
+        }
       })
 
       this.$store.dispatch('requestPrice');
