@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, request
 from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
 from salty_tickets import app
@@ -48,7 +48,8 @@ def event_index(event_key):
     if event is None:
         abort(404)
     form = FlaskForm()
-    return render_template("event.html", event=event, form=form, stripe_pk=config.STRIPE_PK)
+    reg_token = request.args.get('reg_token', default='')
+    return render_template("event.html", event=event, form=form, stripe_pk=config.STRIPE_PK, reg_token=reg_token)
 
 
 @app.route('/event/<string:event_key>', methods=['GET', 'OPTIONS'])

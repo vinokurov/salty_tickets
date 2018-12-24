@@ -117,6 +117,7 @@ class UserOrderInfo(DataClassJsonMixin):
     reg_token: str = None
     event_name: str = None
     event_info: str = None
+    event_key: str = None
     payments: List[PaymentInfo] = field(default_factory=list)
     tickets: List[RegistrationInfo] = field(default_factory=list)
     products: List[PurchaseInfo] = field(default_factory=list)
@@ -140,6 +141,7 @@ class UserOrderInfo(DataClassJsonMixin):
             # pmt_token=PaymentId().serialize(payment),
             event_name=event.name,
             event_info=event.info,
+            event_key=event.key,
             payments=[PaymentInfo.from_payment(p) for p in all_payments],
             tickets=tickets,
             products=products,

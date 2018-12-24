@@ -8,7 +8,7 @@ from salty_tickets.config import EMAIL_FROM
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import Payment, Registration
-from salty_tickets.tokens import PaymentId, PartnerToken
+from salty_tickets.tokens import PaymentId, PartnerToken, RegistrationToken
 
 
 def send_email(email_from, email_to, subj, body_text, body_html, files=None):
@@ -30,13 +30,16 @@ def send_email(email_from, email_to, subj, body_text, body_html, files=None):
 
 def send_registration_confirmation(payment: Payment, event: Event):
     order_status_url = url_for('user_order_index', pmt_token=PaymentId().serialize(payment), _external=True)
+    order_update_url = url_for('event_index', event_key=event.key,
+                               reg_token=RegistrationToken().serialize(payment.paid_by), _external=True)
 
     # ptn_token = PartnerToken().serialize(payment.paid_by)
     body_text = render_template('email/registration_confirmation.txt',
                                 payment=payment,
                                 event=event,
                                 # ptn_token=ptn_token,
-                                order_status_url=order_status_url)
+                                order_status_url=order_status_url,
+                                order_update_url=order_update_url)
 
     subj = f'{event.name} - Registration'
 

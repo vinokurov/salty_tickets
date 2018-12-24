@@ -62,6 +62,9 @@ if (stripe_field) {
   Vue.use(VueStripeCheckout, checkout_base_options);
 }
 
+const reg_token_field = document.getElementById("reg_token");
+if (reg_token_field) {my_state.registration.registration_token = reg_token_field.value}
+
 export default new Vuex.Store({
   plugins: [pathify.plugin],
 
@@ -127,13 +130,17 @@ export default new Vuex.Store({
   },
 
   actions: {
-    async initEvent ({context, state}) {
+    async initEvent ({context, state, dispatch}) {
       const url = '/event/mind_the_shag_2019'
       let response = await axios.get(url)
       state.layout = response.data.layout
       state.tickets = response.data.tickets
       state.products = response.data.products
       state.event_name = response.data.name
+
+      if(state.registration.registration_token) {
+        await dispatch('requestPriorRegistrations');
+      }
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
       const url = '/price/mind_the_shag_2019'

@@ -24,6 +24,7 @@ Order Summary
     REMAINING: £{{payment.price - payment.paid_price}}{%endif%}
 
 You can see your order status following this link: {{order_status_url}}.
+To update your order please click: {{order_update_url}} .
 
 Lots of love,
 Salty Jitterbugs Team
