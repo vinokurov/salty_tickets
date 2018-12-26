@@ -1,6 +1,5 @@
 <template>
   <div id="registration_form">
-
     <div class="container-fluid">
       <div class="container my-4">
         <h2 class="h2 display-4 text-center my-5">Weekend Passes</h2>
@@ -95,7 +94,41 @@
       <div class="container my-4" v-if="products.length">
         <h2  class="h2 display-4 text-center my-5">Extras</h2>
 
-        <div>
+        <b-container>
+          <b-row class="justify-content-md-center">
+            <b-col col lg="8" class="text-justify">
+              At Mind the Shag we are trying to make the world a better place.
+              Not only by bringing more joy to the dance comunity, but also by
+              keeping high environment safe and sustainable production standards.
+            </b-col>
+          </b-row>
+          <b-row class="justify-content-md-center my-3">
+            <b-col col lg="4" class="text-justify">
+              Our Earth is dying and we have to realise that there is not a plan B.
+              We will make our festival <b>PLASTIC FREE</b>!
+              While of course we will have water,
+              there will be no single use plastic cups neither at the workshops nor at the parties.
+              <b>Please bring your own water bottles</b> and refill them at the festival
+              or <b>get an MTS branded aluminium bottle</b>.
+            </b-col>
+
+            <b-col col lg="4" class="text-justify">
+              For our T-shirts and bags we will collaborate with a <b>RESPONSIBLE SUPPLIER</b>
+              to  ensure that NO CHILD LABOUR or SWEATSHOPS have been used
+              in the production of our products as cheap products come from reducing the salary
+              of the workers.
+            </b-col>
+          </b-row>
+          <b-row class="justify-content-md-center">
+            <b-col col lg="8" class="text-justify">
+              The prices of the T-shirts, bags and aluminium bottles are very close to the costs.
+              In order to keep them as low as possible they will be available on pre-order only.
+              We are happy to share the transparency of the pricecost with you.
+            </b-col>
+          </b-row>
+        </b-container>
+
+        <div class="my-5">
           <b-card-group deck>
             <MerchandiseProductCard :inputName='products[0].key'></MerchandiseProductCard>
             <MerchandiseProductCard :inputName='products[1].key'></MerchandiseProductCard>

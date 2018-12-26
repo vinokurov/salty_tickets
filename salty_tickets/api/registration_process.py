@@ -139,6 +139,33 @@ class ProductInfo(DataClassJsonMixin):
 
 
 @dataclass
+class EventRegistrationStatsInfo(DataClassJsonMixin):
+    persons_count: int = None
+    workshops_accepted: int = None
+    countries_count: int = None
+    locations_count: int = None
+
+    @classmethod
+    def from_event(cls, event: Event):
+        registrations = []
+        for p_key, p in event.tickets.items():
+            registrations = registrations + p.registrations
+        registrations = [r for r in registrations if r.active]
+        persons = {r.person.full_name.lower(): r.person for r in registrations}.values()
+
+        def location_to_tuple(location_dict):
+            return tuple({k: v for k, v in location_dict.items() if k != 'query'}.items())
+
+        return cls(
+            persons_count=len(persons),
+            workshops_accepted=len([r for r in registrations if not r.wait_listed
+                                    and isinstance(event.tickets[r.ticket_key], WorkshopTicket)]),
+            countries_count=len(set([p.location.get('country_code') for p in persons])),
+            locations_count=len(set([location_to_tuple(p.location) for p in persons])),
+        )
+
+
+@dataclass
 class EventInfo(DataClassJsonMixin):
     name: str
     key: str
@@ -146,9 +173,11 @@ class EventInfo(DataClassJsonMixin):
     products: List
     # discount_products: List
     layout: Dict
+    registrations_stats: EventRegistrationStatsInfo = None
 
     @classmethod
     def from_event(cls, event):
+
         return cls(
             name=event.name,
             key=event.key,
@@ -156,7 +185,8 @@ class EventInfo(DataClassJsonMixin):
             products=[ProductInfo.from_product(p) for k, p in event.products.items()],
             # discount_products=[DiscountProductInfo.from_discount_product(p)
             #                    for k, p in event.discount_products.items()],
-            layout=event.layout
+            layout=event.layout,
+            registrations_stats=EventRegistrationStatsInfo.from_event(event),
         )
 
 

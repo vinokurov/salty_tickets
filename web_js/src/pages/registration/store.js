@@ -12,6 +12,12 @@ const my_state = {
   products: [],
   layout: {},
   event_name: '',
+  event_registration_stats: {
+    persons_count: null,
+    workshops_accepted: null,
+    countries_count: null,
+    locations_count: null
+  },
   registration: {
     primary: {name:null, email:null, location: null,
               dance_role:null, comments:null},
@@ -137,6 +143,7 @@ export default new Vuex.Store({
       state.tickets = response.data.tickets
       state.products = response.data.products
       state.event_name = response.data.name
+      state.event_registration_stats = response.data.registrations_stats
 
       if(state.registration.registration_token) {
         await dispatch('requestPriorRegistrations');
