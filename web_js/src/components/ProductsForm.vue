@@ -221,13 +221,14 @@ export default {
         this.tickets.forEach((t) => {
           if(t.start_datetime && (t.start_datetime == this.getTicketByKey(reg.ticket_key).start_datetime)) {
             keys_to_disable.push(t.key)
+
+            if( t.key == 'shag_essentials') {
+              keys_to_disable.push('shag_novice')
+              keys_to_disable.push('shag_novice_no_parties')
+            }
           }
         })
       })
-      if(keys_to_disable.indexOf('shag_abc') > -1 || keys_to_disable.indexOf('shag_essentials') > -1) {
-        keys_to_disable.push('shag_novice')
-        keys_to_disable.push('shag_novice_no_parties')
-      }
 
       if (keys_to_disable.indexOf('full_pass') > -1) {
         keys_to_disable.push('party_pass')

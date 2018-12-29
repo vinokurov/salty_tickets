@@ -712,7 +712,7 @@ def do_check_partner_token(dao: TicketsDAO):
 
 
 def set_payment_totals(payment: Payment):
-    payment.price = sum([r.price for r in payment.items if r.price] or [0])
+    payment.price = max(0, sum([r.price for r in payment.items if r.price] or [0]))
     discounts_value = sum([d.value for d in payment.discounts if d.value] or [0])
     if discounts_value:
         if discounts_value > payment.price:

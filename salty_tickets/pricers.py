@@ -192,7 +192,7 @@ class MindTheShagPriceRule(BasePriceRule):
                                                         event_tickets, priced_regs, skip_prior=True) or 0
                     priced_regs.append(reg)
 
-                return max(0, prior_total_price_new - prior_total_price)
+                return prior_total_price_new - prior_total_price
 
 
 
