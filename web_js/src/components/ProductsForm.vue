@@ -221,13 +221,13 @@ export default {
         this.tickets.forEach((t) => {
           if(t.start_datetime && (t.start_datetime == this.getTicketByKey(reg.ticket_key).start_datetime)) {
             keys_to_disable.push(t.key)
-
-            if( t.key == 'shag_essentials') {
-              keys_to_disable.push('shag_novice')
-              keys_to_disable.push('shag_novice_no_parties')
-            }
           }
         })
+
+        if((reg.ticket_key == 'showmans_shag') || (reg.ticket_key == 'hurracaine_shag')) {
+          keys_to_disable.push('shag_novice')
+          keys_to_disable.push('shag_novice_no_parties')
+        }
       })
 
       if (keys_to_disable.indexOf('full_pass') > -1) {

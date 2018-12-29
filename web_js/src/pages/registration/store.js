@@ -51,6 +51,7 @@ const my_state = {
     person: null,
     partner: null,
     registrations: [],
+    dance_role: null,
   },
 }
 
@@ -104,6 +105,7 @@ export default new Vuex.Store({
       state['prior_registrations'] = prior_registrations;
       state['new_ticket_prices'] = prior_registrations.new_prices;
       state.registration.partner_registration_token = prior_registrations.partner_reg_token;
+      state.registration.primary.dance_role = prior_registrations.dance_role;
     },
     setPaymentResponseDetails (state, payment_response) {
       state.payment_response = payment_response
