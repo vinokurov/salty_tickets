@@ -32,8 +32,8 @@ TIME_SUN_2 = {'start_datetime': datetime(2019, 3, 31, 14, 0),
 TIME_SUN_3 = {'start_datetime': datetime(2019, 3, 31, 16, 30),
               'end_datetime': datetime(2019, 3, 31, 18, 30)}
 
-TEACH_PA = 'Fancy & Patrick'
-TEACH_PF = 'Aila & Peter'
+TEACH_PA = 'Aila & Patrick'
+TEACH_PF = 'Fancy & Peter'
 TEACH_FC = 'Cherry & Filip'
 TEACH_RS = 'Simona & Rokas'
 TEACH_TM = 'Maja & Teis'

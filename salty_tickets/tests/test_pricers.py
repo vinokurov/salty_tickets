@@ -161,7 +161,8 @@ def mts_tickets():
 @pytest.fixture
 def mts_pricing_rules():
     return [
-        MindTheShagPriceRule(price_station=30.0, price_station_extra=25.0, price_clinic=40.0),
+        MindTheShagPriceRule(price_station=30.0, price_station_extra=25.0, price_clinic=40.0,
+                             price_cheaper_station_extra=15.0),
         TaggedBasePriceRule(tag='pass'),
         TaggedBasePriceRule(tag='party'),
     ]

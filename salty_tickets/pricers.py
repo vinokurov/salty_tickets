@@ -108,11 +108,13 @@ class MindTheShagPriceRule(BasePriceRule):
     price_station: float
     price_clinic: float
     price_station_extra: float
+    price_cheaper_station_extra: float
 
     tag_station: str = 'station'
     tag_fast_train: str = 'train'
     tag_party: str = 'party'
     tag_clinic: str = 'clinic'
+    tag_cheaper: str = 'cheaper_station'
 
     tag_station_discount_3: str = 'station_discount_3'
     tag_station_discount_2: str = 'station_discount_2'
@@ -132,6 +134,7 @@ class MindTheShagPriceRule(BasePriceRule):
         fast_train_station_keys = self.filter_tickets_by_tag(event_tickets, self.tag_fast_train)
         party_keys = self.filter_tickets_by_tag(event_tickets, self.tag_party)
         clinic_keys = self.filter_tickets_by_tag(event_tickets, self.tag_clinic)
+        cheaper_keys = self.filter_tickets_by_tag(event_tickets, self.tag_cheaper)
 
         stations_priced_count = len([r for r in person_priced_registrations if r.ticket_key in station_keys])
 
@@ -148,12 +151,19 @@ class MindTheShagPriceRule(BasePriceRule):
             if self._has_tags(registration_keys, event_tickets, {self.tag_station_discount_2}):
                 if registration.ticket_key in fast_train_station_keys:
                     return 0.0
+                elif registration.ticket_key in cheaper_keys:
+                    return self.price_cheaper_station_extra
                 else:
                     return self.price_station_extra
 
             elif self._has_tags(registration_keys, event_tickets, {self.tag_station_discount_3}):
                 if stations_priced_count < 3:
-                    return 0
+                    if registration.ticket_key in cheaper_keys:
+                        return self.price_cheaper_station_extra - self.price_station_extra
+                    else:
+                        return 0
+                elif registration.ticket_key in cheaper_keys:
+                    return self.price_cheaper_station_extra
                 else:
                     return self.price_station_extra
             else:

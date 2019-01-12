@@ -35,10 +35,10 @@
                 <b-badge pill variant="danger">SOLD OUT</b-badge>
               </th>
               <th class="table-success">
-                Off Peak<br/><small>150-500 stations</small><br/>
+                Off Peak<br/><small>150-450 stations</small><br/>
                 <b-badge pill variant="success">CURRENT TARIFF</b-badge>
               </th>
-              <th>Rush Hour<br/><small>After 500 stations</small></th>
+              <th>Rush Hour<br/><small>After 450 stations</small></th>
             </thead>
             <tbody>
               <tr>
@@ -86,22 +86,22 @@
                 <td>
                   <b-list-group>
                     <b-list-group-item>
-                      <small>Full Pass</small><br/>£150
+                      <small>Full Pass</small><br/>£155
                     </b-list-group-item>
                     <b-list-group-item>
-                      <small>Party Pass</small><br/>£55
+                      <small>Party Pass</small><br/>£65
                     </b-list-group-item>
                     <b-list-group-item>
-                      <small>Single/extra station</small><br/>£35 / £30
+                      <small>Single/extra station</small><br/>£35 / £25
                     </b-list-group-item>
                     <b-list-group-item>
                       <small>Shag Clinic</small><br/>£40
                     </b-list-group-item>
                     <b-list-group-item>
-                      <small>Shag novice track</small><br/>£110 / £60
+                      <small>Shag novice track</small><br/>£120 / £55
                     </b-list-group-item>
                     <b-list-group-item>
-                      <small>Single parties</small><br/>£20 /£25/ £15
+                      <small>Single parties</small><br/>£25 /£35/ £15
                     </b-list-group-item>
                   </b-list-group>
                 </td>
@@ -129,8 +129,25 @@
                 <b>Discount for groups</b> of at least 5 dancers coming from
                 the same country and outside London.
               </b-col>
+              <b-col col lg="4">
+                <h2>£10</h2>
+                <small>Off any registration</small><br/><br/>
+                <b>Discount for those who host</b> Mind the Shag guests
+                coming to London. Refunded after the festival.
+              </b-col>
             </b-row>
           </b-container>
+        </div>
+      </div>
+
+      <div class="container-fluid">
+
+        <div class="container my-5">
+          <b-alert show variant="info">
+            <h3> <font-awesome icon="info-circle" /> Hint! </h3>
+            The new stations <b>Solo Shag</b> and <b>Shag Dynamite</b> are £10 cheaper if booked
+            with the Full Pass or a Shag Novice ticket.
+          </b-alert>
         </div>
       </div>
 
@@ -138,9 +155,11 @@
 </template>
 
 <script>
+import FontAwesome from './FontAwesome.vue'
 import { mapState, mapActions,mapGetters } from 'vuex'
 import { sync } from 'vuex-pathify';
 export default {
+  components: {FontAwesome},
   computed: {
     ...sync({
       personsCount: 'event_registration_stats@persons_count',
