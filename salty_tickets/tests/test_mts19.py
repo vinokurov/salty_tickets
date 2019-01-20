@@ -30,6 +30,7 @@ def mts(test_dao):
                     "price_station": 30.0,
                     "price_clinic": 40.0,
                     "price_station_extra": 25.0,
+                    "price_cheaper_station_extra": 15.0,
                 }
             },
             {

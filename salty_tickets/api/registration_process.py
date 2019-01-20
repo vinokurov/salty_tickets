@@ -580,7 +580,11 @@ def do_pay(dao: TicketsDAO):
                 if extra_reg.active and (reg.ticket_key == extra_reg.ticket_key):
                     take_existing_registration_off_waiting_list(dao, extra_reg, reg.registered_by)
 
-    registration_post_process(dao, payment)
+    # these are optional things. if they get failed, registration is still successfull
+    try:
+        registration_post_process(dao, payment)
+    except Exception as e:
+        print(e)
 
     return PaymentResult.from_paid_payment(payment)
 
@@ -684,9 +688,9 @@ def post_process_discounts(dao: TicketsDAO, payment: Payment, event: Event):
 def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
+    post_process_discounts(dao, payment, event)
     send_registration_confirmation(payment, event)
     balance_event_waiting_lists(dao, event.key)
-    post_process_discounts(dao, payment, event)
 
 
 def do_check_partner_token(dao: TicketsDAO):
