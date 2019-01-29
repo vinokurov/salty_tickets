@@ -148,12 +148,12 @@ HTML_TOP = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;padding-top:5px;padding-bottom:0px;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:25px;line-height:1;text-align:center;color:#fff;"> MIND THE SHAG </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:25px;line-height:1;text-align:center;color:#fff;"> MIND THE SHAG </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;padding-top:5px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:10px;line-height:1;text-align:center;color:#fff;"> London SHAG Festival </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:10px;line-height:1;text-align:center;color:#fff;"> London SHAG Festival </div>
                     </td>
                   </tr>
                   <tr>
@@ -174,7 +174,7 @@ HTML_TOP = """
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;padding-top:3px;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:10px;line-height:1;text-align:center;color:#fff;"> 29-31 March 2019 </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:10px;line-height:1;text-align:center;color:#fff;"> 29-31 March 2019 </div>
                     </td>
                   </tr>
                 </table>
@@ -220,7 +220,7 @@ HTML_TOP = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:13px;line-height:1;text-align:left;color:#000000;">
+                      <div style="font-family:Raleway,Sans-Serif;font-size:13px;line-height:1;text-align:left;color:#000000;">
 
 """
 
@@ -285,7 +285,7 @@ HTML_MIDDLE = """
                     <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
-                          <td align="center" bgcolor="#1B4F72" role="presentation" style="border:none;border-radius:3px;cursor:auto;padding:10px 25px;" valign="middle"> <a href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%" style="background:#1B4F72;color:white;font-family:Noto Sans TC;font-size:13px;font-weight:normal;line-height:120%;Margin:0;text-decoration:none;text-transform:none;"
+                          <td align="center" bgcolor="#1B4F72" role="presentation" style="border:none;border-radius:3px;cursor:auto;padding:10px 25px;" valign="middle"> <a href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%" style="background:#1B4F72;color:white;font-family:Noto Sans TC,Sans-Serif;font-size:13px;font-weight:normal;line-height:120%;Margin:0;text-decoration:none;text-transform:none;"
                               target="_blank">
               Book for just £15
             </a> </td>
@@ -341,27 +341,27 @@ HTML_SHAG_DYNAMITE = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:20px;line-height:1;text-align:left;color:#626262;"> SHAG DYNAMITE </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:20px;line-height:1;text-align:left;color:#626262;"> SHAG DYNAMITE </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:2px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:12px;line-height:1;text-align:left;color:#626262;"> Lasrissa & Heiko </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:12px;line-height:1;text-align:left;color:#626262;"> Lasrissa & Heiko </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:10px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:12px;line-height:1;text-align:left;color:red;"> Collegiate Shag Veteran </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:12px;line-height:1;text-align:left;color:red;"> Collegiate Shag Veteran </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:15px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:10px;line-height:1;text-align:left;color:#000000;"> Sunday 31-March, 14:00-16:00 </div>
+                      <div style="font-family:Raleway,Sans-Serif;font-size:10px;line-height:1;text-align:left;color:#000000;"> Sunday 31-March, 14:00-16:00 </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:13px;line-height:1;text-align:left;color:#000000;"> Looking for more power moves for competitions, performances or to spice up your social Shag? In this station Larissa & Heiko, the Jitterbugs from Basel, who have competed in almost every major Shag event in the world, are going to
+                      <div style="font-family:Raleway,Sans-Serif;font-size:13px;line-height:1;text-align:left;color:#000000;"> Looking for more power moves for competitions, performances or to spice up your social Shag? In this station Larissa & Heiko, the Jitterbugs from Basel, who have competed in almost every major Shag event in the world, are going to
                         share their favourite killer moves! </div>
                     </td>
                   </tr>
@@ -436,27 +436,27 @@ HTML_SOLO_SHAG = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:20px;line-height:1;text-align:left;color:#626262;"> SOLO SHAG </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:20px;line-height:1;text-align:left;color:#626262;"> SOLO SHAG </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:2px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:12px;line-height:1;text-align:left;color:#626262;"> Cherry & Filip </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:12px;line-height:1;text-align:left;color:#626262;"> Cherry & Filip </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:10px;padding-bottom:0;word-break:break-word;">
-                      <div style="font-family:Noto Sans TC;font-size:12px;line-height:1;text-align:left;color:#0033cc;"> Collegiate Shag </div>
+                      <div style="font-family:Noto Sans TC,Sans-Serif;font-size:12px;line-height:1;text-align:left;color:#0033cc;"> Collegiate Shag </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;padding-top:15px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:10px;line-height:1;text-align:left;color:#000000;"> Sunday 31-March, 16:30-18:30 </div>
+                      <div style="font-family:Raleway,Sans-Serif;font-size:10px;line-height:1;text-align:left;color:#000000;"> Sunday 31-March, 16:30-18:30 </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:13px;line-height:1;text-align:left;color:#000000;"> Join the latest trend in the Shag community all over the world! As well as being great fun to dance alone, Solo Shag will also enhance your partner dancing by building your confidence in developing your own personal variations; great
+                      <div style="font-family:Raleway,Sans-Serif;font-size:13px;line-height:1;text-align:left;color:#000000;"> Join the latest trend in the Shag community all over the world! As well as being great fun to dance alone, Solo Shag will also enhance your partner dancing by building your confidence in developing your own personal variations; great
                         for leaders and followers alike! In this station with Cherry and Filip, the pioneers of the style, you will work both solo and in couples. You will learn a 1-minute choreography that will be performed later at the party. </div>
                     </td>
                   </tr>
@@ -532,7 +532,7 @@ HTML_BOTTOM = """
                     <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
-                          <td align="center" bgcolor="#1B4F72" role="presentation" style="border:none;border-radius:3px;cursor:auto;padding:10px 25px;" valign="middle"> <a href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%" style="background:#1B4F72;color:white;font-family:Noto Sans TC;font-size:13px;font-weight:normal;line-height:120%;Margin:0;text-decoration:none;text-transform:none;"
+                          <td align="center" bgcolor="#1B4F72" role="presentation" style="border:none;border-radius:3px;cursor:auto;padding:10px 25px;" valign="middle"> <a href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%" style="background:#1B4F72;color:white;font-family:Noto Sans TC,Sans-Serif;font-size:13px;font-weight:normal;line-height:120%;Margin:0;text-decoration:none;text-transform:none;"
                               target="_blank">
               Book for just £15
             </a> </td>
@@ -583,7 +583,7 @@ HTML_BOTTOM = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:13px;line-height:1;text-align:left;color:#000000;"> Thank you,<br/> Mind the Shag Team </div>
+                      <div style="font-family:Raleway,Sans-Serif;font-size:13px;line-height:1;text-align:left;color:#000000;"> Thank you,<br/> Mind the Shag Team </div>
                     </td>
                   </tr>
                 </table>
@@ -629,7 +629,7 @@ HTML_BOTTOM = """
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway;font-size:8px;line-height:1;text-align:left;color:#000000;"> If you don't want to receive email news from Mind the Shag 2019, please click <a href="https://www.saltyjitterbugs.co.uk/unsubscribe_email/%recipient.reg_token%">unsubscribe</a>. </div>
+                      <div style="font-family:Raleway,Sans-Serif;font-size:8px;line-height:1;text-align:left;color:#000000;"> If you don't want to receive email news from Mind the Shag 2019, please click <a href="https://www.saltyjitterbugs.co.uk/unsubscribe_email/%recipient.reg_token%">unsubscribe</a>. </div>
                     </td>
                   </tr>
                 </table>
@@ -696,7 +696,7 @@ HTML_BOTTOM = """
                               </tr>
                             </table>
                           </td>
-                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="http://mindtheshag.co.uk" style="color:white;font-size:8px;font-family:Raleway;line-height:22px;text-decoration:none;">
+                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="http://mindtheshag.co.uk" style="color:white;font-size:8px;font-family:Raleway,Sans-Serif;line-height:22px;text-decoration:none;">
               http://mindtheshag.co.uk
             </a> </td>
                         </tr>
@@ -719,7 +719,7 @@ HTML_BOTTOM = """
                               </tr>
                             </table>
                           </td>
-                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="https://www.facebook.com/mindtheshag" style="color:white;font-size:8px;font-family:Raleway;line-height:22px;text-decoration:none;">
+                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="https://www.facebook.com/mindtheshag" style="color:white;font-size:8px;font-family:Raleway,Sans-Serif;line-height:22px;text-decoration:none;">
               Facebook
             </a> </td>
                         </tr>
@@ -742,7 +742,7 @@ HTML_BOTTOM = """
                               </tr>
                             </table>
                           </td>
-                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="https://www.youtube.com/channel/UCY1bkFZP8wCHPGM3Ajg5AyQ" style="color:white;font-size:8px;font-family:Raleway;line-height:22px;text-decoration:none;">
+                          <td style="vertical-align:middle;padding:4px 4px 4px 0;"> <a href="https://www.youtube.com/channel/UCY1bkFZP8wCHPGM3Ajg5AyQ" style="color:white;font-size:8px;font-family:Raleway,Sans-Serif;line-height:22px;text-decoration:none;">
               Youtube
             </a> </td>
                         </tr>
@@ -867,8 +867,8 @@ def send_mailing_list(subject, html_body, vars):
         'html': html_body,
         'recipient-variables': json.dumps(vars),
     }
-    if not config.MODE_TESTING:
-        email_data['bcc'] = config.EMAIL_DEBUG
+    # if not config.MODE_TESTING:
+    #     email_data['bcc'] = config.EMAIL_DEBUG
     result = requests.post('https://api.mailgun.net/v3/saltyjitterbugs.co.uk/messages',
                            auth=('api', config.MAILGUN_KEY),
                            data=email_data,
