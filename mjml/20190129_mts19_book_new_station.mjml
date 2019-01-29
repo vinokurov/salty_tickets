@@ -1,0 +1,156 @@
+<mjml>
+  <mj-head>
+    <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
+    <mj-font name="Open Sans Condensed" href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" />
+    <mj-font name="Noto Sans TC"  href="https://fonts.googleapis.com/css?family=Noto+Sans+TC:900" />
+    <mj-font name="Pathway Gothic One"  href="https://fonts.googleapis.com/css?family=Pathway+Gothic+One" />
+    <mj-font name="Homenaje"  href="https://fonts.googleapis.com/css?family=Homenaje" />
+  </mj-head>
+
+  <mj-body>
+    <mj-section background-color="#1B4F72" padding=0>
+      <mj-column>
+        <mj-text font-size="25px" color="#fff" font-family="Noto Sans TC" align="center" padding-top="5px" padding-bottom="0px">
+          MIND THE SHAG
+        </mj-text>
+        <mj-text font-size="10px" color="#fff" font-family="Noto Sans TC" align="center" padding-top="5px" padding-bottom=0>
+          London SHAG Festival
+        </mj-text>
+        <mj-divider border-color="#fff" padding-top="3px" border-width="1px" padding-bottom="0px" width="120px"/>
+        <mj-text font-size="10px" color="#fff" font-family="Noto Sans TC" align="center" padding-top="3px">
+          29-31 March 2019
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-family="Raleway">
+          <p>Dear %recipient.full_name%,</p>
+          <p>Did you know that there is a special offer that you may find interesting?</p>
+          <p>As you have a Full Pass, you can <b>book this new station for just £15</b>.
+          The offer will expire when the class reaches 15 people.
+          Yet if the station doesn't reach it's minimum until this Wednesday we will need to cancel it.</p>
+
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+        <mj-column>
+          <mj-button font-family="Noto Sans TC" background-color="#1B4F72" color="white"
+            href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%">
+            Book for just £15
+          </mj-button>
+        </mj-column>
+    </mj-section>
+
+<mj-raw><!-- SHAG DYNAMITE --></mj-raw>
+
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" font-family="Noto Sans TC" color="#626262" padding-bottom=0>
+          SHAG DYNAMITE
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC" color="#626262" padding-top="2px" padding-bottom=0>
+          Lasrissa & Heiko
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC" color="red" padding-top="10px" padding-bottom=0>
+          Collegiate Shag Veteran
+        </mj-text>
+        <mj-text font-size="10px" font-family="Raleway" padding-top="15px">
+          Sunday 31-March, 14:00-16:00
+        </mj-text>
+        <mj-text font-family="Raleway">
+          Looking for more power moves for competitions, performances or to spice up your social Shag? In this station Larissa & Heiko, the Jitterbugs from Basel, who have competed in almost every major Shag event in the world, are going to share their favourite killer moves!
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-image width="200px" src="https://static.wixstatic.com/media/eb4a35_d6c7be988eee4e9d867d127442cd4ce7~mv2_d_2362_3543_s_2.jpg/v1/fill/w_206,h_280,al_c,q_80,usm_0.66_1.00_0.01/HL_couple3.webp"></mj-image>
+      </mj-column>
+    </mj-section>
+
+<mj-raw><!-- SOLO SHAG --></mj-raw>
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" font-family="Noto Sans TC" color="#626262" padding-bottom=0>
+          SOLO SHAG
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC" color="#626262" padding-top="2px" padding-bottom=0>
+          Cherry & Filip
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC" color="#0033cc" padding-top="10px" padding-bottom=0>
+          Collegiate Shag
+        </mj-text>
+        <mj-text font-size="10px" font-family="Raleway" padding-top="15px">
+          Sunday 31-March, 16:30-18:30
+        </mj-text>
+        <mj-text font-family="Raleway">
+          Join the latest trend in the Shag community all over the world! As well as being great fun to dance alone, Solo Shag will also enhance your partner dancing by building your confidence in developing your own personal variations; great for leaders and followers alike! In this station with Cherry and Filip, the pioneers of the style, you will work both solo and in couples. You will learn a 1-minute choreography that will be performed later at the party.
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-image width="200px" src="https://static.wixstatic.com/media/eb4a35_ed1ce697937b4d6fbb6c8d295958421b~mv2_d_5264_3509_s_4_2.jpg/v1/fill/w_206,h_280,al_c,q_80,usm_0.66_1.00_0.01/CH_couple2.webp"></mj-image>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+        <mj-column>
+          <mj-button font-family="Noto Sans TC" background-color="#1B4F72" color="white"
+            href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%">
+            Book for just £15
+          </mj-button>
+        </mj-column>
+    </mj-section>
+
+
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-family="Raleway">
+          Thank you,<br/> Mind the Shag Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding=0>
+      <mj-column>
+        <mj-text font-family="Raleway" font-size="8px">
+          If you don't want to receive email news from Mind the Shag 2019, please click <a href="https://www.saltyjitterbugs.co.uk/unsubscribe_email/%recipient.reg_token%">unsubscribe</a>.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+
+    <mj-section background-color="#000" padding=0>
+      <mj-column font-family="Raleway" color="white" align="left">
+        <mj-social align="left" color="white" font-size="8px" font-family="Raleway"
+          padding-top="0px" padding-bottom="0px" mode="horizontal">
+          <mj-social-element name="web"
+            src="https://static.wixstatic.com/media/eb4a35_bb28b405c8ae49d498b45b5cce62ef70~mv2.jpg/v1/fill/w_32%2Ch_32%2Clg_1%2Cusm_0.66_1.00_0.01/eb4a35_bb28b405c8ae49d498b45b5cce62ef70~mv2.jpg"
+            href="http://mindtheshag.co.uk" padding-top="0px"
+            background-color="#1B4F72" icon-size="14px">
+            http://mindtheshag.co.uk
+          </mj-social-element>
+
+          <mj-social-element name="facebook-noshare"
+            src="https://www.mailjet.com/images/theme/v1/icons/ico-social/facebook.png"
+            href="https://www.facebook.com/mindtheshag" padding-top="0px"
+            background-color="#1B4F72" icon-size="14px">
+            Facebook
+          </mj-social-element>
+
+          <mj-social-element name="youtube"
+            src="https://www.mailjet.com/images/theme/v1/icons/ico-social/youtube.png" background-color="#f00"
+            href="https://www.youtube.com/channel/UCY1bkFZP8wCHPGM3Ajg5AyQ" padding-top="0px"
+            icon-size="14px">
+            Youtube
+          </mj-social-element>
+        </mj-social>
+      </mj-column>
+    </mj-section>
+
+  </mj-body>
+</mjml>

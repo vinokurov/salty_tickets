@@ -4,10 +4,11 @@ from typing import List
 
 import dataclasses
 from bson import ObjectId
-from mongoengine import fields, connect
+import mongoengine as me
 from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER, SUCCESSFUL
 from salty_tickets.models.discounts import DiscountProduct, DiscountCode
+from salty_tickets.models.email_campaigns import EventEmailSettings
 from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount, \
@@ -18,16 +19,16 @@ from salty_tickets.utils.utils import timeit
 
 
 @fields_from_dataclass(Registration, skip=['person', 'partner', 'registered_by', 'as_couple', 'details'])
-class RegistrationDocument(fields.Document):
+class RegistrationDocument(me.Document):
     meta = {
         'collection': 'registrations'
     }
-    dance_role = fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
-    person = fields.ReferenceField('PersonDocument', required=True)
-    partner = fields.ReferenceField('PersonDocument', null=True)
-    registered_by = fields.ReferenceField('PersonDocument', required=True)
-    ticket_key = fields.StringField(required=True)
-    event = fields.ReferenceField('EventDocument', required=True)
+    dance_role = me.fields.BaseField(choices=[LEADER, FOLLOWER], null=True)
+    person = me.ReferenceField('PersonDocument', required=True)
+    partner = me.ReferenceField('PersonDocument', null=True)
+    registered_by = me.ReferenceField('PersonDocument', required=True)
+    ticket_key = me.StringField(required=True)
+    event = me.ReferenceField('EventDocument', required=True)
 
     def to_dataclass(self):
         model = self._to_dataclass()
@@ -46,12 +47,12 @@ class RegistrationDocument(fields.Document):
 
 
 @fields_from_dataclass(Purchase, skip=['person'])
-class PurchaseDocument(fields.Document):
+class PurchaseDocument(me.Document):
     meta = {
         'collection': 'purchases',
     }
-    person = fields.ReferenceField('PersonDocument', required=True)
-    event = fields.ReferenceField('EventDocument', required=True)
+    person = me.ReferenceField('PersonDocument', required=True)
+    event = me.ReferenceField('EventDocument', required=True)
 
     def to_dataclass(self):
         model = self._to_dataclass()
@@ -67,8 +68,8 @@ class PurchaseDocument(fields.Document):
 
 
 @fields_from_dataclass(Discount, skip=['person'])
-class DiscountDocument(fields.EmbeddedDocument):
-    person = fields.ReferenceField('PersonDocument', required=True)
+class DiscountDocument(me.EmbeddedDocument):
+    person = me.ReferenceField('PersonDocument', required=True)
 
     def to_dataclass(self):
         model = self._to_dataclass()
@@ -83,11 +84,11 @@ class DiscountDocument(fields.EmbeddedDocument):
 
 
 @fields_from_dataclass(Ticket, skip=['registrations', 'ticket_class', 'ticket_class_parameters'])
-class TicketDocument(fields.EmbeddedDocument):
-    image_url = fields.URLField()
+class TicketDocument(me.EmbeddedDocument):
+    image_url = me.URLField()
 
-    ticket_class = fields.StringField(required=True)
-    ticket_class_parameters = fields.DictField()
+    ticket_class = me.StringField(required=True)
+    ticket_class_parameters = me.DictField()
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
@@ -110,14 +111,14 @@ class TicketDocument(fields.EmbeddedDocument):
 
 
 @fields_from_dataclass(Product)
-class ProductDocument(fields.EmbeddedDocument):
+class ProductDocument(me.EmbeddedDocument):
     pass
 
 
 @fields_from_dataclass(DiscountProduct, skip=['discount_product_class', 'discount_product_parameters'])
-class DiscountProductDocument(fields.EmbeddedDocument):
-    discount_product_class = fields.StringField(required=True)
-    discount_product_parameters = fields.DictField()
+class DiscountProductDocument(me.EmbeddedDocument):
+    discount_product_class = me.StringField(required=True)
+    discount_product_parameters = me.DictField()
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
@@ -139,14 +140,14 @@ class DiscountProductDocument(fields.EmbeddedDocument):
 
 
 @fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products'])
-class EventDocument(fields.Document):
+class EventDocument(me.Document):
     meta = {
         'collection': 'events',
     }
-    key = fields.StringField()
-    tickets = fields.MapField(fields.EmbeddedDocumentField(TicketDocument))
-    products = fields.MapField(fields.EmbeddedDocumentField(ProductDocument))
-    discount_products = fields.MapField(fields.EmbeddedDocumentField(DiscountProductDocument))
+    key = me.StringField()
+    tickets = me.MapField(me.EmbeddedDocumentField(TicketDocument))
+    products = me.MapField(me.EmbeddedDocumentField(ProductDocument))
+    discount_products = me.MapField(me.EmbeddedDocumentField(DiscountProductDocument))
 
     @classmethod
     def from_dataclass(cls, model_dataclass):
@@ -177,14 +178,14 @@ class EventDocument(fields.Document):
 
 
 @fields_from_dataclass(RegistrationGroup, skip=['admin', 'members', 'event'])
-class RegistrationGroupDocument(fields.Document):
+class RegistrationGroupDocument(me.Document):
     __meta__ = {
         'collection': 'registration_groups'
     }
-    int_id = fields.SequenceField()
-    event = fields.ReferenceField(EventDocument)
-    admin = fields.ReferenceField('PersonDocument')
-    members = fields.ListField(fields.ReferenceField('PersonDocument'))
+    int_id = me.SequenceField()
+    event = me.ReferenceField(EventDocument)
+    admin = me.ReferenceField('PersonDocument')
+    members = me.ListField(me.ReferenceField('PersonDocument'))
 
     def to_dataclass(self) -> RegistrationGroup:
         model = self._to_dataclass()
@@ -205,12 +206,12 @@ class RegistrationGroupDocument(fields.Document):
 
 
 @fields_from_dataclass(Person, skip=['event'])
-class PersonDocument(fields.Document):
+class PersonDocument(me.Document):
     meta = {
         'collection': 'person_registrations',
     }
-    event = fields.ReferenceField(EventDocument)
-    int_id = fields.SequenceField()
+    event = me.ReferenceField(EventDocument)
+    int_id = me.SequenceField()
 
     def to_dataclass(self):
         model = self._to_dataclass()
@@ -219,31 +220,31 @@ class PersonDocument(fields.Document):
 
 
 @fields_from_dataclass(PaymentStripeDetails)
-class PaymentStripeDetailsDocument(fields.EmbeddedDocument):
+class PaymentStripeDetailsDocument(me.EmbeddedDocument):
     pass
 
 
 @fields_from_dataclass(TransactionDetails)
-class TransactionDocument(fields.EmbeddedDocument):
+class TransactionDocument(me.EmbeddedDocument):
     pass
 
 
 @fields_from_dataclass(Payment, skip=['paid_by', 'event', 'registrations', 'purchases', 'discounts',
                                       'extra_registrations', 'transactions'])
-class PaymentDocument(fields.Document):
+class PaymentDocument(me.Document):
     meta = {
         'collection': 'payments'
     }
-    date = fields.DateTimeField(null=False, default=datetime.datetime.utcnow)
-    paid_by = fields.ReferenceField(PersonDocument)
-    event = fields.ReferenceField(EventDocument)
-    registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
-    extra_registrations = fields.ListField(fields.ReferenceField(RegistrationDocument))
-    purchases = fields.ListField(fields.ReferenceField(PurchaseDocument))
-    discounts = fields.EmbeddedDocumentListField(DiscountDocument)
-    stripe = fields.EmbeddedDocumentField(PaymentStripeDetailsDocument)
+    date = me.DateTimeField(null=False, default=datetime.datetime.utcnow)
+    paid_by = me.ReferenceField(PersonDocument)
+    event = me.ReferenceField(EventDocument)
+    registrations = me.ListField(me.ReferenceField(RegistrationDocument))
+    extra_registrations = me.ListField(me.ReferenceField(RegistrationDocument))
+    purchases = me.ListField(me.ReferenceField(PurchaseDocument))
+    discounts = me.EmbeddedDocumentListField(DiscountDocument)
+    stripe = me.EmbeddedDocumentField(PaymentStripeDetailsDocument)
     # int_id = fields.SequenceField()
-    transactions = fields.EmbeddedDocumentListField(TransactionDocument, null=True)
+    transactions = me.EmbeddedDocumentListField(TransactionDocument, null=True)
 
     def to_dataclass(self) -> Payment:
         model = self._to_dataclass(paid_by=self.paid_by.to_dataclass())
@@ -268,12 +269,12 @@ class PaymentDocument(fields.Document):
 
 
 @fields_from_dataclass(DiscountCode)
-class DiscountCodeDocument(fields.Document):
+class DiscountCodeDocument(me.Document):
     meta = {
         'collection': 'discount_codes',
     }
-    event = fields.ReferenceField(EventDocument)
-    int_id = fields.SequenceField()
+    event = me.ReferenceField(EventDocument)
+    int_id = me.SequenceField()
 
     def to_dataclass(self):
         model = self._to_dataclass()
@@ -281,12 +282,17 @@ class DiscountCodeDocument(fields.Document):
         return model
 
 
+@fields_from_dataclass(EventEmailSettings)
+class EventEmailSettingsDocument(me.Document):
+    pass
+
+
 class TicketsDAO:
     def __init__(self, host=None):
         if host is None:
             host = 'mongomock://localhost'
 
-        connect(host=host)
+        me.connect(host=host)
         # from salty_tickets.utils.demo_db import salty_recipes
         # salty_recipes(self)
 
@@ -597,6 +603,29 @@ class TicketsDAO:
         doc.members.append(person.id)
         doc.save()
         registration_group.members.append(person)
+
+    def new_event_email_settings(self, event_email_settings: EventEmailSettings):
+        doc = self.get_event_email_settings(event_email_settings.event_key)
+        if doc is not None:
+            raise ValueError('Email settings already exist for event')
+        doc = EventEmailSettingsDocument.from_dataclass(event_email_settings)
+        doc.save()
+        event_email_settings.id = doc.id
+
+    def get_event_email_settings(self, event_key) -> EventEmailSettings:
+        doc = EventEmailSettingsDocument.objects(event_key=event_key).first()
+        if doc is not None:
+            return doc.to_dataclass()
+
+    def update_event_email_settings(self, event_email_settings: EventEmailSettings):
+        self._update_doc(EventEmailSettingsDocument, event_email_settings)
+
+    def get_person_event_key(self, person: Person) -> str:
+        if not hasattr(person, 'id'):
+            return None
+        person_doc = PersonDocument.objects(**id_filter(person.id)).first()
+        if person_doc:
+            return person_doc.event.key
 
 
 def id_filter(object_id):

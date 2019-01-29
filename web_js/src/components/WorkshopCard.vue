@@ -85,7 +85,7 @@ export default {
     },
     title: function() { return this.product.title },
     price: function() { return this.product.price },
-    available: function() { return this.product['available'] || 'plenty'},
+    available: function() { return this.product['available']},
     time: function() {
       let dt0 = new Date(this.product.start_datetime)
       let dt1 = new Date(this.product.end_datetime)

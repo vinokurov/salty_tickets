@@ -3,6 +3,7 @@ from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
 from salty_tickets import app
 from salty_tickets import config
+from salty_tickets.actions.mailing_lists import do_email_unsubscribe
 from salty_tickets.api.admin import do_get_event_stats
 from salty_tickets.config import MONGO
 from salty_tickets.dao import TicketsDAO
@@ -124,6 +125,12 @@ def create_registration_group(event_key):
 def prior_registrations(event_key):
     dao = TicketsDAO(MONGO)
     return jsonify_dataclass(do_get_prior_registrations(dao, event_key))
+
+
+@app.route('/unsubscribe_email/<string:reg_token>', methods=['GET'])
+def unsubscribe_email(reg_token):
+    dao = TicketsDAO(MONGO)
+    return jsonify_dataclass(do_email_unsubscribe(dao, reg_token))
 
 
 #####################################################################
