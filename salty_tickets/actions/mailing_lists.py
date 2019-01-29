@@ -26,6 +26,6 @@ def do_email_unsubscribe(dao: TicketsDAO, registration_token: str):
     dao.update_event_email_settings(email_settings)
 
     return EmailUnsubscribeResponse(
-        False,
+        True,
         'Email has been successfully unsubscribed from notifications'
     )
