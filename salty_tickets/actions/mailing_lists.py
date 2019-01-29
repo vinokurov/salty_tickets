@@ -22,7 +22,7 @@ def do_email_unsubscribe(dao: TicketsDAO, registration_token: str):
 
     event_key = dao.get_person_event_key(person)
     email_settings = dao.get_event_email_settings(event_key)
-    email_settings.undo_unsubscribe_email(person.email)
+    email_settings.unsubscribe_email(person.email)
     dao.update_event_email_settings(email_settings)
 
     return EmailUnsubscribeResponse(

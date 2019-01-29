@@ -284,7 +284,9 @@ class DiscountCodeDocument(me.Document):
 
 @fields_from_dataclass(EventEmailSettings)
 class EventEmailSettingsDocument(me.Document):
-    pass
+    meta = {
+        'collection': 'event_email_settings',
+    }
 
 
 class TicketsDAO:
