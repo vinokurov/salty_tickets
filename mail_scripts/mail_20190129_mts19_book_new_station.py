@@ -830,31 +830,23 @@ def get_person_lists():
         'fast_furious_shag',
         'shag_clinic'
     }
-    sunday_16 = {'shag_roller_coaster', 'shag_hall_of_fame'}
-    sunday_18 = {'millionaire_shag', 'shag_boomerang'}
 
-    full_pass_persons = ticket_persons(event, 'full_pass')
-    advanced_persons = set(itertools.chain.from_iterable([
-        ticket_persons(event, key) for key in advanced_stations
-    ]))
-    sunday_16_persons = set(itertools.chain.from_iterable([
-        ticket_persons(event, key) for key in sunday_16
-    ]))
-    sunday_18_persons = set(itertools.chain.from_iterable([
-        ticket_persons(event, key) for key in sunday_18
-    ]))
+    full_pass = ticket_persons(event, 'full_pass')
+    advanced = set.union(*[ticket_persons(event, key) for key in advanced_stations])
+    sunday_16 = ticket_persons(event, 'shag_roller_coaster') | ticket_persons(event, 'shag_hall_of_fame')
+    sunday_18 = ticket_persons(event, 'millionaire_shag') | ticket_persons(event, 'shag_boomerang')
 
-    persons_4_dynamite = full_pass_persons & advanced_persons - sunday_16_persons
-    persons_4_solo = full_pass_persons - sunday_18_persons
+    dynamite = full_pass & advanced - sunday_16 - ticket_persons(event, 'shag_dynamite')
+    solo = full_pass - sunday_18 - ticket_persons(event, 'solo_shag')
 
-    persons_4_dynamite_only = persons_4_dynamite - persons_4_solo
-    persons_4_solo_only = persons_4_solo - persons_4_dynamite
-    persons_4_both = persons_4_dynamite & persons_4_solo
+    dynamite_only = dynamite - solo
+    solo_only = solo - dynamite
+    both = dynamite & solo
 
     return (
-        persons_list_to_vars_dict(persons_4_dynamite_only),
-        persons_list_to_vars_dict(persons_4_solo_only),
-        persons_list_to_vars_dict(persons_4_both)
+        persons_list_to_vars_dict(dynamite_only),
+        persons_list_to_vars_dict(solo_only),
+        persons_list_to_vars_dict(both)
     )
 
 
