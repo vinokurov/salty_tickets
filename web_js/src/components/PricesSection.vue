@@ -18,7 +18,7 @@
                 <small>Locations</small><br/><h2>{{locationsCount}}</h2>
               </b-col>
               <b-col col lg="2" class="border border-secondary border-left-0 rounded-right text-center bg-info text-light shadow">
-                <small>Current Tariff</small><br/><h2>Off&nbsp;Peak</h2>
+                <small>Current Tariff</small><br/><h2>Rush&nbsp;Hour</h2>
               </b-col>
             </b-row>
           </b-container >
@@ -34,11 +34,14 @@
                 Super Off Peak<br/><small> First 150 stations</small><br/>
                 <b-badge pill variant="danger">SOLD OUT</b-badge>
               </th>
-              <th class="table-success">
+              <th class="table-secondary">
                 Off Peak<br/><small>150-450 stations</small><br/>
+                <b-badge pill variant="danger">SOLD OUT</b-badge>
+              </th>
+              <th class="table-success">
+                Rush Hour<br/><small>After 450 stations</small><br/>
                 <b-badge pill variant="success">CURRENT TARIFF</b-badge>
               </th>
-              <th>Rush Hour<br/><small>After 450 stations</small></th>
             </thead>
             <tbody>
               <tr>
@@ -63,44 +66,44 @@
                 </td>
                 <td>
                   <b-list-group>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Full Pass</small><br/>£140
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Party Pass</small><br/>£50
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Single/extra station</small><br/>£35 / £25
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Shag Clinic</small><br/>£40
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Shag novice track</small><br/>£105 / £55
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Single parties</small><br/>£20 /£25/ £15
                     </b-list-group-item>
                   </b-list-group>
                 </td>
                 <td>
                   <b-list-group>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Full Pass</small><br/>£155
                     </b-list-group-item>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Party Pass</small><br/>£65
                     </b-list-group-item>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Single/extra station</small><br/>£35 / £25
                     </b-list-group-item>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Shag Clinic</small><br/>£40
                     </b-list-group-item>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Shag novice track</small><br/>£120 / £55
                     </b-list-group-item>
-                    <b-list-group-item>
+                    <b-list-group-item variant="success">
                       <small>Single parties</small><br/>£25 /£35/ £15
                     </b-list-group-item>
                   </b-list-group>
@@ -145,7 +148,7 @@
         <div class="container my-5">
           <b-alert show variant="info">
             <h3> <font-awesome icon="info-circle" /> Hint! </h3>
-            The new stations <b>Solo Shag</b> and <b>Shag Dynamite</b> are £10 cheaper if booked
+            The new station <b>Solo Shag</b> is £10 cheaper if booked
             with the Full Pass or a Shag Novice ticket.
           </b-alert>
         </div>
