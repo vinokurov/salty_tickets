@@ -65,7 +65,7 @@
               </b-form-radio-group>
             </b-form-group>
           </b-alert>
-          <button class="btn btn-success my-4" @click="hideModal();stripeCheckout()" v-if="cart.checkout_enabled">
+          <button class="btn btn-success my-4" @click="doCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
           </button>
       </div>
@@ -84,6 +84,16 @@
       </div>
     </b-modal>
 
+    <b-modal  size="lg" id="paymentWait" ref="paymentWait"
+              hide-footer hide-header-close no-close-on-esc
+              title="Processing Payment"
+              >
+      <div class="d-block">
+        <p>The payment is being processed. Please don't refresh the page.</p>
+      </div>
+      <center class="fa-3x"><i class="fas fa-spinner fa-spin"></i></center>
+    </b-modal>
+
   </div>
 </template>
 
@@ -95,7 +105,7 @@ import FontAwesome from './FontAwesome.vue'
 export default {
   components: {FontAwesome},
   computed: {
-    ...mapState(['cart', 'errors', 'payment_response']),
+    ...mapState(['cart', 'errors', 'payment_response', 'payment_processing_in_progress']),
     has_waiting: function() {
       return this.cart.items.filter((i) => i.wait_listed).length > 0
     },
@@ -110,8 +120,9 @@ export default {
       if (item.dance_role) {values.push(item.dance_role)}
       return values.join(' / ')
     },
-    hideModal() {
+    doCheckout() {
       this.$refs.checkoutModal.hide()
+      this.stripeCheckout()
     },
     ...mapActions(['requestPrice', 'requestCheckout', 'stripeCheckout'])
   },
@@ -121,6 +132,13 @@ export default {
         this.$refs.paymentErrorModal.show()
       } else if (this.payment_response.pmt_token) {
         window.location = '/order/' + this.payment_response.pmt_token
+      }
+    },
+    payment_processing_in_progress: function() {
+      if (this.payment_processing_in_progress) {
+        this.$refs.paymentWait.show()
+      } else {
+        this.$refs.paymentWait.hide()
       }
     },
   }

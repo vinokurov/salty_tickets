@@ -53,6 +53,7 @@ const my_state = {
     registrations: [],
     dance_role: null,
   },
+  payment_processing_in_progress: false,
 }
 
 
@@ -109,6 +110,9 @@ export default new Vuex.Store({
     },
     setPaymentResponseDetails (state, payment_response) {
       state.payment_response = payment_response
+    },
+    setPaymentInProgress (state, progress) {
+      state.payment_processing_in_progress = progress
     },
     queueThrottledRequest (state, {url, params}) {
       if (url in state.throttled_calls) {
@@ -220,10 +224,12 @@ export default new Vuex.Store({
             csrf_token: getters.getCSRF,
           }
           const url = '/pay/'
+          commit('setPaymentInProgress', true)
           try {
             let response = await axios.post(url, data)
             commit('setPaymentResponseDetails', response.data)
           } catch(err) {
+            commit('setPaymentInProgress', false)
             commit('setPaymentResponseDetails', {
               success:false,
               error_message: 'Server error while processing payment',
