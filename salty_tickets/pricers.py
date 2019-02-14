@@ -167,7 +167,8 @@ class MindTheShagPriceRule(BasePriceRule):
                 else:
                     return self.price_station_extra
             else:
-                return self.price_station
+                # return self.price_station
+                return event_tickets[registration.ticket_key].base_price
 
         elif registration.ticket_key in party_keys:
             if self._has_tags(registration_keys, event_tickets, {self.tag_includes_parties}):
