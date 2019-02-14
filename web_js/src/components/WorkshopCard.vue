@@ -18,12 +18,12 @@
                   />
         </div>
         <span v-if="(this.product.key != 'shag_clinic') && (!disabled)">
-          <b-alert v-if="this.product.waiting_list.leader" show variant="warning">
-            <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.
+          <b-alert v-if="this.product.waiting_list.leader !== null" show variant="warning">
+            <font-awesome icon="exclamation-triangle"/> Waiting list for leaders.<br/>
             Chances to get accepted: {{this.product.waiting_list.leader}}%.
           </b-alert>
-          <b-alert v-if="this.product.waiting_list.follower" show variant="warning">
-            <font-awesome icon="exclamation-triangle"/> Waiting list for followers.
+          <b-alert v-if="this.product.waiting_list.follower !== null" show variant="warning">
+            <font-awesome icon="exclamation-triangle"/> Waiting list for followers.<br/>
             Chances to get accepted: {{this.product.waiting_list.follower}}%.
           </b-alert>
         </span>

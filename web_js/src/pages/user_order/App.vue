@@ -21,7 +21,7 @@
                   <dd><strong>Registration Token:</strong> {{user_order_info.reg_token}}</dd>
                   <!-- <dd><strong>Token:</strong> {{user_order_info.ptn_token}}</dd> -->
                 </dl>
-                <b-button :href="'/register/'+user_order_info.event_key+'?reg_token='+user_order_info.reg_token" variant="primary"> Update Order</b-button>
+                <b-button :href="'/register/'+user_order_info.event_key+'?reg_token='+user_order_info.reg_token" :disabled="!user_order_info.reg_token" variant="primary"> Update Order</b-button>
               </b-card>
               <b-card-footer>
 
