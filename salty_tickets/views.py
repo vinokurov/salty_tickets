@@ -1,6 +1,8 @@
-from flask import render_template, redirect, url_for, request
+from flask import render_template, redirect, url_for, request, make_response, jsonify
 from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
+from salty.rating.admin import start_contest, stop_contest, get_contest_results
+from salty.rating.voting import generate_voter_uid, add_rating_vote, get_current_contest_config, get_my_last_vote
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.actions.mailing_lists import do_email_unsubscribe
@@ -28,7 +30,7 @@ __author__ = 'vnkrv'
 
 
 if app.debug:
-    @app.route('/static/dist/<path:path>')
+    @app.route('/static/dist/rating/<path:path>')
     def catch_all(path):
         import requests
         return requests.get('http://localhost:8080/{}'.format(path)).text
@@ -167,4 +169,80 @@ def admin_balance_event(event_key):
     balance_event_waiting_lists(dao, event_key)
     return ''
 
-# """
+#####################################################################
+#########             R A T I N G                    ################
+#####################################################################
+
+
+COOKIE_RATING_VOTER_UID = 'voter_uid'
+COOKIE_RATING_IS_JUDGE = 'jj'
+
+
+def rating_vote_response():
+    resp = make_response(render_template('rating/vote.html'))
+    voter_uid = request.cookies.get(COOKIE_RATING_VOTER_UID)
+    if not voter_uid:
+        resp.set_cookie(COOKIE_RATING_VOTER_UID, generate_voter_uid())
+    return resp
+
+
+@app.route('/rating', methods=['GET'])
+def rating_vote():
+    resp = rating_vote_response()
+    resp.set_cookie(COOKIE_RATING_IS_JUDGE, '')
+    return resp
+
+
+@app.route('/rating_judge', methods=['GET'])
+def rating_vote_judge():
+    resp = rating_vote_response()
+    resp.set_cookie(COOKIE_RATING_IS_JUDGE, 'true')
+    return resp
+
+
+@app.route('/rating/vote/submit', methods=['POST'])
+def rating_judge_submit():
+    voter_uid = request.cookies.get(COOKIE_RATING_VOTER_UID)
+    if voter_uid:
+        is_judge = request.cookies.get(COOKIE_RATING_IS_JUDGE, False)
+        add_rating_vote(request.json, voter_uid, is_judge=is_judge)
+    return jsonify({})
+
+
+@app.route('/rating/contest', methods=['GET'])
+def rating_get_contest_config():
+    return jsonify(get_current_contest_config(active_only=True))
+
+
+@app.route('/rating/contest_any', methods=['GET'])
+def rating_get_contest_config_any():
+    return jsonify(get_current_contest_config(active_only=False))
+
+
+@app.route('/rating/my_vote', methods=['POST'])
+def rating_get_my_last_vote():
+    voter_uid = request.cookies.get(COOKIE_RATING_VOTER_UID)
+    if voter_uid:
+        return jsonify(get_my_last_vote(request.json.get('contest_uid'), voter_uid))
+    return jsonify({})
+
+
+@app.route('/rating/admin', methods=['GET'])
+def rating_admin():
+    return render_template('rating/admin.html')
+
+
+@app.route('/rating/admin/new', methods=['POST'])
+def rating_admin_new_contest():
+    return jsonify(start_contest(request.json))
+
+
+@app.route('/rating/admin/stop', methods=['POST'])
+def rating_admin_stop_contest():
+    contest_config = stop_contest(request.json)
+    return jsonify(get_contest_results(contest_config))
+
+
+@app.route('/rating/admin/results', methods=['POST'])
+def rating_admin_contest_results():
+    return jsonify(get_contest_results(request.json))
