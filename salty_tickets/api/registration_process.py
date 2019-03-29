@@ -169,6 +169,7 @@ class EventRegistrationStatsInfo(DataClassJsonMixin):
 class EventInfo(DataClassJsonMixin):
     name: str
     key: str
+    active: bool
     tickets: List
     products: List
     # discount_products: List
@@ -181,6 +182,7 @@ class EventInfo(DataClassJsonMixin):
         return cls(
             name=event.name,
             key=event.key,
+            active=event.active,
             tickets=[TicketInfo.from_workshop(p) for k, p in event.tickets.items()],
             products=[ProductInfo.from_product(p) for k, p in event.products.items()],
             # discount_products=[DiscountProductInfo.from_discount_product(p)
