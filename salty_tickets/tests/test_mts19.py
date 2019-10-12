@@ -57,7 +57,7 @@ def mts(test_dao):
         ratio=1.5,
         allow_first=5,
         max_available=30,
-        base_price=27.5,
+        base_price=30.0,
         tags={'station'}
     )
 
@@ -65,7 +65,7 @@ def mts(test_dao):
         ratio=1.5,
         allow_first=5,
         max_available=30,
-        base_price=27.5,
+        base_price=30.0,
         tags={'station', 'train'}
     )
 

@@ -179,11 +179,11 @@ def ms_y():
 
 
 @pytest.mark.parametrize("registration_keys,expected_prices", [
-    ("w1 w2", [30, 30]),
+    ("w1 w2", [35, 35]),
     ("p1 p2", [20, 30]),
-    ("p3 beg1", [15, 30]),
-    ("w1 w2 p3", [30, 30, 15]),
-    ("w1 clinic p3", [30, 40, 15]),
+    ("p3 beg1", [15, 35]),
+    ("w1 w2 p3", [35, 35, 15]),
+    ("w1 clinic p3", [35, 40, 15]),
 
     ('w1 w2 w3 p1 p2 p3 full_pass', [0, 0, 0, 0, 0, 0, 120]),
 
@@ -192,7 +192,7 @@ def ms_y():
     ('beg1 beg2 p1 p2 shag_novice_no_parties', [0, 0, 20, 30, 45]),
 
     ('p1 p2 p3 party_pass', [0, 0, 0, 55]),
-    ('w1 p1 p2 p3 party_pass', [30, 0, 0, 0, 55]),
+    ('w1 p1 p2 p3 party_pass', [35, 0, 0, 0, 55]),
 
     ('w1 w2 w3 w4 p1 p2 p3 full_pass', [0, 0, 0, 25, 0, 0, 0, 120]),
 
@@ -236,24 +236,24 @@ def test_mind_the_shag_price_rule(mts_tickets, mts_pricing_rules, mr_x, ms_y, re
     # partner has just one workshop
     registrations_couple = registrations_x + [Registration(person=ms_y, registered_by=mr_x, ticket_key='w1')]
     pricer.price_all(registrations_couple)
-    expected_prices_couple = expected_prices + [30]
+    expected_prices_couple = expected_prices + [35]
     assert sum(expected_prices_couple) == sum([r.price for r in registrations_couple])
     assert expected_prices_couple == [r.price for r in registrations_couple]
 
 
 @pytest.mark.parametrize("prior_registration_keys,registration_keys,expected_prices", [
-    ("w1 w2", "w3", [30]),
+    ("w1 w2", "w3", [35]),
     ("w1 w2", "party_pass", [55]),
     ("w1 w2 p1", "party_pass", [35]),  # party is 20, hence party_pass upgrade is 55-20=35
-    ("w1 w2", "full_pass", [60]),  # full_pass=120, station=30, upgrade=120-2*30=60
-    ("w1 w2 p1", "full_pass", [40]),  # full_pass=120, station=30, upgrade=120-2*30=60
+    ("w1 w2", "full_pass", [50]),  # full_pass=120, station=30, upgrade=120-2*30=60
+    ("w1 w2 p1", "full_pass", [30]),  # full_pass=120, station=35, upgrade=120-2*35-20=30
     ("p1 p2 p3 party_pass", "full_pass", [65]),  # full_pass=120, party_pass=55
-    ("w1 p1 p2 p3 party_pass", "full_pass", [35]),  # full_pass=120, party_pass=55
-    ("w1 w2 p1 p2 p3 party_pass", "full_pass", [5]),  # full_pass=120, party_pass=55
-    ("w1", "shag_novice_no_parties", [40]),  # shag_novice_no_parties=45
-    ("w1 p1", "shag_novice", [65]),  # shag_novice=90. 90-5-20=65
-    ("beg1", "shag_novice_no_parties", [15]),  # shag_novice_no_parties=45, beg1=30
-    ("beg1 p1", "shag_novice", [40]),  # 90 - 30 - 20 = 40
+    ("w1 p1 p2 p3 party_pass", "full_pass", [30]),  # full_pass=120, party_pass=55
+    ("w1 w2 p1 p2 p3 party_pass", "full_pass", [-5]),  # full_pass=120, party_pass=55
+    ("w1", "shag_novice_no_parties", [35]),  # shag_novice_no_parties=45
+    ("w1 p1", "shag_novice", [60]),  # shag_novice=90. 90-5-20=65
+    ("beg1", "shag_novice_no_parties", [10]),  # shag_novice_no_parties=45, beg1=30
+    ("beg1 p1", "shag_novice", [35]),  # 90 - 35 - 20 = 35
 ])
 def test_mind_the_shag_price_rule_with_prior(mts_tickets, mts_pricing_rules, mr_x, ms_y,
                                              prior_registration_keys, registration_keys, expected_prices):
