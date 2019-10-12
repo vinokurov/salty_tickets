@@ -37,7 +37,7 @@ discount_code = DiscountCode(
 )
 
 dao = TicketsDAO(host=MONGO)
-event = dao.get_event_by_key('mind_the_shag_2019')
+event = dao.get_event_by_key('mind_the_shag_2019', get_registrations=False)
 dao.add_discount_code(event, discount_code)
 token = DiscountToken().serialize(discount_code)
 print(token)

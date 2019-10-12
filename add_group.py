@@ -10,7 +10,7 @@ registration_group = RegistrationGroup(
     comment='manually created',
 )
 dao = TicketsDAO(host=MONGO)
-event = dao.get_event_by_key('mind_the_shag_2019')
+event = dao.get_event_by_key('mind_the_shag_2019', get_registrations=False)
 dao.add_registration_group(event, registration_group)
 token_str = GroupToken().serialize(registration_group)
 print(token_str)

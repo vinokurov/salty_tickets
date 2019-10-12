@@ -1,6 +1,7 @@
 import logging
 
 import requests
+import typing
 from flask import render_template, url_for
 from premailer import Premailer
 from salty_tickets import config
@@ -11,7 +12,7 @@ from salty_tickets.models.registrations import Payment, Registration
 from salty_tickets.tokens import PaymentId, PartnerToken, RegistrationToken
 
 
-def send_email(email_from, email_to, subj, body_text, body_html, files=None):
+def send_email(email_from: str, email_to: str, subj: str, body_text: str, body_html: str, files: typing.List=None):
     email_data = {
         'from': email_from,
         'to': [email_to],

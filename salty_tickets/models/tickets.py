@@ -27,7 +27,7 @@ class Ticket:
         if self.key is None:
             self.key = string_to_key(self.name)
 
-    def get_form_class(self) -> NoCsrfForm:
+    def get_form_class(self) -> type:
         raise NotImplementedError()
 
     def parse_form(self, form) -> typing.List[Registration]:
@@ -52,16 +52,15 @@ class Ticket:
         return self.name
 
 
-@dataclass
 class PartnerTicket(Ticket):
-    def needs_partner(self, event_form):
+    def needs_partner(self, event_form) -> bool:
         ticket_data = event_form.get_item_by_key(self.key)
         return ticket_data.add.data == COUPLE
 
-    def get_form_class(self):
+    def get_form_class(self) -> type:
         return PartnerTicketForm
 
-    def create_registration(self, person_info: Person, registered_by: Person, dance_role):
+    def create_registration(self, person_info: Person, registered_by: Person, dance_role) -> Registration:
         registration = self._create_base_registration()
         # registration.info = f'{self.name} / {dance_role.title()} / {person_info.full_name}'
         registration.person = person_info
@@ -69,14 +68,14 @@ class PartnerTicket(Ticket):
         registration.dance_role = dance_role
         return registration
 
-    def parse_form(self, event_form) -> typing.List[Registration]:
-        ticket_data = event_form.get_item_by_key(self.key)
+    def parse_form(self, form) -> typing.List[Registration]:
+        ticket_data = form.get_item_by_key(self.key)
         if self.is_added(ticket_data):
             if ticket_data.add.data == COUPLE:
-                person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
-                person_2 = get_partner_personal_info_from_form(event_form) or Person('Partner', '')
+                person_1 = get_primary_personal_info_from_form(form) or Person('You', '')
+                person_2 = get_partner_personal_info_from_form(form) or Person('Partner', '')
 
-                dance_role = event_form.dance_role.data
+                dance_role = form.dance_role.data
                 registration_1 = self.create_registration(person_1, person_1, dance_role)
                 registration_2 = self.create_registration(person_2, person_1, flip_role(dance_role))
 
@@ -85,7 +84,7 @@ class PartnerTicket(Ticket):
                 return [registration_1, registration_2]
 
             elif ticket_data.add.data in [LEADER, FOLLOWER]:
-                person_1 = get_primary_personal_info_from_form(event_form) or Person('You', '')
+                person_1 = get_primary_personal_info_from_form(form) or Person('You', '')
                 dance_role = ticket_data.add.data
                 registration = self.create_registration(person_1, person_1, dance_role)
                 return [registration]
@@ -108,6 +107,23 @@ class WaitListedPartnerTicket(PartnerTicket):
     expected_leads: int = None
     expected_follows: int = None
 
+    def parse_form(self, form) -> typing.List[Registration]:
+        regs = super(WaitListedPartnerTicket, self).parse_form(form)
+        ticket_data = form.get_item_by_key(self.key)
+        if self.is_added(ticket_data):
+            role = ticket_data.add.data
+            if not self.waiting_list.can_add(role):
+                for r in regs:
+                   r.wait_listed = True
+        return regs
+
+    def item_info(self, registration: Registration) -> str:
+        info = super(WaitListedPartnerTicket, self).item_info(registration)
+        if registration.wait_listed:
+            info = f'Waiting List: {info}'
+
+        return info
+
     @property
     def waiting_list(self) -> SimpleWaitingList:
         return SimpleWaitingList(
@@ -123,7 +139,7 @@ class WaitListedPartnerTicket(PartnerTicket):
             expected_follows=self.expected_follows,
         )
 
-    def _get_registration_stats_for_role(self, option):
+    def _get_registration_stats_for_role(self, option: str) -> RegistrationStats:
         if option == COUPLE:
             registered = [r for r in self.registrations if r.as_couple and r.active]
         else:
@@ -179,16 +195,6 @@ class WaitListedPartnerTicket(PartnerTicket):
             if r.active and (r.dance_role == role) and r.wait_listed:
                 return r
 
-    def parse_form(self, event_form) -> typing.List[Registration]:
-        regs = super(WaitListedPartnerTicket, self).parse_form(event_form)
-        ticket_data = event_form.get_item_by_key(self.key)
-        if self.is_added(ticket_data):
-            role = ticket_data.add.data
-            if not self.waiting_list.can_add(role):
-                for r in regs:
-                   r.wait_listed = True
-        return regs
-
     def apply_extra_partner(self, this_registration: Registration,
                             extra_registrations: typing.List[Registration]):
         if self.waiting_list.can_add(COUPLE):
@@ -202,13 +208,6 @@ class WaitListedPartnerTicket(PartnerTicket):
                 extra_reg.partner = this_registration.person
                 extra_reg.wait_listed = False
                 return extra_reg
-
-    def item_info(self, registration: Registration) -> str:
-        info = super(WaitListedPartnerTicket, self).item_info(registration)
-        if registration.wait_listed:
-            info = f'Waiting List: {info}'
-
-        return info
 
 
 @dataclass

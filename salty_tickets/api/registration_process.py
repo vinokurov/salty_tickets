@@ -762,7 +762,7 @@ class TokenCheckResult(DataClassJsonMixin):
 
 
 def do_create_registration_group(dao: TicketsDAO, event_key: str):
-    event = dao.get_event_by_key(event_key)
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     form = CreateRegistrationGroupForm()
     errors = {}
     if form.validate_on_submit():
@@ -790,8 +790,8 @@ class DiscountCodeTokenCheckResult(TokenCheckResult):
     email_override: str = None
 
 
-def do_validate_registration_group_token(dao, event_key):
-    event = dao.get_event_by_key(event_key)
+def do_validate_registration_group_token(dao: TicketsDAO, event_key: str) -> TokenCheckResult:
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     form = create_event_form(event)()
     valid = form.validate_on_submit()
     if form.location.data is not None:
@@ -809,8 +809,8 @@ def do_validate_registration_group_token(dao, event_key):
     return TokenCheckResult(success=False)
 
 
-def do_validate_discount_code_token(dao, event_key):
-    event = dao.get_event_by_key(event_key)
+def do_validate_discount_code_token(dao: TicketsDAO, event_key: str) -> TokenCheckResult:
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     form = create_event_form(event)()
     valid = form.validate_on_submit()
     discount_product = [d for k, d in event.discount_products.items() if isinstance(d, CodeDiscountProduct)][0]
@@ -869,7 +869,7 @@ class PriorRegistrationsInfo(DataClassJsonMixin):
         return regs_info
 
 
-def do_get_prior_registrations(dao: TicketsDAO, event_key: str):
+def do_get_prior_registrations(dao: TicketsDAO, event_key: str) -> PriorRegistrationsInfo:
     event = dao.get_event_by_key(event_key)
     form = create_event_form(event)()
     valid = form.validate_on_submit()

@@ -27,14 +27,14 @@ class Product:
             self.key = string_to_key(self.name)
 
     @classmethod
-    def get_form_class(cls):
+    def get_form_class(cls) -> type:
         return ProductForm
 
     @classmethod
-    def is_added(cls, form: ProductForm):
+    def is_added(cls, form: ProductForm) -> bool:
         return bool(form.add.data)
 
-    def parse_form(self, form: ProductForm) -> typing.List:
+    def parse_form(self, form: ProductForm) -> typing.List[Purchase]:
         purchases = []
         product_form = form.get_item_by_key(self.key)
         if self.is_added(product_form):

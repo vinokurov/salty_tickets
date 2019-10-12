@@ -195,10 +195,10 @@ class CodeDiscountProduct(DiscountProduct):
     applies_to_couple: bool = False
 
     @classmethod
-    def get_form_class(cls):
+    def get_form_class(cls) -> type:
         return CodeDiscountForm
 
-    def _get_discount(self, tickets: typing.Dict, payment: Payment, form) -> typing.List:
+    def _get_discount(self, tickets: typing.Dict, payment: Payment, form) -> typing.List[Discount]:
         discounts = []
 
         discount = self.discount_rule.get_discount(tickets, payment, payment.paid_by, form)
