@@ -5,7 +5,7 @@ from salty_tickets.dao import TicketsDAO
 
 registration_group = RegistrationGroup(
     name='The Frenchie baguette',
-    location={'country_code': 'fr'},
+    location={'country_code': 'gb', 'city':'Norwich'},
     admin_email='alexander.a.vinokurov@gmail.com',
     comment='manually created',
 )

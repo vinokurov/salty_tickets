@@ -11,29 +11,30 @@ from salty_tickets.dao import TicketsDAO
 #     info='Free parties discount',
 #     active=True,
 #     included_tickets=['party_pass'],
-#     comment='Adam & Rebecca'
+#     comment='Mimi & Yoshi'
 # )
 
-
-discount_code = DiscountCode(
-    discount_rule='all_free',
-    applies_to_couple=True,
-    max_usages=1,
-    times_used=0,
-    info='Pay later',
-    active=True,
-    comment='Pay later'
-)
 
 # discount_code = DiscountCode(
-#     discount_rule='free_full_pass',
-#     applies_to_couple=False,
+#     discount_rule='all_free',
+#     applies_to_couple=True,
 #     max_usages=1,
 #     times_used=0,
-#     info='Free full pass discount',
+#     info='Pay later',
 #     active=True,
-#     included_tickets=['full_pass']
+#     comment='Pay later'
 # )
+
+discount_code = DiscountCode(
+    discount_rule='free_full_pass',
+    applies_to_couple=False,
+    max_usages=1,
+    times_used=0,
+    info='Free full pass discount',
+    active=True,
+    included_tickets=['full_pass'],
+    comment='Lesta Woo - ticket transfer'
+)
 
 dao = TicketsDAO(host=MONGO)
 event = dao.get_event_by_key('mind_the_shag_2019')

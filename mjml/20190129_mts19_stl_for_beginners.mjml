@@ -1,0 +1,175 @@
+<mjml>
+  <mj-head>
+    <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
+    <mj-font name="Open Sans Condensed" href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300" />
+    <mj-font name="Noto Sans TC"  href="https://fonts.googleapis.com/css?family=Noto+Sans+TC:900" />
+    <mj-font name="Pathway Gothic One"  href="https://fonts.googleapis.com/css?family=Pathway+Gothic+One" />
+    <mj-font name="Homenaje"  href="https://fonts.googleapis.com/css?family=Homenaje" />
+  </mj-head>
+
+  <mj-body>
+    <mj-section background-color="#1B4F72" padding=0>
+      <mj-column>
+        <mj-text font-size="25px" color="#fff" font-family="Noto Sans TC,Sans-Serif" align="center" padding-top="5px" padding-bottom="0px">
+          MIND THE SHAG
+        </mj-text>
+        <mj-text font-size="10px" color="#fff" font-family="Noto Sans TC,Sans-Serif" align="center" padding-top="5px" padding-bottom=0>
+          London SHAG Festival
+        </mj-text>
+        <mj-divider border-color="#fff" padding-top="3px" border-width="1px" padding-bottom="0px" width="120px"/>
+        <mj-text font-size="10px" color="#fff" font-family="Noto Sans TC,Sans-Serif" align="center" padding-top="3px">
+          29-31 March 2019
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-family="Raleway,Sans-Serif">
+          <p>Dear %recipient.full_name%,</p>
+          <p>Did you know that there is a special offer that you may find interesting?</p>
+          <p>
+          <b>Simona Pogosian & Rokas Borusevicius</b>, the ultimate best <b>St.Louis Shaggers</b> in Europe, will be teaching 3 stations at Mind the Shag. Starting with <i>St.Louis from A to Z</i>, which is intended to give you in 2h everything required to be able to dance this style. Two other stations are focused on learning more moves.
+          Why not use the opportunity and get into St.Louis Shag as well?
+          As you have a Shag Novice ticket, you can <b>book extra stations for just £25</b>.
+          </p>
+          <p>See here their latest video: <a href="https://youtu.be/OKTj5I67mOE">https://youtu.be/OKTj5I67mOE</a></p>
+
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+        <mj-column>
+          <mj-button font-family="Noto Sans TC" background-color="#1B4F72" color="white"
+            href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%">
+            Book for just £25
+          </mj-button>
+        </mj-column>
+    </mj-section>
+
+<mj-raw><!-- ST.LOUIS FROM A TO Z --></mj-raw>
+
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-bottom=0>
+          ST.LOUIS FROM A TO Z
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-top="2px" padding-bottom=0>
+          Simona & Rokas
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="green" padding-top="10px" padding-bottom=0>
+          St.Louis Shag
+        </mj-text>
+        <mj-text font-size="10px" font-family="Raleway,Sans-Serif" padding-top="15px">
+          Saturday 30-March, 14:00-16:00
+        </mj-text>
+        <mj-text font-family="Raleway">
+          You are an experienced swing dancer, but want to try new styles. In these 2h Rokas & Simona, the best St.Louis Shaggers in Europe, will challenge you to learn the fundamentals of the footwork and connection as well as the must have repertoire for social dancing.
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-image width="200px" src="https://static.wixstatic.com/media/eb4a35_f171ecf5a38d46e48c81f40d9d04c5f4~mv2_d_3840_5760_s_4_2.jpg/v1/fill/w_206,h_280,al_c,q_80,usm_0.66_1.00_0.01/SR_couple1.webp"></mj-image>
+      </mj-column>
+    </mj-section>
+
+
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="20px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-bottom=0>
+          ST.LOUIS ORBITS
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-top="2px" padding-bottom=0>
+          Simona & Rokas
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="green" padding-top="10px" padding-bottom=0>
+          St.Louis Shag
+        </mj-text>
+        <mj-text font-size="10px" font-family="Raleway,Sans-Serif" padding-top="15px">
+          Saturday 30-March, 16:30-18:30
+        </mj-text>
+        <mj-text font-family="Raleway">
+          Get ready to travel the orbits and blow your mind with unseen St. Louis Shag swing-out variations.
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text font-size="20px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-bottom=0>
+          ST.LOUIS COCKTAIL
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="#626262" padding-top="2px" padding-bottom=0>
+          Simona & Rokas
+        </mj-text>
+        <mj-text font-size="12px" font-family="Noto Sans TC,Sans-Serif" color="green" padding-top="10px" padding-bottom=0>
+          St.Louis Shag
+        </mj-text>
+        <mj-text font-size="10px" font-family="Raleway,Sans-Serif" padding-top="15px">
+          Sunday 31-March, 11:00-13:00
+        </mj-text>
+        <mj-text font-family="Raleway">
+          This station will introduce you to the mixology of the favourite St. Louis Shag ingredients of Rokas & Simona. Learn them, try them, and make your own cocktail.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+<mj-raw><!-- END STATIONS --></mj-raw>
+
+    <mj-section>
+        <mj-column>
+          <mj-button font-family="Noto Sans TC,Sans-Serif" background-color="#1B4F72" color="white"
+            href="https://www.saltyjitterbugs.co.uk/register/mind_the_shag_2019?reg_token=%recipient.reg_token%">
+            Book for just £25
+          </mj-button>
+        </mj-column>
+    </mj-section>
+
+
+
+    <mj-section>
+      <mj-column>
+        <mj-text font-family="Raleway,Sans-Serif">
+          Thank you,<br/> Mind the Shag Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding=0>
+      <mj-column>
+        <mj-text font-family="Raleway,Sans-Serif" font-size="8px">
+          If you don't want to receive email news from Mind the Shag 2019, please click <a href="https://www.saltyjitterbugs.co.uk/unsubscribe_email/%recipient.reg_token%">unsubscribe</a>.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+
+    <mj-section background-color="#000" padding=0>
+      <mj-column font-family="Raleway,Sans-Serif" color="white" align="left">
+        <mj-social align="left" color="white" font-size="8px" font-family="Raleway"
+          padding-top="0px" padding-bottom="0px" mode="horizontal">
+          <mj-social-element name="web"
+            src="https://static.wixstatic.com/media/eb4a35_bb28b405c8ae49d498b45b5cce62ef70~mv2.jpg/v1/fill/w_32%2Ch_32%2Clg_1%2Cusm_0.66_1.00_0.01/eb4a35_bb28b405c8ae49d498b45b5cce62ef70~mv2.jpg"
+            href="http://mindtheshag.co.uk" padding-top="0px"
+            background-color="#1B4F72" icon-size="14px">
+            http://mindtheshag.co.uk
+          </mj-social-element>
+
+          <mj-social-element name="facebook-noshare"
+            src="https://www.mailjet.com/images/theme/v1/icons/ico-social/facebook.png"
+            href="https://www.facebook.com/mindtheshag" padding-top="0px"
+            background-color="#1B4F72" icon-size="14px">
+            Facebook
+          </mj-social-element>
+
+          <mj-social-element name="youtube"
+            src="https://www.mailjet.com/images/theme/v1/icons/ico-social/youtube.png" background-color="#f00"
+            href="https://www.youtube.com/channel/UCY1bkFZP8wCHPGM3Ajg5AyQ" padding-top="0px"
+            icon-size="14px">
+            Youtube
+          </mj-social-element>
+        </mj-social>
+      </mj-column>
+    </mj-section>
+
+  </mj-body>
+</mjml>

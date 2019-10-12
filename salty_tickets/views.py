@@ -36,8 +36,6 @@ if app.debug:
         return requests.get('http://localhost:8080/{}'.format(path)).text
 
 
-@app.route('/')
-@app.route('/r')
 @app.route('/register')
 @app.route('/register/')
 def register_index():
@@ -186,6 +184,8 @@ def rating_vote_response():
     return resp
 
 
+@app.route('/')
+@app.route('/r')
 @app.route('/rating', methods=['GET'])
 def rating_vote():
     resp = rating_vote_response()

@@ -20,7 +20,7 @@ registrations = [Registration(
     )]
 
 payment = Payment(
-    person=person,
+    paid_by=person,
     registrations=registrations,
     status=SUCCESSFUL,
     info_items=[(event.tickets[r.ticket_key].item_info(r), r.price) for r in registrations],
