@@ -19,7 +19,8 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup, \
     TransactionDetails
-from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket, Ticket
+from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket, Ticket, PartyTicket, \
+    FestivalPassTicket
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken, RegistrationToken
@@ -88,6 +89,10 @@ class TicketInfo(DataClassJsonMixin):
 
         if hasattr(ticket, 'location'):
             ticket_info.location = ticket.location
+
+        if isinstance(ticket, PartyTicket):
+            available = ticket.max_available - ticket.waiting_list.total_accepted
+            ticket_info.available = available
 
         if isinstance(ticket, WorkshopTicket):
             available = ticket.max_available - ticket.waiting_list.total_accepted
