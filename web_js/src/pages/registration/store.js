@@ -12,6 +12,7 @@ const my_state = {
   products: [],
   layout: {},
   event_name: '',
+  event_active: true,
   event_registration_stats: {
     persons_count: null,
     workshops_accepted: null,
@@ -149,6 +150,7 @@ export default new Vuex.Store({
       state.tickets = response.data.tickets
       state.products = response.data.products
       state.event_name = response.data.name
+      state.event_active = response.data.active
       state.event_registration_stats = response.data.registrations_stats
 
       if(state.registration.registration_token) {

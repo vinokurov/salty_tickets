@@ -90,7 +90,7 @@
       </div>
     </div>
 
-    <div class="container-fluid">
+    <!-- <div class="container-fluid">
       <div class="container my-4" v-if="products.length">
         <h2  class="h2 display-4 text-center my-5">Extras</h2>
 
@@ -137,7 +137,7 @@
           </b-card-group>
         </div>
       </div>
-    </div>
+    </div> -->
 
   </div>
 </template>

@@ -2,9 +2,16 @@
   <div id="app">
     <checkout-header/>
     <registration-jumbotron/>
-    <prices-section/>
-    <registration-form/>
-    <products-form/>
+    <prices-section v-if="event_active"/>
+    <registration-form v-if="event_active"/>
+    <products-form v-if="event_active"/>
+
+    <b-container fluid v-if="!event_active">
+      <b-container class="my-4">
+        <h3>Online registration is closed</h3>
+      </b-container>
+    </b-container>
+
   </div>
 </template>
 
@@ -14,6 +21,7 @@ import ProductsForm from '../../components/ProductsForm.vue';
 import CheckoutHeader from '../../components/CheckoutHeader.vue';
 import RegistrationForm from '../../components/RegistrationForm.vue';
 import RegistrationJumbotron from '../../components/RegistrationJumbotron.vue';
+import { mapState, mapActions,mapGetters } from 'vuex'
 
 export default {
   name: 'app',
@@ -25,6 +33,9 @@ export default {
     RegistrationJumbotron,
   },
   methods: {
+  },
+  computed: {
+  ...mapState(['event_active']),
   },
 };
 </script>
