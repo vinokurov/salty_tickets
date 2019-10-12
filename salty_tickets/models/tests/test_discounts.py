@@ -81,7 +81,8 @@ def test_FixedValueDiscountProduct(app, festival_event, mr_x, ms_y,
         tag='discount'
     )
     festival_event.discount_products = {discount_product.key: discount_product}
-    form = create_event_form(festival_event)()
+    with app.app_context():
+        form = create_event_form(festival_event)()
     assert [] == discount_product.get_discount(festival_event.tickets, payment, form)
 
     form.get_item_by_key('test_discount').validated.data = True
@@ -107,7 +108,7 @@ def test_FixedValueDiscountProduct(app, festival_event, mr_x, ms_y,
 def test_FreeRegistrationDiscountRule(app, festival_event, mr_x, ms_y,
                                       x_registrations, y_registrations, x_discount, y_discount):
     discount_rule = FreeRegistrationDiscountRule(info='Free registration')
-    discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
+    discount_rule_testing_procedure(app, discount_rule, mr_x, ms_y, festival_event,
                                     x_discount, x_registrations, y_discount, y_registrations)
 
 
@@ -132,7 +133,7 @@ def test_FreeRegistrationDiscountRule(app, festival_event, mr_x, ms_y,
 def test_FreePartiesDiscountRule(app, festival_event, mr_x, ms_y,
                                  x_registrations, y_registrations, x_discount, y_discount):
     discount_rule = FreePartiesDiscountRule(info='Free party pass')
-    discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
+    discount_rule_testing_procedure(app, discount_rule, mr_x, ms_y, festival_event,
                                     x_discount, x_registrations, y_discount, y_registrations)
 
 
@@ -151,11 +152,11 @@ def test_FreePartiesDiscountRule(app, festival_event, mr_x, ms_y,
 def test_FreeFullPassDiscountRule(app, festival_event, mr_x, ms_y,
                                   x_registrations, y_registrations, x_discount, y_discount):
     discount_rule = FreeFullPassDiscountRule(info='Free full pass')
-    discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
+    discount_rule_testing_procedure(app, discount_rule, mr_x, ms_y, festival_event,
                                     x_discount, x_registrations, y_discount, y_registrations)
 
 
-def discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
+def discount_rule_testing_procedure(app, discount_rule, mr_x, ms_y, festival_event,
                                     x_discount, x_registrations, y_discount, y_registrations):
     registrations = [Registration(person=mr_x, ticket_key=i[0], price=i[1]) for i in x_registrations] \
                     + [Registration(person=ms_y, ticket_key=i[0], price=i[1]) for i in y_registrations]
@@ -168,7 +169,8 @@ def discount_rule_testing_procedure(discount_rule, mr_x, ms_y, festival_event,
         discount_rule=discount_rule
     )
     festival_event.discount_products = {discount_product.key: discount_product}
-    form = create_event_form(festival_event)()
+    with app.app_context():
+        form = create_event_form(festival_event)()
     assert [] == discount_product.get_discount(festival_event.tickets, payment, form)
     form.get_item_by_key('test_discount').validated.data = True
     expected_discounts = []

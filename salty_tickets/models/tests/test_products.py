@@ -32,7 +32,8 @@ def test_product(app):
         options={'red': 'Burgundy Red', 'blue': 'Navy Blue'}
     )
     event = Event(name='Test', products={'bag': product})
-    form = create_event_form(event)()
+    with app.app_context():
+        form = create_event_form(event)()
 
     form.get_item_by_key('bag').add.data = {'red': 1}
     expected_purchases = [Purchase(person=Person('You', ''),
@@ -54,7 +55,8 @@ def test_product(app):
                                    price_each=25.0)]
     assert expected_purchases == product.parse_form(form)
 
-    form = create_event_form(event)()
+    with app.app_context():
+        form = create_event_form(event)()
     form.get_item_by_key('bag').add.data = {'blue': 2}
     form.name.data = 'Mr.X'
     form.email.data = 'mr.x@gmail.com'

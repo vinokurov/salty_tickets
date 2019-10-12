@@ -27,11 +27,11 @@ class Event:
         if self.key is None:
             self.key = string_to_key(self.name)
 
-    def append_tickets(self, ticket_list):
+    def append_tickets(self, ticket_list: List[Ticket]):
         self.tickets.update({p.key: p for p in ticket_list})
 
-    def append_products(self, product_list):
+    def append_products(self, product_list: List[Product]):
         self.products.update({p.key: p for p in product_list})
 
-    def append_discount_products(self, discount_product_list):
+    def append_discount_products(self, discount_product_list: List[DiscountProduct]):
         self.discount_products.update({p.key: p for p in discount_product_list})

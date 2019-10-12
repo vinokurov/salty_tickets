@@ -1,8 +1,8 @@
 from flask import render_template, redirect, url_for, request, make_response, jsonify
 from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
-from salty.rating.admin import start_contest, stop_contest, get_contest_results
-from salty.rating.voting import generate_voter_uid, add_rating_vote, get_current_contest_config, get_my_last_vote
+# from salty.rating.admin import start_contest, stop_contest, get_contest_results
+# from salty.rating.voting import generate_voter_uid, add_rating_vote, get_current_contest_config, get_my_last_vote
 from salty_tickets import app
 from salty_tickets import config
 from salty_tickets.actions.mailing_lists import do_email_unsubscribe

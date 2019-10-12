@@ -237,7 +237,8 @@ def test_wait_listed_parse_form(app):
     event = Event(name='Test Event', tickets={'test': ticket})
 
     # will accept leader
-    form = create_event_form(event)()
+    with app.app_context():
+        form = create_event_form(event)()
     form.get_item_by_key('test').add.data = LEADER
     regs = ticket.parse_form(form)
     assert not regs[0].wait_listed

@@ -1,7 +1,7 @@
 from datetime import datetime
+from unittest.mock import MagicMock, Mock
 
 import pytest
-from mock import MagicMock, Mock
 from pytest import raises
 from salty_tickets.constants import COUPLE, LEADER, FOLLOWER
 from salty_tickets.forms import create_event_form, DanceSignupForm, get_primary_personal_info_from_form, \
@@ -36,7 +36,8 @@ def test_create_event_form(app):
     form_class = create_event_form(event)
     assert issubclass(form_class, DanceSignupForm)
 
-    form = form_class()
+    with app.app_context():
+        form = form_class()
     assert form.get_item_by_key(tickets[0].key).form_class == tickets[0].get_form_class()
 
 
