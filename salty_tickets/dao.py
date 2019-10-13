@@ -311,6 +311,15 @@ class TicketsDAO:
 
         return event
 
+    def get_ticket_registrations(self, event, tickets=None):
+        registrations = self.query_registrations(event)
+        ticket_registrations = {}
+        for ticket_key in event.tickets:
+            if tickets and ticket_key not in tickets:
+                continue
+            ticket_registrations[ticket_key] = [r for r in registrations if r.ticket_key == ticket_key]
+        return ticket_registrations
+
     def get_registrations_for_ticket(self, event: Event, ticket) -> List[Registration]:
         filters = {
             'ticket_key': self._get_ticket_key(ticket),

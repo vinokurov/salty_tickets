@@ -91,8 +91,7 @@ class TicketInfo(DataClassJsonMixin):
             ticket_info.location = ticket.location
 
         if isinstance(ticket, PartyTicket):
-            available = ticket.max_available - ticket.waiting_list.total_accepted
-            ticket_info.available = available
+            ticket_info.available = ticket.get_available_quantity()
 
         if isinstance(ticket, WorkshopTicket):
             available = ticket.max_available - ticket.waiting_list.total_accepted
