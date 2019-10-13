@@ -328,7 +328,7 @@ class TicketsDAO:
     def _get_event_doc(self, event) -> EventDocument:
         if isinstance(event, str):
             return EventDocument.objects(key=event).first()
-        elif hasattr(event, 'id') and event.id:
+        elif event.id:
             return EventDocument.objects(id=event.id).first()
         else:
             raise ValueError(f'Invalid event argument: {event}')
@@ -336,7 +336,7 @@ class TicketsDAO:
     def _get_event_id(self, event) -> EventDocument:
         if isinstance(event, str):
             return EventDocument.objects(key=event).first().id
-        elif hasattr(event, 'id') and event.id:
+        elif event.id:
             return event.id
         else:
             raise ValueError(f'Invalid event argument: {event}')
@@ -348,12 +348,12 @@ class TicketsDAO:
             return ticket.key
 
     def _get_or_create_new_person(self, person, event) -> PersonDocument:
-        if not hasattr(person, 'id'):
+        if not person.id:
             self.add_person(person, event)
         return PersonDocument.objects(id=person.id).first()
 
     def add_person(self, person: Person, event: Event):
-        if hasattr(person, 'id'):
+        if person.id:
             raise ValueError(f'Person already exists: {person}')
         else:
             person_doc = PersonDocument.from_dataclass(person)
@@ -361,8 +361,8 @@ class TicketsDAO:
             person_doc.save()
             person.id = person_doc.id
 
-    def add_registration(self, registration: Registration, event):
-        if hasattr(registration, 'id'):
+    def add_registration(self, registration: Registration, event: Event):
+        if registration.id:
             raise ValueError(f'Registration already exists: {registration}')
 
         registration_doc = RegistrationDocument.from_dataclass(registration)
@@ -375,7 +375,7 @@ class TicketsDAO:
         registration.id = registration_doc.id
 
     def add_purchase(self, purchase: Purchase, event):
-        if hasattr(purchase, 'id'):
+        if purchase.id:
             raise ValueError(f'Purchase already exists: {purchase}')
 
         purchase_doc = PurchaseDocument.from_dataclass(purchase)
@@ -386,14 +386,14 @@ class TicketsDAO:
 
     @timeit
     def add_payment(self, payment: Payment, event: Event, register=False):
-        if hasattr(payment, 'id'):
+        if payment.id:
             raise ValueError(f'Payment already exists: {payment}')
         print(payment)
         payment_doc = PaymentDocument.from_dataclass(payment)
         payment_doc.event = event.id
         payment_doc.paid_by = self._get_or_create_new_person(payment.paid_by, event)
         for reg in payment.registrations:
-            if not hasattr(reg, 'id'):
+            if not reg.id:
                 if not register:
                     raise ValueError(f'Registrations need to be added first: {reg}')
                 else:
@@ -403,7 +403,7 @@ class TicketsDAO:
         payment_doc.extra_registrations = [r.id for r in payment.extra_registrations]
 
         for prd in payment.purchases:
-            if not hasattr(prd, 'id'):
+            if not prd.id:
                 if not register:
                     raise ValueError(f'Purchases need to be added first: {reg}')
                 else:
@@ -440,7 +440,7 @@ class TicketsDAO:
         return [p.to_dataclass() for p in payment_docs]
 
     def get_payment_by_registration(self, registration):
-        if hasattr(registration, 'id'):
+        if registration.id:
             payment_doc = PaymentDocument.objects.filter(registrations__contains=registration.id).first()
             if payment_doc:
                 return payment_doc.to_dataclass()
@@ -563,7 +563,7 @@ class TicketsDAO:
             return doc.to_dataclass()
 
     def add_discount_code(self, event: Event, discount_code: DiscountCode):
-        if hasattr(discount_code, 'id'):
+        if discount_code.id:
             raise ValueError(f'Discount code already exists: {discount_code}')
         discount_code_doc = DiscountCodeDocument.from_dataclass(discount_code)
         discount_code_doc.event = event.id
@@ -572,7 +572,7 @@ class TicketsDAO:
         discount_code.int_id = discount_code_doc.int_id
 
     def increment_discount_code_usages(self, discount_code: DiscountCode, usages=1):
-        if not hasattr(discount_code, 'id'):
+        if not discount_code.id:
             raise ValueError(f'Discount code isn`t saved: {discount_code}')
         discount_code_doc = DiscountCodeDocument.objects(**id_filter(discount_code.id)).first()
         discount_code_doc.times_used += usages
@@ -596,9 +596,9 @@ class TicketsDAO:
             return doc.to_dataclass()
 
     def add_registration_group_member(self, registration_group: RegistrationGroup, person: Person):
-        if not hasattr(person, 'id'):
+        if not person.id:
             raise ValueError('Person need to be saved first')
-        if not hasattr(registration_group, 'id'):
+        if not registration_group.id:
             raise ValueError('Registration group need to be saved first')
 
         doc = RegistrationGroupDocument.objects(**id_filter(registration_group.id)).first()
@@ -623,7 +623,7 @@ class TicketsDAO:
         self._update_doc(EventEmailSettingsDocument, event_email_settings)
 
     def get_person_event_key(self, person: Person) -> str:
-        if not hasattr(person, 'id'):
+        if not person.id:
             return None
         person_doc = PersonDocument.objects(**id_filter(person.id)).first()
         if person_doc:

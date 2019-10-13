@@ -22,6 +22,8 @@ class Product:
     tags: typing.Set = field(default_factory=set)
     options: typing.Dict = field(default_factory=dict)
 
+    id = None
+
     def __post_init__(self):
         if self.key is None:
             self.key = string_to_key(self.name)

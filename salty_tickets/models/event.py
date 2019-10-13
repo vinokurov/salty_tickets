@@ -23,6 +23,8 @@ class Event:
     validation_rules: List = field(default_factory=list)
     layout: Dict = None
 
+    id = None
+
     def __post_init__(self):
         if self.key is None:
             self.key = string_to_key(self.name)

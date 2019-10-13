@@ -1,6 +1,5 @@
 import pymongo
 import typing
-from unittest import mock
 from unittest.mock import Mock
 
 from datetime import datetime
@@ -246,22 +245,18 @@ def app_routes(app, test_dao):
 
 
 @pytest.fixture
-def mock_send_email():
-    with mock.patch('salty_tickets.emails.send_email') as mock_1,\
-         mock.patch('salty_tickets.api.registration_process.send_registration_confirmation') as mock_2,\
-         mock.patch('salty_tickets.api.registration_process.send_waiting_list_accept_email') as mock_3:
-        mock_1.return_value = True
-        mock_2.return_value = True
-        mock_3.return_value = True
-        yield
+def mock_send_email(mocker):
+    mocker.patch('salty_tickets.emails.send_email').return_value = True
+    mocker.patch('salty_tickets.api.registration_process.send_registration_confirmation').return_value = True
+    mocker.patch('salty_tickets.api.registration_process.send_waiting_list_accept_email').return_value = True
 
 
 @pytest.fixture
-def mock_stripe():
-    with mock.patch('salty_tickets.payments.stripe_session') as mock_stripe_session:
-        mock_sp = Mock()
-        mock_stripe_session.return_value.__enter__.return_value = mock_sp
-        yield mock_sp
+def mock_stripe(mocker):
+    mock_stripe_session = mocker.patch('salty_tickets.payments.stripe_session')
+    mock_sp = Mock()
+    mock_stripe_session.return_value.__enter__.return_value = mock_sp
+    return mock_sp
 
 
 @pytest.fixture

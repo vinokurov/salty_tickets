@@ -27,7 +27,7 @@ from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupTo
 from salty_tickets.validators import validate_registrations
 
 """
-Before chackout:
+Before checkout:
     - get form data
     - price tickets, validate fields
     - return JSON with prices, field validation, etc
@@ -483,7 +483,7 @@ def do_price(dao: TicketsDAO, event_key: str):
         return PricingResult.from_payment(event, payment, errors, new_prices=new_prices)
 
 
-def get_prior_registrations(dao, event, prior_registred_by):
+def get_prior_registrations(dao: TicketsDAO, event: Event, prior_registred_by):
     if prior_registred_by is not None:
         prior_registrations = dao.query_registrations(event, registered_by=prior_registred_by)
         prior_registrations = [r for r in prior_registrations if r.active]
@@ -543,7 +543,7 @@ def do_pay(dao: TicketsDAO):
         error_message = 'Payment information has expired. Please try again.'
         return PaymentResult(success=False, error_message=error_message)
 
-    event = dao.get_event_by_key(event_key)
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     payment.description = event.name
     stripe_token_id = form.stripe_token.data.get('id')
     payment.stripe = PaymentStripeDetails(token_id=stripe_token_id)
@@ -870,7 +870,7 @@ class PriorRegistrationsInfo(DataClassJsonMixin):
 
 
 def do_get_prior_registrations(dao: TicketsDAO, event_key: str) -> PriorRegistrationsInfo:
-    event = dao.get_event_by_key(event_key)
+    event = dao.get_event_by_key(event_key, get_registrations=False)
     form = create_event_form(event)()
     valid = form.validate_on_submit()
 

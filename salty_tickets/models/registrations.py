@@ -13,6 +13,8 @@ class Person:
     location: Dict = field(default_factory=dict, hash=False)
     comment: str = None
 
+    id = None
+
     def __bool__(self):
         return bool(self.full_name) or bool(self.email)
 
@@ -32,6 +34,8 @@ class Registration:
     ticket_key: str = None
     active: bool = False
 
+    id = None
+
     @property
     def as_couple(self):
         return bool(self.partner)
@@ -50,6 +54,8 @@ class Purchase:
     is_paid: bool = False
     active: bool = False
 
+    id = None
+
 
 @dataclass
 class DiscountCode:
@@ -63,6 +69,8 @@ class DiscountCode:
     active: bool = False
     included_tickets: typing.List = field(default_factory=list)
     comment: str = None
+
+    id = None
 
     @property
     def can_be_used(self):
@@ -118,6 +126,8 @@ class Payment:
     first_pay_amount: float = 0
     first_pay_fee: float = 0
 
+    id = None
+
     def __post_init__(self):
         if self.price and self.pay_all_now and not self.first_pay_amount:
             self.first_pay_amount = self.price
@@ -157,3 +167,5 @@ class RegistrationGroup:
     comment: str = None
     admin: Person = None
     members: typing.List = field(default_factory=list)
+
+    id = None
