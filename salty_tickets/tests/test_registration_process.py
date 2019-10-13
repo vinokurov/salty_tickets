@@ -168,8 +168,8 @@ def test_register_couple(test_dao, app, client, salty_recipes):
     post_json_data(client, '/', post_data)
 
 
-def test_do_price(test_dao, app_routes, client, sample_data):
-    res = post_json_data(client, '/price', sample_data.form_data)
+def test_do_price(test_dao, client, salty_recipes, sample_data):
+    res = post_json_data(client, '/price/salty_recipes', sample_data.form_data)
 
     expected = sample_data.pricing_results.copy()
     expected['new_prices'] = [{'ticket_key': 'party', 'price': 10}]
@@ -178,22 +178,22 @@ def test_do_price(test_dao, app_routes, client, sample_data):
     assert expected == res.json
 
 
-def test_do_price_validation(test_dao, app_routes, client, sample_data):
+def test_do_price_validation(test_dao, salty_recipes, client, sample_data):
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': LEADER}
-    res = post_json_data(client, '/price', data=form_data)
+    res = post_json_data(client, '/price/salty_recipes', data=form_data)
     assert not res.json['errors']
     assert not res.json['disable_checkout']
     assert not res.json['checkout_success']
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com'}
-    res = post_json_data(client, '/price', data=form_data)
+    res = post_json_data(client, '/price/salty_recipes', data=form_data)
     assert not res.json['errors']
     assert res.json['disable_checkout']
     assert not res.json['checkout_success']
 
     form_data = {'name': 'Mr X', 'saturday-add': LEADER}
-    res = post_json_data(client, '/price', data=form_data)
+    res = post_json_data(client, '/price/salty_recipes', data=form_data)
     is_required = ['This field is required.']
     assert {'email': is_required} == res.json['errors']
     assert res.json['disable_checkout']
@@ -201,7 +201,7 @@ def test_do_price_validation(test_dao, app_routes, client, sample_data):
     assert 25 == res.json['order_summary']['total_price']
 
     form_data = {'saturday-add': LEADER}
-    res = post_json_data(client, '/price', data=form_data)
+    res = post_json_data(client, '/price/salty_recipes', data=form_data)
     is_required = ['This field is required.']
     assert {'email': is_required, 'name': is_required} == res.json['errors']
     assert res.json['disable_checkout']
@@ -209,7 +209,7 @@ def test_do_price_validation(test_dao, app_routes, client, sample_data):
     assert 25 == res.json['order_summary']['total_price']
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': COUPLE}
-    res = post_json_data(client, '/price', data=form_data)
+    res = post_json_data(client, '/price/salty_recipes', data=form_data)
 
     ptn_required = ['Partner details are required']
     expected_errors = {'dance_role': ptn_required, 'partner_name': ptn_required, 'partner_email': ptn_required}
@@ -219,8 +219,8 @@ def test_do_price_validation(test_dao, app_routes, client, sample_data):
     assert 50 == res.json['order_summary']['total_price']
 
 
-def test_do_checkout(test_dao, app_routes, client, sample_data):
-    res = post_json_data(client, '/checkout', data=sample_data.form_data)
+def test_do_checkout(test_dao, salty_recipes, client, sample_data):
+    res = post_json_data(client, '/checkout/salty_recipes', data=sample_data.form_data)
 
     expected = sample_data.pricing_results.copy()
     expected['payment_id'] = ''
@@ -239,22 +239,22 @@ def test_do_checkout(test_dao, app_routes, client, sample_data):
         assert not reg.wait_listed
 
 
-def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
+def test_do_checkout_validation(test_dao, salty_recipes, client, sample_data):
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': LEADER}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
     assert not res.json['errors']
     assert not res.json['disable_checkout']
     assert res.json['checkout_success']
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com'}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
     assert not res.json['errors']
     assert res.json['disable_checkout']
     assert not res.json['checkout_success']
 
     form_data = {'name': 'Mr X', 'saturday-add': LEADER}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
     is_required = ['This field is required.']
     assert {'email': is_required} == res.json['errors']
     assert res.json['disable_checkout']
@@ -262,7 +262,7 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
     assert 25 == res.json['order_summary']['total_price']
 
     form_data = {'saturday-add': LEADER}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
     is_required = ['This field is required.']
     assert {'email': is_required, 'name': is_required} == res.json['errors']
     assert res.json['disable_checkout']
@@ -270,7 +270,7 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
     assert 25 == res.json['order_summary']['total_price']
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': COUPLE}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
 
     ptn_required = ['Partner details are required']
     expected_errors = {'dance_role': ptn_required, 'partner_name': ptn_required, 'partner_email': ptn_required}
@@ -280,11 +280,11 @@ def test_do_checkout_validation(test_dao, app_routes, client, sample_data):
     assert 50 == res.json['order_summary']['total_price']
 
 
-def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_charge, test_dao, app_routes, client, sample_data):
+def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_charge, test_dao, salty_recipes, client, sample_data):
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
     assert 0 == PersonDocument.objects(full_name=sample_data.form_data['name']).count()
 
-    res = post_json_data(client, '/checkout', data=sample_data.form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=sample_data.form_data)
     with client.session_transaction() as sess:
         payment = sess.get('payment')
         assert payment is not None
@@ -317,7 +317,7 @@ def test_do_pay_success(mock_send_email, mock_stripe, sample_stripe_successful_c
     assert res.json['error_message']
 
 
-def post_pay(client, stripe_token_id='ch_test', url='/pay'):
+def post_pay(client, stripe_token_id='ch_test', url='/pay/'):
     post_data = {'stripe_token': {'id': stripe_token_id}}
     res = client.post(url, data=json.dumps(post_data), content_type='application/json')
     return res
@@ -329,10 +329,10 @@ def post_payment_status(client, payment_id, stripe_token_id='ch_test', url='/pay
     return res
 
 
-def test_do_pay_failure(mock_send_email, mock_stripe, sample_stripe_card_error, test_dao, app_routes, client, sample_data):
+def test_do_pay_failure(mock_send_email, mock_stripe, sample_stripe_card_error, test_dao, salty_recipes, client, sample_data):
     mock_stripe.Charge.create.side_effect = sample_stripe_card_error
 
-    post_json_data(client, '/checkout', data=sample_data.form_data)
+    post_json_data(client, '/checkout/salty_recipes', data=sample_data.form_data)
 
     res = post_pay(client)
     last_payment = PaymentDocument.objects().order_by('-_id').first()
@@ -352,11 +352,11 @@ def test_do_pay_failure(mock_send_email, mock_stripe, sample_stripe_card_error, 
 
 
 def test_do_pay_failure_then_success(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
-                                     test_dao, app_routes, client, sample_data):
+                                     test_dao, salty_recipes, client, sample_data):
     # first CardError, then success
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
 
-    post_json_data(client, '/checkout', data=sample_data.form_data)
+    post_json_data(client, '/checkout/salty_recipes', data=sample_data.form_data)
 
     res = post_pay(client)
     assert not res.json['success']
@@ -383,7 +383,7 @@ def test_do_pay_failure_then_success(mock_send_email, mock_stripe, sample_stripe
 
 
 def test_registration_process_balance(mock_send_email, mock_stripe, sample_stripe_successful_charge, sample_stripe_customer,
-                                     test_dao, app_routes, client, sample_data, salty_recipes, person_factory):
+                                     test_dao, salty_recipes, client, sample_data, person_factory):
 
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
     mock_stripe.Customer.create.return_value = sample_stripe_customer
@@ -394,7 +394,7 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     def _register_one(role):
         person = person_factory.pop()
         form_data = {'name': person.full_name, 'email': person.email, 'sunday-add': role}
-        post_json_data(client, '/checkout', data=form_data)
+        post_json_data(client, '/checkout/salty_recipes', data=form_data)
         res = post_pay(client)
         assert res.json['success']
         return res
@@ -432,10 +432,10 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
 
 def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
-                               test_dao, app_routes, client, sample_data):
+                               test_dao, salty_recipes, client, sample_data):
 
     form_data = {'name': 'Mr X', 'email': f'Mr.X@email.com', 'saturday-add': LEADER}
-    res = post_json_data(client, '/checkout', data=form_data)
+    res = post_json_data(client, '/checkout/salty_recipes', data=form_data)
     # payment_id = res.json['payment_id']
 
     mock_stripe.Charge.create.side_effect = [sample_stripe_card_error, sample_stripe_successful_charge]
@@ -493,7 +493,7 @@ def test_do_get_payment_status(mock_send_email, mock_stripe, sample_stripe_card_
     assert expected == res.json
 
 
-def test_do_check_partner_token(mock_send_email, salty_recipes, test_dao, app_routes, client):
+def test_do_check_partner_token(mock_send_email, salty_recipes, test_dao, client):
     event = test_dao.get_event_by_key('salty_recipes', False)
     partner = test_dao.get_registrations_for_ticket(event, 'saturday')[0].person
     ptn_token = PartnerToken().serialize(partner)

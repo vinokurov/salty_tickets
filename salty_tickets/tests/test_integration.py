@@ -14,7 +14,7 @@ def test_e2e_leader_accepted(e2e_vars):
     assert not event.tickets['saturday'].waiting_list.can_add(FOLLOWER)
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': LEADER}
-    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert not payment.registrations[0].wait_listed
     assert payment.registrations[0].active
     assert 25 == payment.price
@@ -31,7 +31,7 @@ def test_e2e_follower_wait_listed_pay_all(e2e_vars):
     assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': FOLLOWER, 'pay_all': 'y'}
-    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
     assert payment.registrations[0].is_paid
@@ -53,7 +53,7 @@ def test_e2e_follower_wait_listed_some_pay_all(e2e_vars):
 
     form_data = {'name': person.full_name, 'email': person.email, 'pay_all': 'y',
                  'saturday-add': FOLLOWER, 'sunday-add': FOLLOWER}
-    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
 
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
@@ -79,7 +79,7 @@ def test_e2e_follower_wait_listed_pay_later(e2e_vars):
     assert event.tickets['saturday'].waiting_list.has_waiting_list
 
     form_data = {'name': person.full_name, 'email': person.email, 'saturday-add': FOLLOWER, 'pay_all': ''}
-    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
     assert not payment.registrations[0].is_paid
@@ -102,7 +102,7 @@ def test_e2e_follower_wait_listed_some_pay_later(e2e_vars):
 
     form_data = {'name': person.full_name, 'email': person.email, 'pay_all': '',
                  'saturday-add': FOLLOWER, 'sunday-add': FOLLOWER}
-    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
 
     assert payment.registrations[0].wait_listed
     assert payment.registrations[0].active
@@ -118,13 +118,14 @@ def test_e2e_follower_wait_listed_some_pay_later(e2e_vars):
 
 
 def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
+    event = e2e_vars.dao.get_event_by_key('salty_recipes')
     # stripe will return success
     e2e_vars.mock_stripe.Charge.create.return_value = e2e_vars.sample_stripe_successful_charge
 
     # LEADER
     leader = e2e_vars.person_factory.pop()
     form_data = {'name': leader.full_name, 'email': leader.email, 'saturday-add': LEADER}
-    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     leader = leader_payment.paid_by
 
     # make sure we have waiting lsit
@@ -138,7 +139,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     # try without partner, make sure get wait listed
     # price
     form_data = {'name': follower.full_name, 'email': follower.email, 'saturday-add': FOLLOWER}
-    res = new_client.post('/price', data=form_data)
+    res = new_client.post(f'/price/{event.key}', data=form_data)
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
@@ -160,7 +161,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     form_data['partner_token'] = ptn_token
 
     # checkout with token
-    res = new_client.post('/price', data=form_data)
+    res = new_client.post(f'/price/{event.key}', data=form_data)
     assert 25 == res.json['order_summary']['total_price']
     expected = [{'dance_role': 'follower',
                  'name': 'Saturday',
@@ -172,7 +173,7 @@ def test_e2e_follower_uses_accepted_leaders_token(e2e_vars):
     assert expected == res.json['order_summary']['items']
 
     # check that follower gets signed up without waiting list with the token
-    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, new_client, form_data)
+    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, new_client, event.key, form_data)
     assert not follower_payment.registrations[0].wait_listed
     assert follower_payment.registrations[0].active
     assert leader_payment.paid_by == follower_payment.registrations[0].partner
@@ -196,7 +197,7 @@ def test_e2e_leader_uses_waiting_followers_token(e2e_vars):
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()
     form_data = {'name': follower.full_name, 'email': follower.email, 'pay_all': 'y', 'saturday-add': FOLLOWER}
-    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert follower_payment.registrations[0].wait_listed
     assert follower_payment.registrations[0].active
     assert not follower_payment.registrations[0].partner
@@ -214,7 +215,7 @@ def test_e2e_leader_uses_waiting_followers_token(e2e_vars):
     form_data['partner_token'] = ptn_token
 
     # check leader is registered ok
-    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert not leader_payment.registrations[0].wait_listed
     assert leader_payment.registrations[0].active
     assert 25 == leader_payment.registrations[0].price
@@ -240,7 +241,7 @@ def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()
     form_data = {'name': follower.full_name, 'email': follower.email, 'pay_all': 'y', 'saturday-add': FOLLOWER}
-    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert follower_payment.registrations[0].wait_listed
     assert follower_payment.registrations[0].active
     assert not follower_payment.registrations[0].partner
@@ -260,7 +261,7 @@ def test_e2e_leader_uses_waiting_folowers_token_but_payment_fails(e2e_vars):
     form_data['partner_token'] = ptn_token
 
     # check leader yayment is saved with success=FALSE
-    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data, assert_pay_success=False)
+    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data, assert_pay_success=False)
     assert FAILED == leader_payment.status
     assert not leader_payment.registrations[0].active
     assert not leader_payment.registrations[0].wait_listed
@@ -284,7 +285,7 @@ def test_e2e_follower_pays_later_leader_uses_her_token(e2e_vars):
     # FOLLOWER
     follower = e2e_vars.person_factory.pop()
     form_data = {'name': follower.full_name, 'email': follower.email, 'pay_all': '', 'saturday-add': FOLLOWER}
-    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    follower_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert follower_payment.registrations[0].wait_listed
     assert follower_payment.registrations[0].active
     assert not follower_payment.registrations[0].partner
@@ -305,7 +306,7 @@ def test_e2e_follower_pays_later_leader_uses_her_token(e2e_vars):
     form_data['partner_token'] = ptn_token
 
     # check leader is registered ok
-    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, form_data)
+    leader_payment = process_test_price_checkout_pay(e2e_vars.dao, e2e_vars.client, event.key, form_data)
     assert not leader_payment.registrations[0].wait_listed
     assert leader_payment.registrations[0].active
     assert 25 == leader_payment.registrations[0].price

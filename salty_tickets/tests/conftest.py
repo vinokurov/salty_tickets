@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from flask import Flask as _Flask
 from flask.testing import FlaskClient
 from flask_session import Session
-from mongoengine import connect
+from mongoengine import connect, disconnect
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument, TicketsDAO
@@ -25,14 +25,16 @@ from stripe.error import CardError
 
 
 class TestTicketsDAO(TicketsDAO):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        disconnect()
         db = connect(host='mongomock://localhost', db='salty_tickets')
         db.drop_database('salty_tickets')
 
 
 @pytest.fixture
-def test_dao():
+def test_dao(mocker):
     dao = TestTicketsDAO()
+    mocker.patch('salty_tickets.views.TicketsDAO', TestTicketsDAO)
     return dao
 
 
@@ -207,7 +209,11 @@ def app():
     app.config['WTF_CSRF_ENABLED'] = False
     app.config['SESSION_TYPE'] = 'mongodb'
     app.config['SESSION_MONGODB'] = pymongo.MongoClient()
+    app.config['MONGO'] = 'mongomock://localhost'
     Session(app)
+    with app.app_context():
+        from salty_tickets import views
+        app.register_blueprint(views.tickets_bp)
 
     return app
 
@@ -215,33 +221,6 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
-
-
-@pytest.fixture
-def app_routes(app, test_dao):
-    @app.route('/price', methods=['POST'])
-    def _price():
-        return jsonify_dataclass(do_price(test_dao, 'salty_recipes'))
-
-    @app.route('/checkout', methods=['POST'])
-    def _checkout():
-        return jsonify_dataclass(do_checkout(test_dao, 'salty_recipes'))
-
-    @app.route('/pay', methods=['POST'])
-    def _pay():
-        return jsonify_dataclass(do_pay(test_dao))
-
-    @app.route('/payment_status', methods=['POST'])
-    def _payment_status():
-        return jsonify_dataclass(do_get_payment_status(test_dao))
-
-    @app.route('/check_partner_token', methods=['POST'])
-    def _check_partner_token():
-        return jsonify_dataclass(do_check_partner_token(test_dao))
-
-    @app.route('/user_order', methods=['GET'])
-    def user_order_index():
-        pass
 
 
 @pytest.fixture
@@ -364,7 +343,7 @@ class AllVars:
 
 
 @pytest.fixture
-def e2e_vars(test_dao, salty_recipes, app, app_routes, client, person_factory,
+def e2e_vars(test_dao, salty_recipes, app, client, person_factory,
              mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
              sample_stripe_customer, mock_send_email):
 

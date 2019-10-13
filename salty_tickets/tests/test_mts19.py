@@ -332,7 +332,7 @@ def mts_app_routes(app, test_dao):
         pass
 
 
-def test_full_pass_registration_solo(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_full_pass_registration_solo(mts, test_dao, client, person_factory, mock_stripe,
                                      sample_stripe_card_error, sample_stripe_successful_charge,
                                      sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -349,12 +349,12 @@ def test_full_pass_registration_solo(mts_app_routes, mts, test_dao, client, pers
         'saturday_party-add': LEADER,
         'sunday_party-add': LEADER,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 120.0 == payment.price
 
 
-def test_full_pass_registration_couple(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_full_pass_registration_couple(mts, test_dao, client, person_factory, mock_stripe,
                                        sample_stripe_card_error, sample_stripe_successful_charge,
                                        sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -375,12 +375,12 @@ def test_full_pass_registration_couple(mts_app_routes, mts, test_dao, client, pe
         'saturday_party-add': COUPLE,
         'sunday_party-add': COUPLE,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 240.0 == payment.price
 
 
-def test_full_pass_with_estras_registration_solo(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_full_pass_with_estras_registration_solo(mts, test_dao, client, person_factory, mock_stripe,
                                      sample_stripe_card_error, sample_stripe_successful_charge,
                                      sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -398,12 +398,12 @@ def test_full_pass_with_estras_registration_solo(mts_app_routes, mts, test_dao, 
         'saturday_party-add': LEADER,
         'sunday_party-add': LEADER,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 145.0 == payment.price
 
 
-def test_full_pass_with_clinic_registration_couple(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_full_pass_with_clinic_registration_couple(mts, test_dao, client, person_factory, mock_stripe,
                                        sample_stripe_card_error, sample_stripe_successful_charge,
                                        sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -424,12 +424,12 @@ def test_full_pass_with_clinic_registration_couple(mts_app_routes, mts, test_dao
         'saturday_party-add': COUPLE,
         'sunday_party-add': COUPLE,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 270.0 == payment.price
 
 
-def test_full_pass_registration_couple_with_products(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_full_pass_registration_couple_with_products(mts, test_dao, client, person_factory, mock_stripe,
                                        sample_stripe_card_error, sample_stripe_successful_charge,
                                        sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -452,13 +452,13 @@ def test_full_pass_registration_couple_with_products(mts_app_routes, mts, test_d
         'tshirt-add': {'male_l': 1, 'female_s': 1},
         'bottle-add': {'blue': 2}
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 290.0 == payment.price
     assert 50 == sum([p.price for p in payment.purchases])
 
 
-def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_registration_with_overseas_discount(mts, test_dao, client, person_factory, mock_stripe,
                                        sample_stripe_card_error, sample_stripe_successful_charge,
                                        sample_stripe_customer, mock_send_email):
     # stripe will return success
@@ -482,7 +482,7 @@ def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, clie
         'bottle-add': {'blue': 2},
         'overseas_discount-validated': 'checked',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 240 == sum([p.price for p in payment.registrations])
     assert 50 == sum([p.price for p in payment.purchases])
@@ -502,7 +502,7 @@ def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, clie
         'showmans_shag-add': COUPLE,
         'overseas_discount-validated': 'checked',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 120 == payment.price
     assert 120 == sum([p.price for p in payment.registrations])
@@ -529,7 +529,7 @@ def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, clie
         'bottle-add': {'blue': 2},
         'overseas_discount-validated': 'checked',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 120 + 30 + 15 == sum([p.price for p in payment.registrations])
     assert 50 == sum([p.price for p in payment.purchases])
@@ -537,10 +537,10 @@ def test_registration_with_overseas_discount(mts_app_routes, mts, test_dao, clie
     assert 120 + 30 + 15 + 50 - 20 == payment.price
 
 
-def test_validate_registration_group(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_validate_registration_group(mts, test_dao, client, person_factory, mock_stripe,
                                      sample_stripe_card_error, sample_stripe_successful_charge,
                                      sample_stripe_customer, mock_send_email):
-    res = post_json_data(client, '/create_registration_group', {
+    res = post_json_data(client, f'/create_registration_group/{mts.key}', {
         'name': 'My Group',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -550,7 +550,7 @@ def test_validate_registration_group(mts_app_routes, mts, test_dao, client, pers
     assert token
     assert len(token) < 10
 
-    res = post_json_data(client, '/check_registration_group_token', {
+    res = post_json_data(client, f'/check_registration_group_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -560,7 +560,7 @@ def test_validate_registration_group(mts_app_routes, mts, test_dao, client, pers
     assert 'My Group' == res.json['info']
 
     # same country, different city - OK
-    res = post_json_data(client, '/check_registration_group_token', {
+    res = post_json_data(client, f'/check_registration_group_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "London", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -569,7 +569,7 @@ def test_validate_registration_group(mts_app_routes, mts, test_dao, client, pers
     assert res.json['success']
 
     # wrong token
-    res = post_json_data(client, '/check_registration_group_token', {
+    res = post_json_data(client, f'/check_registration_group_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -578,7 +578,7 @@ def test_validate_registration_group(mts_app_routes, mts, test_dao, client, pers
     assert not res.json['success']
 
     # disfferent country - not OK
-    res = post_json_data(client, '/check_registration_group_token', {
+    res = post_json_data(client, f'/check_registration_group_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "Eindhoven", "country": "Netherlands", "country_code": "nl"},
         'email': 'test@gmail.com',
@@ -587,10 +587,10 @@ def test_validate_registration_group(mts_app_routes, mts, test_dao, client, pers
     assert not res.json['success']
 
 
-def test_registration_with_a_group(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_registration_with_a_group(mts, test_dao, client, person_factory, mock_stripe,
                                    sample_stripe_card_error, sample_stripe_successful_charge,
                                    sample_stripe_customer, mock_send_email):
-    res = post_json_data(client, '/create_registration_group', {
+    res = post_json_data(client, f'/create_registration_group/{mts.key}', {
         'name': 'My Group',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -616,7 +616,7 @@ def test_registration_with_a_group(mts_app_routes, mts, test_dao, client, person
         'group_discount-code': group_token,
         'group_discount-validated': 'yes',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
 
     assert 10 == payment.discounts[0].value
@@ -633,7 +633,7 @@ def test_registration_with_a_group(mts_app_routes, mts, test_dao, client, person
         'group_discount-code': group_token,
         'group_discount-validated': 'yes',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
 
     assert not payment.discounts
@@ -659,14 +659,14 @@ def test_registration_with_a_group(mts_app_routes, mts, test_dao, client, person
         'group_discount-code': group_token,
         'group_discount-validated': 'yes',
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     group = GroupToken().deserialize(test_dao, group_token)
     # members not changed
     assert 3 == len(group.members)
 
 
-def test_validate_discount_code_token(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_validate_discount_code_token(mts, test_dao, client, person_factory, mock_stripe,
                                    sample_stripe_card_error, sample_stripe_successful_charge,
                                    sample_stripe_customer, mock_send_email):
     discount_code = DiscountCode(
@@ -682,7 +682,7 @@ def test_validate_discount_code_token(mts_app_routes, mts, test_dao, client, per
     test_dao.add_discount_code(event, discount_code)
     token = DiscountToken().serialize(discount_code)
 
-    res = post_json_data(client, '/check_discount_token', {
+    res = post_json_data(client, f'/check_discount_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -695,7 +695,7 @@ def test_validate_discount_code_token(mts_app_routes, mts, test_dao, client, per
     assert not res['email_override']
 
     test_dao.increment_discount_code_usages(discount_code, 1)
-    res = post_json_data(client, '/check_discount_token', {
+    res = post_json_data(client, f'/check_discount_token/{mts.key}', {
         'name': 'Mr.X',
         'location': {"city": "Cardiff", "country": "United Kingdom", "country_code": "gb"},
         'email': 'test@gmail.com',
@@ -704,7 +704,7 @@ def test_validate_discount_code_token(mts_app_routes, mts, test_dao, client, per
     assert not res['success']
 
 
-def test_registration_with_discount_code_party_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_registration_with_discount_code_party_pass(mts, test_dao, client, person_factory, mock_stripe,
                                    sample_stripe_card_error, sample_stripe_successful_charge,
                                    sample_stripe_customer, mock_send_email):
     person = person_factory.pop()
@@ -741,16 +741,16 @@ def test_registration_with_discount_code_party_pass(mts_app_routes, mts, test_da
         'discount_code-code': token,
         'discount_code-validated': '',
     }
-    assert post_json_data(client, '/check_discount_token', form_data).json['success']
+    assert post_json_data(client, f'/check_discount_token/{mts.key}', form_data).json['success']
     form_data['discount_code-validated'] = 'yes'
 
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 55 == sum([p.value for p in payment.discounts])
     assert 120 + 120 - 55 == payment.price
 
 
-def test_registration_with_discount_code_full_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_registration_with_discount_code_full_pass(mts, test_dao, client, person_factory, mock_stripe,
                                    sample_stripe_card_error, sample_stripe_successful_charge,
                                    sample_stripe_customer, mock_send_email):
     person = person_factory.pop()
@@ -788,16 +788,16 @@ def test_registration_with_discount_code_full_pass(mts_app_routes, mts, test_dao
         'discount_code-code': token,
         'discount_code-validated': '',
     }
-    assert post_json_data(client, '/check_discount_token', form_data).json['success']
+    assert post_json_data(client, f'/check_discount_token/{mts.key}', form_data).json['success']
     form_data['discount_code-validated'] = 'yes'
 
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 120 == sum([p.value for p in payment.discounts])
     assert 120 + 25 + 25 == payment.price
 
 
-def test_update_mts_order_add_extra_station(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_update_mts_order_add_extra_station(mts, test_dao, client, person_factory, mock_stripe,
                           sample_stripe_card_error, sample_stripe_successful_charge,
                           sample_stripe_customer, mock_send_email):
 
@@ -814,7 +814,7 @@ def test_update_mts_order_add_extra_station(mts_app_routes, mts, test_dao, clien
         'saturday_party-add': LEADER,
         'sunday_party-add': LEADER,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
 
     reg_token = RegistrationToken().serialize(payment.paid_by)
@@ -824,15 +824,15 @@ def test_update_mts_order_add_extra_station(mts_app_routes, mts, test_dao, clien
         'registration_token': reg_token,
         'shag_roller_coaster-add': LEADER,
     }
-    res = process_test_price(client, form_data, assert_disable_checkout=False)
+    res = process_test_price(client, mts.key, form_data, assert_disable_checkout=False)
     print(res)
-    payment2 = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment2 = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment2 is not None
     assert payment.paid_by == payment2.paid_by
     assert 25 == payment2.price
 
 
-def test_update_mts_order_add_upgrade_to_full_pass(mts_app_routes, mts, test_dao, client, person_factory, mock_stripe,
+def test_update_mts_order_add_upgrade_to_full_pass(mts, test_dao, client, person_factory, mock_stripe,
                           sample_stripe_card_error, sample_stripe_successful_charge,
                           sample_stripe_customer, mock_send_email):
 
@@ -847,7 +847,7 @@ def test_update_mts_order_add_upgrade_to_full_pass(mts_app_routes, mts, test_dao
         'saturday_party-add': LEADER,
         'sunday_party-add': LEADER,
     }
-    payment = process_test_price_checkout_pay(test_dao, client, form_data)
+    payment = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment is not None
     assert 85 == payment.price
 
@@ -860,8 +860,8 @@ def test_update_mts_order_add_upgrade_to_full_pass(mts_app_routes, mts, test_dao
         'rockabilly_bopper-add': LEADER,
         'showmans_shag-add': LEADER,
     }
-    res = process_test_price(client, form_data, assert_disable_checkout=False)
-    payment2 = process_test_price_checkout_pay(test_dao, client, form_data)
+    res = process_test_price(client, mts.key, form_data, assert_disable_checkout=False)
+    payment2 = process_test_price_checkout_pay(test_dao, client, mts.key, form_data)
     assert payment2 is not None
     assert payment.paid_by == payment2.paid_by
     assert 35 == payment2.price

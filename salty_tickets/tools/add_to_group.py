@@ -10,8 +10,8 @@ event = dao.get_event_by_key('mind_the_shag_2019')
 
 
 def add_discount_to_payment(payment_id: str, discount_token: str):
-    from salty_tickets.views import app
-    with app.test_request_context():
+    from salty_tickets.views import tickets_bp
+    with tickets_bp.test_request_context():
         form = create_event_form(event)()
     payment = dao.get_payment_by_id(payment_id)
     form.generic_discount_code.data = discount_token
