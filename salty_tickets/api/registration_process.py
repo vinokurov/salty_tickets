@@ -22,7 +22,8 @@ from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
     FestivalPassTicket
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
-from salty_tickets.tasks import email_registration_confirmation, email_waiting_list_accept_email
+from salty_tickets.tasks import task_registration_confirmation_email, task_waiting_list_accept_email, \
+    task_balance_waiting_lists
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken, RegistrationToken
 from salty_tickets.validators import validate_registrations
 
@@ -647,7 +648,7 @@ def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: R
         registration.partner = new_partner
     registration.wait_listed = False
     dao.update_registration(registration)
-    email_waiting_list_accept_email.send(str(registration.id))
+    task_waiting_list_accept_email.send(str(registration.id))
 
 
 def do_get_payment_status(dao: TicketsDAO):
@@ -696,8 +697,8 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     event = dao.get_payment_event(payment)
     post_process_discounts(dao, payment, event)
     # send_registration_confirmation(payment, event)
-    email_registration_confirmation.send(str(payment.id), event.key)
-    balance_event_waiting_lists(dao, event.key)
+    task_registration_confirmation_email.send(str(payment.id), event.key)
+    task_balance_waiting_lists.send(dao, event.key)
 
 
 def do_check_partner_token(dao: TicketsDAO):

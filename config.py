@@ -25,3 +25,5 @@ SESSION_TYPE = 'mongodb'
 SESSION_MONGODB = pymongo.MongoClient('mongodb://localhost')
 SESSION_MONGODB_DB = 'salty_tickets'
 
+
+

@@ -1,4 +1,3 @@
-# import dramatiq
 import logging
 
 from salty_tickets import dramatiq
@@ -7,12 +6,11 @@ from flask import render_template, url_for, current_app
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_email
 from salty_tickets.tokens import RegistrationToken, PaymentId
-# from salty_tickets.views import dao
 
 dao = TicketsDAO(current_app.config['MONGO'])
 
 @dramatiq.actor
-def email_registration_confirmation(payment_id, event_key):
+def task_registration_confirmation_email(payment_id, event_key):
     payment = dao.get_payment_by_id(payment_id)
     event = dao.get_event_by_key(event_key)
     with current_app.app_context():
@@ -38,7 +36,7 @@ def email_registration_confirmation(payment_id, event_key):
 
 
 @dramatiq.actor
-def email_waiting_list_accept_email(registration_id):
+def task_waiting_list_accept_email(registration_id):
     registration = dao.get_ticket_registration_by_id(registration_id)
     payment = dao.get_payment_by_registration(registration)
     event = dao.get_payment_event(payment)
@@ -54,3 +52,9 @@ def email_waiting_list_accept_email(registration_id):
     res = send_email(EMAIL_FROM, registration.person.email, subj, body_text, body_html=None)
     logging.info(res)
     return res
+
+
+@dramatiq.actor
+def task_balance_waiting_lists(event_key):
+    from salty_tickets.api.registration_process import balance_event_waiting_lists
+    balance_event_waiting_lists(dao, event_key)

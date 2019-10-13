@@ -7,6 +7,7 @@ from salty_tickets.dao import PaymentDocument, PersonDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import Registration, Payment, PaymentStripeDetails
 from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
+from salty_tickets.tasks import task_balance_waiting_lists
 from salty_tickets.testutils import post_json_data
 from salty_tickets.tokens import PartnerToken, PaymentId
 
@@ -412,6 +413,8 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     waiting_list = event.tickets['sunday'].waiting_list
     while waiting_list.registration_stats[FOLLOWER].accepted / (waiting_list.registration_stats[LEADER].accepted + 1) > waiting_list.ratio:
         _register_one(LEADER)
+        task_balance_waiting_lists('salty_recipes')
+
         first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
         assert first_waiting_follower.wait_listed
 
@@ -420,6 +423,7 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
     # now add one more leader and make sure that waiting list gets balanced
     _register_one(LEADER)
+    task_balance_waiting_lists('salty_recipes')
     event = test_dao.get_event_by_key('salty_recipes')
     waiting_list = event.tickets['sunday'].waiting_list
 

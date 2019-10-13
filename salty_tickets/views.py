@@ -152,7 +152,8 @@ def admin_order(payment_id):
 @tickets_bp.route('/admin/balance_event/<string:event_key>', methods=['GET'])
 @login_required
 def admin_balance_event(event_key):
-    balance_event_waiting_lists(dao, event_key)
+    from salty_tickets.tasks import task_balance_waiting_lists
+    task_balance_waiting_lists.send(event_key)
     return ''
 
 #####################################################################
