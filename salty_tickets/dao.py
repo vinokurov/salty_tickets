@@ -530,7 +530,7 @@ class TicketsDAO:
             doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts or []]
             doc.save()
 
-    def mark_registrations_as_couple(self, registration_1: Registration, registration_2: Registration):
+    def mark_registrations_as_couple(self, registration_1: Registration, registration_2: Registration) -> Payment:
         registration_1.partner = registration_2.person
         registration_2.partner = registration_1.person
         self.update_registration(registration_1)

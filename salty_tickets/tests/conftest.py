@@ -226,8 +226,8 @@ def client(app):
 @pytest.fixture
 def mock_send_email(mocker):
     mocker.patch('salty_tickets.emails.send_email').return_value = True
-    mocker.patch('salty_tickets.api.registration_process.send_registration_confirmation').return_value = True
-    mocker.patch('salty_tickets.api.registration_process.send_waiting_list_accept_email').return_value = True
+    mocker.patch('salty_tickets.api.registration_process.email_waiting_list_accept_email').send.return_value = True
+    mocker.patch('salty_tickets.api.registration_process.email_registration_confirmation').send.return_value = True
 
 
 @pytest.fixture

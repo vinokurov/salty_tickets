@@ -4,6 +4,7 @@ flask
 flask-wtf
 flask-session
 flask-simplelogin
+Flask-Melodramatiq
 stripe
 premailer
 hashids

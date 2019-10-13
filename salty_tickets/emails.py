@@ -22,43 +22,12 @@ def send_email(email_from: str, email_to: str, subj: str, body_text: str, body_h
     }
     if not config.MODE_TESTING:
         email_data['bcc'] = config.EMAIL_DEBUG
+    logging.info(email_data)
     result = requests.post('https://api.mailgun.net/v3/saltyjitterbugs.co.uk/messages',
                            auth=('api', config.MAILGUN_KEY),
                            data=email_data,
                            files=files)
     return result
-
-
-def send_registration_confirmation(payment: Payment, event: Event):
-    order_status_url = url_for('user_order_index', pmt_token=PaymentId().serialize(payment), _external=True)
-    order_update_url = url_for('event_index', event_key=event.key,
-                               reg_token=RegistrationToken().serialize(payment.paid_by), _external=True)
-
-    # ptn_token = PartnerToken().serialize(payment.paid_by)
-    body_text = render_template('email/registration_confirmation.txt',
-                                payment=payment,
-                                event=event,
-                                # ptn_token=ptn_token,
-                                order_status_url=order_status_url,
-                                order_update_url=order_update_url)
-
-    subj = f'{event.name} - Registration'
-
-    return send_email(EMAIL_FROM, payment.paid_by.email, subj, body_text, body_html=None)
-
-
-def send_waiting_list_accept_email(dao: TicketsDAO, registration: Registration):
-    payment = dao.get_payment_by_registration(registration)
-    event = dao.get_payment_event(payment)
-    order_status_url = url_for('user_order_index', pmt_token=PaymentId().serialize(payment), _external=True)
-    body_text = render_template('email/acceptance_from_waiting_list.txt',
-                                registration=registration,
-                                event=event,
-                                order_status_url=order_status_url)
-
-    subj = f'{event.name} - You are in!'
-
-    return send_email(EMAIL_FROM, registration.person.email, subj, body_text, body_html=None)
 
 
 ##############################################################################################
