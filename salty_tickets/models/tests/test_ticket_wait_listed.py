@@ -131,39 +131,44 @@ def assert_registrations_eq(list1, list2):
 def test_wait_listed_partner_ticket_balance_no_waiting_list():
     ticket = WaitListedPartnerTicket(ratio=1.0, allow_first=1, name='Test', max_available=10)
 
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER),
         RegistrationMeta(FOLLOWER),
     ])
-    assert [] == ticket.balance_waiting_list()
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    assert [] == ticket.balance_waiting_list(registrations)
 
 
 def test_wait_listed_partner_ticket_balance_waiting_list():
     ticket = WaitListedPartnerTicket(ratio=1.0, allow_first=1, name='Test', max_available=10)
 
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(wait_listed=True),
         CoupleRegistrationMeta(wait_listed=True),
         CoupleRegistrationMeta(wait_listed=True),
     ])
-    balanced = ticket.balance_waiting_list()
-    assert_registrations_eq(ticket.registrations, balanced)
-    assert not any([r.wait_listed for r in ticket.registrations])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    balanced = ticket.balance_waiting_list(registrations)
+    assert_registrations_eq(registrations, balanced)
+
+    ticket.numbers = ticket.calculate_ticket_numbers(balanced)
+    assert not any([r.waiting for r in ticket.numbers.roles.values()])
 
 
 def test_wait_listed_partner_ticket_balance_waiting_list_can_accept_one():
     #### 2 leaders, 4 followers. can accept just 1 follower
     ticket = WaitListedPartnerTicket(ratio=1.5, allow_first=1, name='Test', max_available=10)
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER, wait_listed=True),
         RegistrationMeta(FOLLOWER, wait_listed=True),
     ])
-    balanced = ticket.balance_waiting_list()
-    assert_registrations_eq([ticket.registrations[-2]], balanced)
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    balanced = ticket.balance_waiting_list(registrations)
+    assert_registrations_eq([registrations[-2]], balanced)
 
 
 def test_wait_listed_partner_ticket_balance_waiting_list_couple_first():
@@ -171,14 +176,15 @@ def test_wait_listed_partner_ticket_balance_waiting_list_couple_first():
     #### couple gets off the waiting list first
     ticket.ratio = 1.5
     ticket.allow_first = 1
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER),
         RegistrationMeta(FOLLOWER, wait_listed=True),
         CoupleRegistrationMeta(wait_listed=True),
     ])
-    balanced = ticket.balance_waiting_list()
-    assert_registrations_eq(ticket.registrations[-2:], balanced)
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    balanced = ticket.balance_waiting_list(registrations)
+    assert_registrations_eq(registrations[-2:], balanced)
 
 
 def test_wait_listed_partner_ticket_balance_waiting_list_real_scenario():
@@ -186,25 +192,28 @@ def test_wait_listed_partner_ticket_balance_waiting_list_real_scenario():
     #### couple gets off the waiting list first
     ticket.ratio = 1.5
     ticket.allow_first = 1
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(),
         RegistrationMeta(FOLLOWER),
         RegistrationMeta(FOLLOWER, wait_listed=True),
         RegistrationMeta(FOLLOWER, wait_listed=True),
     ])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
     # already 2 leads, 3 follows -> 1.5, 1 follower waiting
-    assert [] == ticket.balance_waiting_list()
+    assert [] == ticket.balance_waiting_list(registrations)
 
     # add 1 leader. Now 3 and 3. -> can add 1 more follower
-    ticket.registrations += util_generate_registrations([RegistrationMeta(LEADER)])
-    balanced = ticket.balance_waiting_list()
-    assert_registrations_eq([ticket.registrations[5]], balanced)
+    registrations += util_generate_registrations([RegistrationMeta(LEADER)])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    balanced = ticket.balance_waiting_list(registrations)
+    assert_registrations_eq([registrations[5]], balanced)
 
     # add  1 couple. Now it is 4 and 5. Can add one more follower
-    ticket.registrations += util_generate_registrations([CoupleRegistrationMeta()])
-    balanced = ticket.balance_waiting_list()
-    assert_registrations_eq([ticket.registrations[6]], balanced)
+    registrations += util_generate_registrations([CoupleRegistrationMeta()])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
+    balanced = ticket.balance_waiting_list(registrations)
+    assert_registrations_eq([registrations[6]], balanced)
 
 
 class Flask(_Flask):
@@ -229,11 +238,12 @@ def test_wait_listed_parse_form(app):
     ticket = WaitListedPartnerTicket(ratio=1.5, allow_first=1, name='Test', max_available=10)
     ticket.ratio = 1.5
     ticket.allow_first = 1
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),   # 1/1 = 1
         CoupleRegistrationMeta(),   # 2/2 = 1
         RegistrationMeta(FOLLOWER),  # 3/2 = 1.5
     ])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
     event = Event(name='Test Event', tickets={'test': ticket})
 
     # will accept leader
@@ -249,21 +259,23 @@ def test_wait_listed_parse_form(app):
     assert regs[0].wait_listed
 
     # will accept couple event if there's waiting list for followers
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),   # 1/1 = 1
         CoupleRegistrationMeta(),   # 2/2 = 1
         RegistrationMeta(FOLLOWER),  # 3/2 = 1.5
         RegistrationMeta(FOLLOWER),  # 4/2 = 2.0
     ])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
     form.get_item_by_key('test').add.data = COUPLE
     regs = ticket.parse_form(form)
     assert not any([r.wait_listed for r in regs])
 
     # now that we have a couple in a waiting list -> will put a new couple in the wait list
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),   # 1/1 = 1
         CoupleRegistrationMeta(wait_listed=True),
     ])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
     assert not ticket.waiting_list.can_add(COUPLE)
     regs = ticket.parse_form(form)
     assert all([r.wait_listed for r in regs])
@@ -289,6 +301,7 @@ def test_wait_listed_apply_extra_partner(app):
         Registration(person=pop_person(), partner=another_one, wait_listed=False, active=True, dance_role=FOLLOWER, ticket_key='test'),
         Registration(person=pop_person(), wait_listed=False, active=False, dance_role=FOLLOWER, ticket_key='test'),
     ]
+    ticket.numbers = ticket.calculate_ticket_numbers([])
     regs = ticket.apply_extra_partner(my_registration, extra_registrations)
     assert not regs
     assert my_registration.wait_listed
@@ -300,6 +313,7 @@ def test_wait_listed_apply_extra_partner(app):
         Registration(person=pop_person(), wait_listed=True, active=True, dance_role=FOLLOWER, ticket_key='test'),
         Registration(person=pop_person(), wait_listed=False, active=True, dance_role=FOLLOWER, ticket_key='test'),
     ]
+    ticket.numbers = ticket.calculate_ticket_numbers([])
     applied_reg = ticket.apply_extra_partner(my_registration, extra_registrations)
     assert extra_registrations[1] == applied_reg
     assert not applied_reg.wait_listed
@@ -309,10 +323,11 @@ def test_wait_listed_apply_extra_partner(app):
 
     # too many people, can't add couple
     ticket = WaitListedPartnerTicket(ratio=1.5, allow_first=1, name='Test', max_available=5)
-    ticket.registrations = util_generate_registrations([
+    registrations = util_generate_registrations([
         CoupleRegistrationMeta(),
         CoupleRegistrationMeta(wait_listed=True),
     ])
+    ticket.numbers = ticket.calculate_ticket_numbers(registrations)
     assert not ticket.waiting_list.can_add(COUPLE)
 
     my_registration = Registration(person=me, wait_listed=True, active=True, dance_role=LEADER, ticket_key='test')

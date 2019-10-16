@@ -669,12 +669,15 @@ def balance_event_waiting_lists(dao: TicketsDAO, event_key: str):
 
     # it is a good idea to refresh event object
     event = dao.get_event_by_key(event_key)
+    registrations = dao.get_ticket_registrations(event)
     for ticket_key, ticket in event.tickets.items():
         if isinstance(ticket, WaitListedPartnerTicket):
             if ticket.waiting_list.has_waiting_list:
-                for registration in ticket.balance_waiting_list():
+                for registration in ticket.balance_waiting_list(registrations[ticket_key]):
                     take_existing_registration_off_waiting_list(dao, registration)
                     balanced_registrations.append(registration)
+    if balanced_registrations:
+        task_update_ticket_numbers(event.key)
 
 
 def post_process_discounts(dao: TicketsDAO, payment: Payment, event: Event):

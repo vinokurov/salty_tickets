@@ -4,6 +4,7 @@ from config import EMAIL_FROM
 from flask import render_template, url_for, current_app
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_email
+from salty_tickets.models.event import Event
 from salty_tickets.tokens import RegistrationToken, PaymentId
 
 def get_dao():
@@ -78,6 +79,14 @@ def task_balance_waiting_lists(event_key):
     balance_event_waiting_lists(dao, event.key)
 
 
+def update_ticket_numbers(dao: TicketsDAO, event: Event):
+    ticket_registrations = dao.get_ticket_registrations(event)
+
+    ticket_numbers = {k: t.calculate_ticket_numbers(ticket_registrations[k])
+                      for k, t in event.tickets.items()}
+    dao.save_event_ticket_numbers(event.key, ticket_numbers)
+
+
 @dramatiq.actor(priority=0)
 def task_update_ticket_numbers(event_key):
     dao = get_dao()
@@ -85,8 +94,4 @@ def task_update_ticket_numbers(event_key):
     if event is None:
         logging.error(f'Event {event_key} not found')
         return
-    ticket_registrations = dao.get_ticket_registrations(event)
-
-    ticket_numbers = {k: t.calculate_ticket_numbers(ticket_registrations[k])
-                      for k, t in event.tickets.items()}
-    dao.save_event_ticket_numbers(event_key, ticket_numbers)
+    update_ticket_numbers(dao, event)

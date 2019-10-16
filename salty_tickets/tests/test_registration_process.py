@@ -6,8 +6,9 @@ from salty_tickets.constants import LEADER, NEW, COUPLE, FOLLOWER, SUCCESSFUL, F
 from salty_tickets.dao import PaymentDocument, PersonDocument
 from salty_tickets.forms import create_event_form
 from salty_tickets.models.registrations import Registration, Payment, PaymentStripeDetails
-from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, process_first_payment
-from salty_tickets.tasks import task_balance_waiting_lists
+from salty_tickets.api.registration_process import get_payment_from_form, PartnerTokenCheckResult, \
+    process_first_payment, balance_event_waiting_lists
+from salty_tickets.tasks import task_balance_waiting_lists, update_ticket_numbers
 from salty_tickets.testutils import post_json_data
 from salty_tickets.tokens import PartnerToken, PaymentId
 
@@ -389,6 +390,8 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
     mock_stripe.Customer.create.return_value = sample_stripe_customer
 
+    mocker.patch('salty_tickets.tasks.get_dao').return_value = test_dao
+
     event = test_dao.get_event_by_key('salty_recipes')
     assert not event.tickets['sunday'].waiting_list.has_waiting_list
 
@@ -403,6 +406,7 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
     # add followers so that we have a waiting list
     while not event.tickets['sunday'].waiting_list.has_waiting_list:
         res = _register_one(FOLLOWER)
+        update_ticket_numbers(test_dao, event)
         event = test_dao.get_event_by_key('salty_recipes')
 
     first_waiting_follower_payment_id = res.json['payment_id']
@@ -411,9 +415,10 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
     # now create leaders until we can balance
     waiting_list = event.tickets['sunday'].waiting_list
-    while waiting_list.registration_stats[FOLLOWER].accepted / (waiting_list.registration_stats[LEADER].accepted + 1) > waiting_list.ratio:
+    while waiting_list.registration_stats[FOLLOWER].total / (waiting_list.registration_stats[LEADER].accepted + 1) > waiting_list.ratio:
         _register_one(LEADER)
-        task_balance_waiting_lists('salty_recipes')
+        update_ticket_numbers(test_dao, event)
+        balance_event_waiting_lists(test_dao, 'salty_recipes')
 
         first_waiting_follower = test_dao.get_payment_by_id(first_waiting_follower_payment_id).registrations[0]
         assert first_waiting_follower.wait_listed
@@ -423,12 +428,16 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
     # now add one more leader and make sure that waiting list gets balanced
     _register_one(LEADER)
+    update_ticket_numbers(test_dao, event)
 
-    mocker.patch('salty_tickets.tasks.get_dao').return_value = test_dao
-    task_balance_waiting_lists('salty_recipes')
+    registrations = test_dao.get_ticket_registrations(event)
+
+    balance_event_waiting_lists(test_dao, 'salty_recipes')
 
     event = test_dao.get_event_by_key('salty_recipes')
     waiting_list = event.tickets['sunday'].waiting_list
+
+    registrations = test_dao.get_ticket_registrations(event)
 
     assert waiting_list.current_ratio <= waiting_list.ratio
     follower_payment = test_dao.get_payment_by_id(first_waiting_follower_payment_id)

@@ -95,7 +95,7 @@ class TicketDocument(me.EmbeddedDocument):
         model_dict = dataclasses.asdict(model_dataclass)
         base_fields = [f.name for f in dataclasses.fields(Ticket)]
         kwargs = {f: model_dict.pop(f) for f in base_fields if f in model_dict}
-        kwargs.pop('registrations')
+        # kwargs.pop('registrations')
         kwargs.pop('numbers')
         kwargs['ticket_class'] = model_dataclass.__class__.__name__
         kwargs['ticket_class_parameters'] = model_dict
@@ -349,14 +349,14 @@ class TicketsDAO:
             return None
 
         event = event_doc.to_dataclass()
-        if get_registrations:
-            registrations = self.query_registrations(event)
-            for ticket_key in event.tickets:
-                event.tickets[ticket_key].registrations = [r for r in registrations if r.ticket_key == ticket_key]
+        # if get_registrations:
+        #     registrations = self.query_registrations(event)
+        #     for ticket_key in event.tickets:
+        #         event.tickets[ticket_key].registrations = [r for r in registrations if r.ticket_key == ticket_key]
 
         return event
 
-    def get_ticket_registrations(self, event, tickets=None):
+    def get_ticket_registrations(self, event: Event, tickets=None):
         registrations = self.query_registrations(event)
         ticket_registrations = {}
         for ticket_key in event.tickets:
@@ -511,7 +511,7 @@ class TicketsDAO:
         payment_docs = PaymentDocument.objects(event=event.id, paid_by=person_doc).select_related(3)
         return [p.to_dataclass() for p in payment_docs]
 
-    def get_payment_by_registration(self, registration):
+    def get_payment_by_registration(self, registration) -> Payment:
         if registration.id:
             payment_doc = PaymentDocument.objects.filter(registrations__contains=registration.id).first()
             if payment_doc:

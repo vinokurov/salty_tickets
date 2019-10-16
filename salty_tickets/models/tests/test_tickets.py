@@ -18,8 +18,7 @@ def test_wait_listed_partner_ticket_get_available_quantity():
     assert workshop_ticket.get_available_quantity() is None
 
     workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
-    assert workshop_ticket.registrations == []
-    assert workshop_ticket.get_available_quantity() == 10
+    assert workshop_ticket.calculate_remaining([]) == 10
     
     mr_one = Person(full_name="Mr One", email='mr.one@gmail.com')
     mr_two = Person(full_name="Mr Two", email='mr.two@gmail.com')
@@ -29,24 +28,24 @@ def test_wait_listed_partner_ticket_get_available_quantity():
         Registration(person=mr_two, dance_role=LEADER, active=True),
     ]
 
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, registrations=registrations)
-    assert workshop_ticket.get_available_quantity() == 8
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
+    assert workshop_ticket.calculate_remaining(registrations) == 8
 
     registrations = [
         Registration(person=mr_one, dance_role=LEADER, active=True),
         Registration(person=mr_two, wait_listed=True, dance_role=LEADER, active=True),
     ]
 
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, registrations=registrations)
-    assert workshop_ticket.get_available_quantity() == 9
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
+    assert workshop_ticket.calculate_remaining(registrations) == 9
 
     registrations = [
         Registration(person=mr_one, dance_role=LEADER, active=True),
         Registration(person=mr_two, dance_role=LEADER, active=False),
     ]
 
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, registrations=registrations)
-    assert workshop_ticket.get_available_quantity() == 9
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
+    assert workshop_ticket.calculate_remaining(registrations) == 9
 
 
 def test_wait_listed_partner_ticket_waiting_list():
@@ -64,7 +63,8 @@ def test_wait_listed_partner_ticket_waiting_list():
         Registration(person=ms_three, dance_role=FOLLOWER, active=False),
     ]
 
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, registrations=registrations)
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
+    workshop_ticket.numbers = workshop_ticket.calculate_ticket_numbers(registrations)
     assert workshop_ticket.waiting_list.registration_stats[LEADER] == RegistrationStats(accepted=2, waiting=0)
     assert workshop_ticket.waiting_list.registration_stats[FOLLOWER] == RegistrationStats(accepted=2, waiting=0)
     assert workshop_ticket.waiting_list.registration_stats[COUPLE] == RegistrationStats(accepted=2, waiting=0)
@@ -75,11 +75,13 @@ def test_wait_listed_partner_ticket_waiting_list():
         Registration(person=mr_two, wait_listed=True, dance_role=LEADER, active=True),
     ]
 
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, registrations=registrations)
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10)
+    workshop_ticket.numbers = workshop_ticket.calculate_ticket_numbers(registrations)
     assert workshop_ticket.waiting_list.registration_stats[LEADER] == RegistrationStats(accepted=1, waiting=1)
 
     ####
-    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, ratio=1.5, registrations=registrations)
+    workshop_ticket = WaitListedPartnerTicket(name='Test', max_available=10, ratio=1.5)
+    workshop_ticket.numbers = workshop_ticket.calculate_ticket_numbers(registrations)
     assert workshop_ticket.waiting_list.ratio == 1.5
     assert workshop_ticket.waiting_list.max_available == 10
 

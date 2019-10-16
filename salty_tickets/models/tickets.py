@@ -36,7 +36,7 @@ class Ticket:
     base_price: float = 0
     image_url: str = None
     tags: typing.Set = field(default_factory=set)
-    registrations: typing.List[Registration] = field(default_factory=list)
+    # registrations: typing.List[Registration] = field(default_factory=list)
     numbers: typing.Optional[TicketNumbers] = None
 
     def __post_init__(self):
@@ -51,10 +51,7 @@ class Ticket:
             return [self._create_base_registration()]
 
     def get_available_quantity(self) -> typing.Optional[int]:
-        if self.max_available is None:
-            return None
-        total_accepted = len([r for r in self.registrations if not r.wait_listed])
-        return self.max_available - total_accepted
+        return self.numbers.remaining
 
     @classmethod
     def is_added(cls, ticket_form) -> bool:
@@ -67,7 +64,7 @@ class Ticket:
         return self.name
 
     def calculate_accepted(self, registrations) -> int:
-        return len([r for r in registrations if not r.wait_listed])
+        return len([r for r in registrations if not r.wait_listed and r.active])
 
     def calculate_remaining(self, registrations):
         if self.max_available is None:
@@ -175,13 +172,9 @@ class WaitListedPartnerTicket(PartnerTicket):
         )
 
     def _get_registration_stats_for_role(self, option: str) -> RegistrationStats:
-        if option == COUPLE:
-            registered = [r for r in self.registrations if r.as_couple and r.active]
-        else:
-            registered = [r for r in self.registrations if r.dance_role == option and r.active]
         return RegistrationStats(
-            accepted=len([r for r in registered if not r.wait_listed]),
-            waiting=len([r for r in registered if r.wait_listed]),
+            accepted=self.numbers.roles[option].accepted,
+            waiting=self.numbers.roles[option].waiting,
         )
 
     def get_available_quantity(self) -> typing.Optional[int]:
@@ -195,29 +188,31 @@ class WaitListedPartnerTicket(PartnerTicket):
                          + self.waiting_list.registration_stats[FOLLOWER].accepted
         return self.max_available - total_accepted
 
-    def balance_waiting_list(self) -> typing.List[Registration]:
+    def balance_waiting_list(self, registrations: typing.List[Registration]) -> typing.List[Registration]:
         balanced_registrations = []
         while self.waiting_list.needs_balancing():
             if self.waiting_list.needs_balancing(COUPLE):
-                regs = self._get_first_waiting_couple()
+                regs = self._get_first_waiting_couple(registrations)
                 if not regs:
                     continue
                 for r in regs:
                     r.wait_listed = False
                 balanced_registrations += regs
+                self.numbers = self.calculate_ticket_numbers(registrations)
 
             for role in [LEADER, FOLLOWER]:
                 if self.waiting_list.needs_balancing(role):
-                    reg = self._get_first_waiting(role)
+                    reg = self._get_first_waiting(role, registrations)
                     reg.wait_listed = False
                     balanced_registrations += [reg]
+                    self.numbers = self.calculate_ticket_numbers(registrations)
 
         return balanced_registrations
 
-    def _get_first_waiting_couple(self) -> typing.List[Registration]:
-        for r1 in self.registrations:
+    def _get_first_waiting_couple(self, registrations: typing.List[Registration]) -> typing.List[Registration]:
+        for r1 in registrations:
             if r1.as_couple and r1.wait_listed and r1.active:
-                r2_list = [r for r in self.registrations if r.person == r1.partner and r.active]
+                r2_list = [r for r in registrations if r.person == r1.partner and r.active]
                 if r2_list:
                     r2 = r2_list[0]
                     if r2.wait_listed:
@@ -225,8 +220,8 @@ class WaitListedPartnerTicket(PartnerTicket):
                 return [r1]
         return []
 
-    def _get_first_waiting(self, role: str) -> Registration:
-        for r in self.registrations:
+    def _get_first_waiting(self, role: str, registrations: typing.List[Registration]) -> Registration:
+        for r in registrations:
             if r.active and (r.dance_role == role) and r.wait_listed:
                 return r
 
@@ -244,7 +239,7 @@ class WaitListedPartnerTicket(PartnerTicket):
                 extra_reg.wait_listed = False
                 return extra_reg
 
-    def calculate_ticket_numbers(self, registrations) -> TicketNumbers:
+    def calculate_ticket_numbers(self, registrations: typing.List[Registration]) -> TicketNumbers:
         roles = {}
         for option in [LEADER, FOLLOWER, COUPLE]:
             if option == COUPLE:

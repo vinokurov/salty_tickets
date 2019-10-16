@@ -21,8 +21,7 @@ def test_dao_get_event(test_dao, salty_recipes):
 
     assert event.id is not None
     for ticket_key, ticket in event.tickets.items():
-        for reg in ticket.registrations:
-            assert reg.id is not None
+        assert ticket.numbers is not None
     assert isinstance(event.tickets['saturday'], WorkshopTicket)
 
     assert event.tickets['saturday'].waiting_list.registration_stats == {
