@@ -13,6 +13,21 @@ from salty_tickets.utils.utils import string_to_key
 
 
 @dataclass
+class RoleNumbers:
+    accepted: typing.Optional[int] = 0
+    waiting: typing.Optional[int] = None
+    is_wait_listed: bool = False
+    waiting_probability: typing.Optional[int] = None
+
+
+@dataclass
+class TicketNumbers:
+    accepted: typing.Optional[int] = 0
+    remaining: typing.Optional[int] = None
+    roles: typing.Dict[str, RoleNumbers] = field(default_factory=dict)
+
+
+@dataclass
 class Ticket:
     name: str
     key: str = None
@@ -22,6 +37,7 @@ class Ticket:
     image_url: str = None
     tags: typing.Set = field(default_factory=set)
     registrations: typing.List[Registration] = field(default_factory=list)
+    numbers: typing.Optional[TicketNumbers] = None
 
     def __post_init__(self):
         if self.key is None:
@@ -37,7 +53,6 @@ class Ticket:
     def get_available_quantity(self) -> typing.Optional[int]:
         if self.max_available is None:
             return None
-
         total_accepted = len([r for r in self.registrations if not r.wait_listed])
         return self.max_available - total_accepted
 
@@ -50,6 +65,21 @@ class Ticket:
 
     def item_info(self, registration: Registration) -> str:
         return self.name
+
+    def calculate_accepted(self, registrations) -> int:
+        return len([r for r in registrations if not r.wait_listed])
+
+    def calculate_remaining(self, registrations):
+        if self.max_available is None:
+            return None
+        total_accepted = self.calculate_accepted(registrations)
+        return self.max_available - total_accepted
+
+    def calculate_ticket_numbers(self, registrations) -> TicketNumbers:
+        return TicketNumbers(
+            accepted=self.calculate_accepted(registrations),
+            remaining=self.calculate_remaining(registrations)
+        )
 
 
 class PartnerTicket(Ticket):
@@ -126,14 +156,19 @@ class WaitListedPartnerTicket(PartnerTicket):
 
     @property
     def waiting_list(self) -> SimpleWaitingList:
-        return SimpleWaitingList(
-            max_available=self.max_available,
-            ratio=self.ratio,
+        return self._create_waiting_list(
             registration_stats={
                 LEADER: self._get_registration_stats_for_role(LEADER),
                 FOLLOWER: self._get_registration_stats_for_role(FOLLOWER),
                 COUPLE: self._get_registration_stats_for_role(COUPLE),
             },
+        )
+
+    def _create_waiting_list(self, registration_stats) -> SimpleWaitingList:
+        return SimpleWaitingList(
+            max_available=self.max_available,
+            ratio=self.ratio,
+            registration_stats=registration_stats,
             allow_first=self.allow_first,
             expected_leads=self.expected_leads,
             expected_follows=self.expected_follows,
@@ -208,6 +243,30 @@ class WaitListedPartnerTicket(PartnerTicket):
                 extra_reg.partner = this_registration.person
                 extra_reg.wait_listed = False
                 return extra_reg
+
+    def calculate_ticket_numbers(self, registrations) -> TicketNumbers:
+        roles = {}
+        for option in [LEADER, FOLLOWER, COUPLE]:
+            if option == COUPLE:
+                registered = [r for r in registrations if r.as_couple and r.active]
+            else:
+                registered = [r for r in registrations if r.dance_role == option and r.active]
+            accepted = len([r for r in registered if not r.wait_listed])
+            waiting = len([r for r in registered if r.wait_listed])
+            roles[option] = RoleNumbers(accepted=accepted, waiting=waiting)
+
+        waiting_list = self._create_waiting_list({k: RegistrationStats(accepted=v.accepted, waiting=v.waiting)
+                                                  for k, v in roles.items()})
+
+        for option in [LEADER, FOLLOWER, COUPLE]:
+            roles[option].is_wait_listed = not waiting_list.can_add(option)
+            roles[option].waiting_probability = not waiting_list.probability_for_option(option)
+
+        return TicketNumbers(
+            accepted=self.calculate_accepted(registrations),
+            remaining=self.calculate_remaining(registrations),
+            roles=roles
+        )
 
 
 @dataclass

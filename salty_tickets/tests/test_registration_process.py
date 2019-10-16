@@ -384,7 +384,7 @@ def test_do_pay_failure_then_success(mock_send_email, mock_stripe, sample_stripe
 
 
 def test_registration_process_balance(mock_send_email, mock_stripe, sample_stripe_successful_charge, sample_stripe_customer,
-                                     test_dao, salty_recipes, client, sample_data, person_factory):
+                                     test_dao, salty_recipes, client, sample_data, person_factory, mocker):
 
     mock_stripe.Charge.create.return_value = sample_stripe_successful_charge
     mock_stripe.Customer.create.return_value = sample_stripe_customer
@@ -423,7 +423,10 @@ def test_registration_process_balance(mock_send_email, mock_stripe, sample_strip
 
     # now add one more leader and make sure that waiting list gets balanced
     _register_one(LEADER)
+
+    mocker.patch('salty_tickets.tasks.get_dao').return_value = test_dao
     task_balance_waiting_lists('salty_recipes')
+
     event = test_dao.get_event_by_key('salty_recipes')
     waiting_list = event.tickets['sunday'].waiting_list
 
@@ -646,4 +649,3 @@ def test_process_first_payment(mock_send_email, mock_stripe, sample_stripe_card_
     assert [False, False] == [r.is_paid for r in payment.registrations]
     assert [] == [(t.price, t.success) for t in payment.transactions]
     assert FAILED == payment.status
-

@@ -27,4 +27,6 @@ MONGO = 'mongodb://localhost/salty_tickets'
 SESSION_TYPE = 'mongodb'
 SESSION_MONGODB = 'mongodb://localhost'
 
+DRAMATIQ_BROKER_CLASS = 'RabbitBroker'
+
 

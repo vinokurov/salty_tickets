@@ -13,7 +13,7 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount, \
     RegistrationGroup, TransactionDetails
-from salty_tickets.models.tickets import Ticket
+from salty_tickets.models.tickets import Ticket, RoleNumbers, TicketNumbers
 from salty_tickets.utils.mongo_utils import fields_from_dataclass
 from salty_tickets.utils.utils import timeit
 
@@ -83,7 +83,7 @@ class DiscountDocument(me.EmbeddedDocument):
         return doc
 
 
-@fields_from_dataclass(Ticket, skip=['registrations', 'ticket_class', 'ticket_class_parameters'])
+@fields_from_dataclass(Ticket, skip=['registrations', 'ticket_class', 'ticket_class_parameters', 'numbers'])
 class TicketDocument(me.EmbeddedDocument):
     image_url = me.URLField()
 
@@ -96,6 +96,7 @@ class TicketDocument(me.EmbeddedDocument):
         base_fields = [f.name for f in dataclasses.fields(Ticket)]
         kwargs = {f: model_dict.pop(f) for f in base_fields if f in model_dict}
         kwargs.pop('registrations')
+        kwargs.pop('numbers')
         kwargs['ticket_class'] = model_dataclass.__class__.__name__
         kwargs['ticket_class_parameters'] = model_dict
         ticket_doc = cls(**kwargs)
@@ -104,7 +105,7 @@ class TicketDocument(me.EmbeddedDocument):
     def to_dataclass(self):
         kwargs = self.ticket_class_parameters
         model_class = getattr(models.tickets, self.ticket_class)
-        model_fields = [f.name for f in dataclasses.fields(Ticket) if f.name not in ['registrations']]
+        model_fields = [f.name for f in dataclasses.fields(Ticket) if f.name not in ['registrations', 'numbers']]
         kwargs.update({f: getattr(self, f) for f in model_fields})
         ticket_model = model_class(**kwargs)
         return ticket_model
@@ -139,18 +140,55 @@ class DiscountProductDocument(me.EmbeddedDocument):
         return ticket_model
 
 
-@fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products'])
+@fields_from_dataclass(RoleNumbers)
+class RoleNumbersDocument(me.EmbeddedDocument):
+    accepted = me.IntField(required=True)
+    waiting = me.IntField(required=False)
+    is_wait_listed = me.BooleanField()
+    waiting_probability = me.IntField(required=False)
+
+
+@fields_from_dataclass(TicketNumbers, skip=['roles'])
+class TicketNumbersDocument(me.EmbeddedDocument):
+    accepted = me.IntField(required=True)
+    remaining = me.IntField()
+    roles = me.MapField(me.EmbeddedDocumentField(RoleNumbersDocument))
+
+    @classmethod
+    def from_dataclass(cls, model_dataclass: TicketNumbers):
+        doc = cls._from_dataclass(model_dataclass)
+        doc.roles = {k: RoleNumbersDocument.from_dataclass(v)
+                     for k, v in model_dataclass.roles.items()}
+        return doc
+
+    def to_dataclass(self) -> TicketNumbers:
+        model_dataclass = self._to_dataclass()
+        model_dataclass.roles = {k: v.to_dataclass() for k, v in self.roles.items()}
+        return model_dataclass
+
+
+class EventTicketsNumbersDocument(me.Document):
+    meta = {
+        'collection': 'event_ticket_numbers',
+    }
+    event_key = me.StringField(primary_key=True)
+    ticket_numbers = me.MapField(me.EmbeddedDocumentField(TicketNumbersDocument))
+
+
+@fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products', 'ticket_numbers'])
 class EventDocument(me.Document):
     meta = {
         'collection': 'events',
+        'strict': False
     }
     key = me.StringField()
     tickets = me.MapField(me.EmbeddedDocumentField(TicketDocument))
     products = me.MapField(me.EmbeddedDocumentField(ProductDocument))
     discount_products = me.MapField(me.EmbeddedDocumentField(DiscountProductDocument))
+    ticket_numbers = me.ReferenceField(EventTicketsNumbersDocument, required=False)
 
     @classmethod
-    def from_dataclass(cls, model_dataclass):
+    def from_dataclass(cls, model_dataclass: Event):
         event_doc = cls._from_dataclass(model_dataclass)
         event_doc.tickets = {p_key: TicketDocument.from_dataclass(p)
                              for p_key, p in model_dataclass.tickets.items()}
@@ -160,11 +198,18 @@ class EventDocument(me.Document):
                               for p_key, p in model_dataclass.discount_products.items()}
         return event_doc
 
-    def to_dataclass(self):
+    def to_dataclass(self) -> Event:
         event_model = self._to_dataclass()
+
+        if self.ticket_numbers:
+            ticket_numbers = {k: v.to_dataclass() for k, v in self.ticket_numbers.ticket_numbers.items()}
+        else:
+            ticket_numbers = {}
+
         for p_key, prd in self.tickets.items():
-            ticket_doc = prd.to_dataclass()
-            event_model.tickets[p_key] = ticket_doc
+            ticket = prd.to_dataclass()
+            ticket.numbers = ticket_numbers.get(ticket.key)
+            event_model.tickets[p_key] = ticket
 
         for p_key, prd in self.products.items():
             product_doc = prd.to_dataclass()
@@ -325,9 +370,27 @@ class TicketsDAO:
             'ticket_key': self._get_ticket_key(ticket),
             'event': event.id,
         }
-
         items = RegistrationDocument.objects(**filters).select_related(3)
         return [r.to_dataclass() for r in items]
+
+    def get_event_ticket_numbers(self, event_key: str) -> typing.Dict[str, TicketNumbers]:
+        doc = EventTicketsNumbersDocument.objects(id=event_key).first()
+        if not doc:
+            doc = EventTicketsNumbersDocument()
+        return {k: v.to_dataclass() for k, v in doc.ticket_numbers.items()}
+
+    def save_event_ticket_numbers(self, event_key: str, ticket_numbers: typing.Dict[str, TicketNumbers]):
+        doc = EventTicketsNumbersDocument.objects(event_key=event_key).first()
+        if not doc:
+            doc = EventTicketsNumbersDocument(event_key=event_key)
+        doc.ticket_numbers = {k: TicketNumbersDocument.from_dataclass(v)
+                              for k, v in ticket_numbers.items()}
+        doc.save()
+
+        event_doc = self._get_event_doc(event_key)
+        if event_doc.ticket_numbers != doc:
+            event_doc.ticket_numbers = doc
+            event_doc.save()
 
     def create_event(self, event_model):
         event_doc = EventDocument.from_dataclass(event_model)

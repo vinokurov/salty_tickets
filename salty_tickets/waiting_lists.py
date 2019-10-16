@@ -25,7 +25,7 @@ def flip_role(role):
         }[role]
 
 
-def waiting_probability(max_available, ratio, this, other, p_other):
+def waiting_probability(max_available, ratio, this, other, p_other) -> float:
     if this + other >= max_available:
         return 0
 

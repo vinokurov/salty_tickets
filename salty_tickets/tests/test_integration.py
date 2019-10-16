@@ -318,5 +318,3 @@ def test_e2e_follower_pays_later_leader_uses_her_token(e2e_vars):
     assert 25 == follower_payment.registrations[0].price
     assert not follower_payment.registrations[0].wait_listed
     assert leader_payment.paid_by == follower_payment.registrations[0].partner
-
-

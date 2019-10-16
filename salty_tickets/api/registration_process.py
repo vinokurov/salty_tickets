@@ -23,7 +23,7 @@ from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tasks import task_registration_confirmation_email, task_waiting_list_accept_email, \
-    task_balance_waiting_lists
+    task_balance_waiting_lists, task_update_ticket_numbers
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken, RegistrationToken
 from salty_tickets.validators import validate_registrations
 
@@ -696,9 +696,10 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     post_process_discounts(dao, payment, event)
+    task_update_ticket_numbers.send(event.key)
     # send_registration_confirmation(payment, event)
     task_registration_confirmation_email.send(str(payment.id), event.key)
-    task_balance_waiting_lists.send(dao, event.key)
+    task_balance_waiting_lists.send(event.key)
 
 
 def do_check_partner_token(dao: TicketsDAO):

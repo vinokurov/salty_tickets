@@ -2,10 +2,11 @@ import dramatiq
 from flask import Flask, render_template, flash, escape
 # from flask_bootstrap import Bootstrap
 # from flask_sqlalchemy import SQLAlchemy
-from flask_melodramatiq import RabbitmqBroker
+from flask_melodramatiq import Broker
 from flask_session import Session
 from flask_simplelogin import SimpleLogin
 # from salty_tickets import config
+from salty_tickets.dao import TicketsDAO
 
 __author__ = 'vnkrv'
 
@@ -13,7 +14,7 @@ sess = Session()
 login = SimpleLogin()
 
 print('registering broker')
-broker = RabbitmqBroker()
+broker = Broker()
 dramatiq.set_broker(broker)
 
 def create_app():
@@ -36,12 +37,14 @@ def create_app():
     with app.app_context():
         from . import views
         # from . import template_filters
+        app.config['dao'] = TicketsDAO(app.config['MONGO'])
 
         app.register_blueprint(views.tickets_bp)
 
         # from salty_tickets.tasks import broker
         broker.init_app(app)
 
+
         return app
 
-app = create_app()
+# app = create_app()

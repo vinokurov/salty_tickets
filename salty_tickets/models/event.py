@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Dict, List
 
 from dataclasses import dataclass, field
+
+import typing
 from salty_tickets.models.discounts import DiscountProduct
 from salty_tickets.models.products import Product
 from salty_tickets.models.tickets import Ticket
@@ -11,7 +13,7 @@ from salty_tickets.utils.utils import string_to_key
 @dataclass
 class Event:
     name: str
-    key: str = None
+    key: typing.Optional[str] = None
     start_date: datetime = None
     end_date: datetime = None
     info: str = None
@@ -37,3 +39,6 @@ class Event:
 
     def append_discount_products(self, discount_product_list: List[DiscountProduct]):
         self.discount_products.update({p.key: p for p in discount_product_list})
+
+
+

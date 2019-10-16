@@ -37,7 +37,7 @@ __author__ = 'vnkrv'
 #         import requests
 #         return requests.get('http://localhost:8080/{}'.format(path)).text
 
-dao = TicketsDAO(current_app.config['MONGO'])
+
 
 @tickets_bp.route('/register')
 @tickets_bp.route('/register/')
@@ -47,6 +47,7 @@ def register_index():
 
 @tickets_bp.route('/register/<string:event_key>', methods=['GET'])
 def event_index(event_key):
+    dao = current_app.config['dao']
     event = dao.get_event_by_key(event_key, get_registrations=False)
     if event is None:
         abort(404)
@@ -57,6 +58,7 @@ def event_index(event_key):
 
 @tickets_bp.route('/event/<string:event_key>', methods=['GET', 'OPTIONS'])
 def register_event_details(event_key):
+    dao = current_app.config['dao']
     event = dao.get_event_by_key(event_key, get_registrations=True)
     if event is None:
         abort(404)
@@ -65,26 +67,31 @@ def register_event_details(event_key):
 
 @tickets_bp.route('/price/<string:event_key>', methods=['GET', 'POST'])
 def register_get_price(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_price(dao, event_key))
 
 
 @tickets_bp.route('/checkout/<string:event_key>', methods=['POST'])
 def register_checkout(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_checkout(dao, event_key))
 
 
 @tickets_bp.route('/pay/', methods=['POST'])
 def register_pay():
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_pay(dao))
 
 
 @tickets_bp.route('/payment_status', methods=['POST'])
 def payment_status():
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_get_payment_status(dao))
 
 
 @tickets_bp.route('/check_partner_token', methods=['POST'])
 def check_partner_token():
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_check_partner_token(dao))
 
 
@@ -95,31 +102,37 @@ def user_order_index(pmt_token):
 
 @tickets_bp.route('/order_info/<string:pmt_token>', methods=['POST', 'GET'])
 def user_order_info(pmt_token):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_get_user_order_info(dao, pmt_token))
 
 
 @tickets_bp.route('/check_discount_token/<string:event_key>', methods=['POST'])
 def check_discount_token(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_validate_discount_code_token(dao, event_key))
 
 
 @tickets_bp.route('/check_registration_group_token/<string:event_key>', methods=['POST'])
 def check_registration_group_token(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_validate_registration_group_token(dao, event_key))
 
 
 @tickets_bp.route('/create_registration_group/<string:event_key>', methods=['POST'])
 def create_registration_group(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_create_registration_group(dao, event_key))
 
 
 @tickets_bp.route('/prior_registrations/<string:event_key>', methods=['POST'])
 def prior_registrations(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_get_prior_registrations(dao, event_key))
 
 
 @tickets_bp.route('/unsubscribe_email/<string:reg_token>', methods=['GET'])
 def unsubscribe_email(reg_token):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_email_unsubscribe(dao, reg_token))
 
 
@@ -137,6 +150,7 @@ def admin_event_index(event_key):
 @tickets_bp.route('/admin/event_info/<string:event_key>', methods=['GET'])
 @login_required
 def admin_event_info(event_key):
+    dao = current_app.config['dao']
     return jsonify_dataclass(do_get_event_stats(dao, event_key))
 
 

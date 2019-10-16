@@ -291,47 +291,6 @@ def mts(test_dao):
     return event
 
 
-@pytest.fixture
-def mts_app_routes(app, test_dao):
-    event_key = 'mind_the_shag_2019'
-
-    @app.route('/price', methods=['POST'])
-    def _price():
-        return jsonify_dataclass(do_price(test_dao, event_key))
-
-    @app.route('/checkout', methods=['POST'])
-    def _checkout():
-        return jsonify_dataclass(do_checkout(test_dao, event_key))
-
-    @app.route('/pay', methods=['POST'])
-    def _pay():
-        return jsonify_dataclass(do_pay(test_dao))
-
-    @app.route('/payment_status', methods=['POST'])
-    def _payment_status():
-        return jsonify_dataclass(do_get_payment_status(test_dao))
-
-    @app.route('/check_partner_token', methods=['POST'])
-    def _check_partner_token():
-        return jsonify_dataclass(do_check_partner_token(test_dao))
-
-    @app.route('/check_discount_token', methods=['POST'])
-    def _check_discount_token():
-        return jsonify_dataclass(do_validate_discount_code_token(test_dao, event_key))
-
-    @app.route('/check_registration_group_token', methods=['POST'])
-    def _check_registration_group_token():
-        return jsonify_dataclass(do_validate_registration_group_token(test_dao, event_key))
-
-    @app.route('/create_registration_group', methods=['POST'])
-    def _create_registration_group():
-        return jsonify_dataclass(do_create_registration_group(test_dao, event_key))
-
-    @app.route('/admin_create_discount_code', methods=['POST'])
-    def _admin_create_discount_code():
-        pass
-
-
 def test_full_pass_registration_solo(mts, test_dao, client, person_factory, mock_stripe,
                                      sample_stripe_card_error, sample_stripe_successful_charge,
                                      sample_stripe_customer, mock_send_email):
@@ -865,5 +824,3 @@ def test_update_mts_order_add_upgrade_to_full_pass(mts, test_dao, client, person
     assert payment2 is not None
     assert payment.paid_by == payment2.paid_by
     assert 35 == payment2.price
-
-

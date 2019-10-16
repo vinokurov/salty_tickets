@@ -1,3 +1,4 @@
+import dramatiq
 import pymongo
 import typing
 from unittest.mock import Mock
@@ -6,19 +7,19 @@ from datetime import datetime
 
 import pytest
 from dataclasses import dataclass
+
+from dramatiq import Worker
 from flask import Flask as _Flask
 from flask.testing import FlaskClient
 from flask_session import Session
 from mongoengine import connect, disconnect
+from salty_tickets import broker
 from salty_tickets.constants import LEADER, FOLLOWER, SUCCESSFUL, FAILED
 from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocument, \
     PaymentDocument, TicketsDAO
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, Ticket
 from salty_tickets.models.registrations import Person
-from salty_tickets.api.registration_process import do_check_partner_token, do_get_payment_status, do_pay, do_checkout, \
-    do_price
-from salty_tickets.utils.utils import jsonify_dataclass
 from salty_tickets.waiting_lists import flip_role
 from stripe import Charge, Customer
 from stripe.error import CardError
@@ -203,18 +204,25 @@ class Flask(_Flask):
         return super(Flask, self).make_response(rv)
 
 
+print('setting test broker')
+
 @pytest.fixture
-def app():
+def app(test_dao):
     app = Flask(__name__)
     app.config['WTF_CSRF_ENABLED'] = False
     app.config['SESSION_TYPE'] = 'mongodb'
     app.config['SESSION_MONGODB'] = pymongo.MongoClient()
     app.config['MONGO'] = 'mongomock://localhost'
+    app.config['DRAMATIQ_BROKER_CLASS'] = 'StubBroker'
+    app.config['dao'] = test_dao
     Session(app)
+    dramatiq.set_broker(broker)
     with app.app_context():
         from salty_tickets import views
         app.register_blueprint(views.tickets_bp)
+        broker.init_app(app)
 
+    broker.flush_all()
     return app
 
 
@@ -222,6 +230,13 @@ def app():
 def client(app):
     return app.test_client()
 
+
+@pytest.fixture()
+def stub_worker():
+    worker = Worker(broker, worker_timeout=100)
+    worker.start()
+    yield worker
+    worker.stop()
 
 @pytest.fixture
 def mock_send_email(mocker):
@@ -340,13 +355,14 @@ class AllVars:
     sample_stripe_card_error: CardError
     sample_stripe_successful_charge: typing.Dict
     sample_stripe_customer: typing.Dict
+    stub_worker: Worker
 
 
 @pytest.fixture
 def e2e_vars(test_dao, salty_recipes, app, client, person_factory,
              mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
-             sample_stripe_customer, mock_send_email):
+             sample_stripe_customer, mock_send_email, stub_worker):
 
     return AllVars(test_dao, app, client, person_factory, mock_send_email,
                    mock_stripe, sample_stripe_card_error, sample_stripe_successful_charge,
-                   sample_stripe_customer)
+                   sample_stripe_customer, stub_worker)
