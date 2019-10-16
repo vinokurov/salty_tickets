@@ -20,7 +20,7 @@ from salty_tickets.dao import EventDocument, PersonDocument, RegistrationDocumen
 from salty_tickets.models.event import Event
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, Ticket
 from salty_tickets.models.registrations import Person
-from salty_tickets.tasks import update_ticket_numbers
+from salty_tickets.tasks import update_event_numbers
 from salty_tickets.waiting_lists import flip_role
 from stripe import Charge, Customer
 from stripe.error import CardError
@@ -114,7 +114,7 @@ def salty_recipes(test_dao):
     )
     save_event_from_meta(event_meta)
     event = test_dao.get_event_by_key('salty_recipes')
-    update_ticket_numbers(test_dao, event)
+    update_event_numbers(test_dao, event)
     return event_meta
 
 

@@ -10,7 +10,7 @@ from salty_tickets.models.event import Event
 from salty_tickets.models.registrations import DiscountCode
 from salty_tickets.models.tickets import WorkshopTicket, PartyTicket, FestivalPassTicket
 from salty_tickets.models.products import Product
-from salty_tickets.tasks import update_ticket_numbers
+from salty_tickets.tasks import update_event_numbers
 from salty_tickets.testutils import process_test_price_checkout_pay, post_json_data, process_test_price
 from salty_tickets.tokens import GroupToken, DiscountToken, RegistrationToken
 from salty_tickets.utils.utils import jsonify_dataclass
@@ -289,7 +289,7 @@ def mts(test_dao):
     event.append_products(products)
     event.append_discount_products(discount_products)
     test_dao.create_event(event)
-    update_ticket_numbers(test_dao, event)
+    update_event_numbers(test_dao, event)
     return event
 
 

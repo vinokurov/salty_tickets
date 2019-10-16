@@ -14,7 +14,7 @@ from salty_tickets.forms import create_event_form, StripeCheckoutForm, DanceSign
     add_primary_person_to_form_cache, add_partner_person_to_form_cache
 from salty_tickets.models.discounts import CodeDiscountProduct, DiscountProduct, get_discount_rule_from_code, \
     GroupDiscountProduct
-from salty_tickets.models.event import Event
+from salty_tickets.models.event import Event, EventSummaryNumbers
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, PaymentStripeDetails, Registration, RegistrationGroup, \
     TransactionDetails
@@ -23,7 +23,7 @@ from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket
 from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tasks import task_registration_confirmation_email, task_waiting_list_accept_email, \
-    task_balance_waiting_lists, task_update_ticket_numbers
+    task_balance_waiting_lists, task_update_event_numbers
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken, RegistrationToken
 from salty_tickets.validators import validate_registrations
 
@@ -144,33 +144,6 @@ class ProductInfo(DataClassJsonMixin):
 
 
 @dataclass
-class EventRegistrationStatsInfo(DataClassJsonMixin):
-    persons_count: int = None
-    workshops_accepted: int = None
-    countries_count: int = None
-    locations_count: int = None
-
-    @classmethod
-    def from_event(cls, event: Event):
-        registrations = []
-        for p_key, p in event.tickets.items():
-            registrations = registrations + p.registrations
-        registrations = [r for r in registrations if r.active]
-        persons = {r.person.full_name.lower(): r.person for r in registrations}.values()
-
-        def location_to_tuple(location_dict):
-            return tuple({k: v for k, v in location_dict.items() if k != 'query'}.items())
-
-        return cls(
-            persons_count=len(persons),
-            workshops_accepted=len([r for r in registrations if not r.wait_listed
-                                    and isinstance(event.tickets[r.ticket_key], WorkshopTicket)]),
-            countries_count=len(set([p.location.get('country_code') for p in persons])),
-            locations_count=len(set([location_to_tuple(p.location) for p in persons])),
-        )
-
-
-@dataclass
 class EventInfo(DataClassJsonMixin):
     name: str
     key: str
@@ -179,11 +152,10 @@ class EventInfo(DataClassJsonMixin):
     products: List
     # discount_products: List
     layout: Dict
-    registrations_stats: EventRegistrationStatsInfo = None
+    registrations_stats: EventSummaryNumbers = None
 
     @classmethod
-    def from_event(cls, event):
-
+    def from_event(cls, event: Event):
         return cls(
             name=event.name,
             key=event.key,
@@ -193,7 +165,7 @@ class EventInfo(DataClassJsonMixin):
             # discount_products=[DiscountProductInfo.from_discount_product(p)
             #                    for k, p in event.discount_products.items()],
             layout=event.layout,
-            registrations_stats=EventRegistrationStatsInfo.from_event(event),
+            registrations_stats=event.summary_numbers,
         )
 
 
@@ -345,7 +317,7 @@ class PartnerTokenCheckResult(DataClassJsonMixin):
 
 
 def get_payment_from_form(event: Event, form, extra_registrations=None,
-                          prior_registrations=None, discount_product: DiscountProduct=None):
+                          prior_registrations=None, discount_product: DiscountProduct = None):
     registrations = []
     for ticket_key, ticket in event.tickets.items():
         registrations += ticket.parse_form(form)
@@ -377,7 +349,7 @@ def get_payment_from_form(event: Event, form, extra_registrations=None,
     elif len(purchases):
         person = purchases[0].person
     else:
-        person = None # ??? ACTUALLY CHECK
+        person = None  # ??? ACTUALLY CHECK
 
     payment = Payment(
         paid_by=person,
@@ -628,7 +600,7 @@ def process_first_payment(payment: Payment):
 
 
 def take_existing_registration_off_waiting_list(dao: TicketsDAO, registration: Registration,
-                                                new_partner: Person=None):
+                                                new_partner: Person = None):
     if not registration.is_paid:
         payment = dao.get_payment_by_registration(registration)
         transaction = TransactionDetails(
@@ -677,7 +649,7 @@ def balance_event_waiting_lists(dao: TicketsDAO, event_key: str):
                     take_existing_registration_off_waiting_list(dao, registration)
                     balanced_registrations.append(registration)
     if balanced_registrations:
-        task_update_ticket_numbers(event.key)
+        task_update_event_numbers(event.key)
 
 
 def post_process_discounts(dao: TicketsDAO, payment: Payment, event: Event):
@@ -699,7 +671,7 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     post_process_discounts(dao, payment, event)
-    task_update_ticket_numbers.send(event.key)
+    task_update_event_numbers.send(event.key)
     # send_registration_confirmation(payment, event)
     task_registration_confirmation_email.send(str(payment.id), event.key)
     task_balance_waiting_lists.send(event.key)
@@ -908,6 +880,3 @@ def get_new_prices(event: Event, person: Person, registrations: typing.List[Regi
             pricer.price_all([ticket_reg], prior_registrations=registrations)
             new_prices.append({'ticket_key': ticket_key, 'price': ticket_reg.price})
     return new_prices
-
-
-

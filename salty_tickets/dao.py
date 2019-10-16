@@ -9,7 +9,7 @@ from salty_tickets import models
 from salty_tickets.constants import FOLLOWER, LEADER, SUCCESSFUL
 from salty_tickets.models.discounts import DiscountProduct, DiscountCode
 from salty_tickets.models.email_campaigns import EventEmailSettings
-from salty_tickets.models.event import Event
+from salty_tickets.models.event import Event, EventSummaryNumbers
 from salty_tickets.models.products import Product
 from salty_tickets.models.registrations import Payment, Person, Registration, PaymentStripeDetails, Purchase, Discount, \
     RegistrationGroup, TransactionDetails
@@ -167,15 +167,20 @@ class TicketNumbersDocument(me.EmbeddedDocument):
         return model_dataclass
 
 
-class EventTicketsNumbersDocument(me.Document):
+@fields_from_dataclass(EventSummaryNumbers)
+class EventSummaryNumbers(me.EmbeddedDocument):
+    pass
+
+class EventNumbersDocument(me.Document):
     meta = {
-        'collection': 'event_ticket_numbers',
+        'collection': 'event_numbers',
     }
     event_key = me.StringField(primary_key=True)
     ticket_numbers = me.MapField(me.EmbeddedDocumentField(TicketNumbersDocument))
+    summary_numbers = me.EmbeddedDocumentField(EventSummaryNumbers)
 
 
-@fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products', 'ticket_numbers'])
+@fields_from_dataclass(Event, skip=['tickets', 'merchandise', 'discount_products', 'ticket_numbers', 'summary_numbers'])
 class EventDocument(me.Document):
     meta = {
         'collection': 'events',
@@ -185,7 +190,7 @@ class EventDocument(me.Document):
     tickets = me.MapField(me.EmbeddedDocumentField(TicketDocument))
     products = me.MapField(me.EmbeddedDocumentField(ProductDocument))
     discount_products = me.MapField(me.EmbeddedDocumentField(DiscountProductDocument))
-    ticket_numbers = me.ReferenceField(EventTicketsNumbersDocument, required=False)
+    ticket_numbers = me.ReferenceField(EventNumbersDocument, required=False)
 
     @classmethod
     def from_dataclass(cls, model_dataclass: Event):
@@ -203,6 +208,7 @@ class EventDocument(me.Document):
 
         if self.ticket_numbers:
             ticket_numbers = {k: v.to_dataclass() for k, v in self.ticket_numbers.ticket_numbers.items()}
+            event_model.summary_numbers = self.ticket_numbers.summary_numbers.to_dataclass()
         else:
             ticket_numbers = {}
 
@@ -374,17 +380,18 @@ class TicketsDAO:
         return [r.to_dataclass() for r in items]
 
     def get_event_ticket_numbers(self, event_key: str) -> typing.Dict[str, TicketNumbers]:
-        doc = EventTicketsNumbersDocument.objects(id=event_key).first()
+        doc = EventNumbersDocument.objects(id=event_key).first()
         if not doc:
-            doc = EventTicketsNumbersDocument()
+            doc = EventNumbersDocument()
         return {k: v.to_dataclass() for k, v in doc.ticket_numbers.items()}
 
-    def save_event_ticket_numbers(self, event_key: str, ticket_numbers: typing.Dict[str, TicketNumbers]):
-        doc = EventTicketsNumbersDocument.objects(event_key=event_key).first()
+    def save_event_numbers(self, event_key: str, ticket_numbers: typing.Dict[str, TicketNumbers], summary_numbers: EventSummaryNumbers):
+        doc = EventNumbersDocument.objects(event_key=event_key).first()
         if not doc:
-            doc = EventTicketsNumbersDocument(event_key=event_key)
+            doc = EventNumbersDocument(event_key=event_key)
         doc.ticket_numbers = {k: TicketNumbersDocument.from_dataclass(v)
                               for k, v in ticket_numbers.items()}
+        doc.summary_numbers = EventSummaryNumbers.from_dataclass(summary_numbers)
         doc.save()
 
         event_doc = self._get_event_doc(event_key)
