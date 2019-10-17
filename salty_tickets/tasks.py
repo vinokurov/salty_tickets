@@ -6,7 +6,6 @@ from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_email
 from salty_tickets.models.event import Event
 from salty_tickets.tokens import RegistrationToken, PaymentId
-from salty_tickets.utils.utils import timeit
 
 
 def get_dao():

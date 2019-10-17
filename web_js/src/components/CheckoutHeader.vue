@@ -17,7 +17,7 @@
           </div>
       </div>
 
-    <b-modal  size="lg" id="checkoutModal" ref="checkoutModal" hide-footer title="Checkout">
+    <b-modal  size="lg" id="checkoutModal" ref="checkoutModal" hide-backdrop hide-footer title="Checkout">
       <div class="d-block">
         <b-list-group v-if="Object.keys(errors).length">
           <b-list-group-item v-for="(error, error_key) in errors" variant="danger">
@@ -71,7 +71,7 @@
       </div>
     </b-modal>
 
-    <b-modal  size="lg" id="paymentErrorModal" ref="paymentErrorModal" hide-footer
+    <b-modal  size="lg" id="paymentErrorModal" ref="paymentErrorModal" hide-backdrop hide-footer
               title="Payment Error"
               header-bg-variant="danger"
               header-text-variant="light"
@@ -84,7 +84,7 @@
       </div>
     </b-modal>
 
-    <b-modal  size="lg" id="paymentWait" ref="paymentWait"
+    <b-modal  size="lg" id="paymentWait" ref="paymentWait" hide-backdrop
               hide-footer hide-header-close no-close-on-esc
               title="Processing Payment"
               >
