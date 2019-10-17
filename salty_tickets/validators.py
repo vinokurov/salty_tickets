@@ -11,43 +11,44 @@ def validate_registrations(event: Event, registrations: List[Registration]):
         rule_func = VALIDATION_RULES[rule['name']]
         _error = rule_func(registrations, event.tickets, **rule['kwargs'])
         if _error:
-            errors['Registration'] = [_error]
+            registration_errors = errors.get('Registration', [])
+            errors['Registration'] = registration_errors + [_error]
     return errors
 
 
 def errors_at_least_any_with_tag(registrations: List[Registration],
-                                 products: Dict[str, Ticket],
+                                 tickets: Dict[str, Ticket],
                                  tag, count=1, error_text=None):
     if registrations:
         primary = registrations[0].registered_by
-        matching_products = [products[r.ticket_key] for r in registrations
-                             if tag in products[r.ticket_key].tags
+        matching_products = [tickets[r.ticket_key] for r in registrations
+                             if tag in tickets[r.ticket_key].tags
                              and r.person == primary]
-        if 0 < len(matching_products) < count:
+        if len(matching_products) < count:
             return error_text
 
-        partner_products = [products[r.ticket_key] for r in registrations
-                            if tag in products[r.ticket_key].tags
+        partner_products = [tickets[r.ticket_key] for r in registrations
+                            if tag in tickets[r.ticket_key].tags
                             and r.person != primary]
         if 0 < len(partner_products) < count:
             return error_text
 
 
 def errors_if_overlapping(registrations: List[Registration],
-                          products: Dict[str, Ticket],
+                          tickets: Dict[str, Ticket],
                           tag, error_text=None):
     if registrations:
         primary = registrations[0].registered_by
         if primary:
-            matching_products = [products[r.ticket_key] for r in registrations
-                                 if tag in products[r.ticket_key].tags
+            matching_products = [tickets[r.ticket_key] for r in registrations
+                                 if tag in tickets[r.ticket_key].tags
                                  and r.person == primary]
             start_times = [p.start_datetime for p in matching_products if hasattr(p, 'start_datetime')]
             if len(start_times) > len(set(start_times)):
                 return error_text
 
-            partner_products = [products[r.ticket_key] for r in registrations
-                                if tag in products[r.ticket_key].tags
+            partner_products = [tickets[r.ticket_key] for r in registrations
+                                if tag in tickets[r.ticket_key].tags
                                 and r.person != primary]
             start_times = [p.start_datetime for p in partner_products if hasattr(p, 'start_datetime')]
             if len(start_times) > len(set(start_times)):
@@ -84,9 +85,9 @@ def mind_the_shag_validator(registrations: List[Registration],
                 if stations_count < 3:
                     return 'You need to choose at least 3 stations'
             elif _has_tags(registration_keys, tickets, 'station_discount_2'):
-                if not {'shag_abc', 'shag_essentials'}.intersection(set(registration_keys)):
-                    return 'You need to select "Shag ABC" and "Shag Essentials"'
-            elif len({'shag_abc', 'shag_essentials'}.intersection(set(registration_keys))) == 2:
+                if not {'shag_roots', 'rising_shag'}.intersection(set(registration_keys)):
+                    return 'You need to select "Shag Roots" and "Rising Shag"'
+            elif len({'shag_roots', 'rising_shag'}.intersection(set(registration_keys))) == 2:
                 registrations.append(
                     Registration(
                         registered_by=primary,

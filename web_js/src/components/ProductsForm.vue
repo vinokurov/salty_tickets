@@ -12,12 +12,12 @@
                   :special_price="getSpecialPrice('full_pass')"
                 />
               </td>
-              <td style="border:none">
+              <!-- <td style="border:none">
                 <PassTicketCard
                   inputName='party_pass'
                   :special_price="getSpecialPrice('party_pass')"
                 />
-              </td>
+              </td> -->
             </tr>
             <tr>
               <td style="border:none">
@@ -26,12 +26,12 @@
                   :special_price="getSpecialPrice('shag_novice')"
                 />
               </td>
-              <td style="border:none">
+              <!-- <td style="border:none">
                 <PassTicketWithRoleCard
                   inputName='shag_novice_no_parties'
                   :special_price="getSpecialPrice('shag_novice_no_parties')"
                 />
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>
@@ -57,8 +57,15 @@
                       <workshop-card
                         :inputName="productKey"
                         :headerColor="level_color_codes[getTicketByKey(productKey).level]"
-                        v-if="productKey"
+                        v-if="productKey && getTicketByKey(productKey).waiting_list"
                         :special_price="getSpecialPrice(productKey)"
+                        />
+                      <ExtrasCard 
+                        :inputName="productKey"
+                        :special_price="getSpecialPrice(productKey)"
+                        headerColor="#E67E22"
+                        icon='star'
+                        v-else-if="productKey"
                         />
                     </td>
                 </tr>
@@ -148,6 +155,7 @@ import MerchandiseProductCard from './MerchandiseProductCard.vue';
 import PassTicketCard from './PassTicketCard.vue';
 import PassTicketWithRoleCard from './PassTicketWithRoleCard.vue';
 import PartyTicketCard from './PartyTicketCard.vue';
+import ExtrasCard from './ExtrasCard.vue';
 import LocationInput from './LocationInput.vue';
 import { mapState, mapActions,mapGetters } from 'vuex'
 
@@ -156,7 +164,7 @@ export default {
     WorkshopCard,
     PassTicketCard,PassTicketWithRoleCard,
     MerchandiseProductCard,
-    PartyTicketCard,
+    PartyTicketCard, ExtrasCard,
     LocationInput,
   },
   created() {
@@ -168,10 +176,10 @@ export default {
     return {
       level_color_codes: {
         'St.Louis Shag': '#1E8449',
-        'St.Louis Shag Novice': '#1E8449',
-        'Collegiate Shag': '#1B4F72',
-        'Collegiate Shag Novice': '#5499C7',
-        'Collegiate Shag Veteran': '#922B21'
+        'St.Louis Shag Novice': '#5499C7',
+        'Collegiate Shag General': '#1B4F72',
+        'Collegiate Shag Beginner': '#1E8449',
+        'Collegiate Shag Advanced': '#922B21'
       },
       selected_workshops_by_category: {},
       extra_station_price: 25,
@@ -224,7 +232,7 @@ export default {
           }
         })
 
-        if((reg.ticket_key == 'showmans_shag') || (reg.ticket_key == 'hurracaine_shag')) {
+        if((reg.ticket_key == 'shag_anatomy') || (reg.ticket_key == 'aero_shag') || (reg.ticket_key == 'all_that_shag')) {
           keys_to_disable.push('shag_novice')
           keys_to_disable.push('shag_novice_no_parties')
         }
@@ -278,7 +286,7 @@ export default {
     applyPassesAutoselect: function() {
       var pass_key = this.selected_workshops_by_category['pass']
       var parties = ['friday_party', 'saturday_party', 'sunday_party']
-      var novice_stations = ['shag_abc', 'shag_essentials']
+      var novice_stations = ['shag_roots', 'rising_shag']
       if (pass_key){
         var pass = this.getTicketByKey(pass_key)
 

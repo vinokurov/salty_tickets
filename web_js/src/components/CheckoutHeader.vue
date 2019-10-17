@@ -48,22 +48,26 @@
             </b-list-group-item>
 
             <!-- TOTALs now and later -->
-            <b-list-group-item v-if="(pay_all != 'y') && has_waiting" variant="primary" class="d-flex justify-content-between align-items-center">
+            <!-- <b-list-group-item v-if="(pay_all != 'y') && has_waiting" variant="primary" class="d-flex justify-content-between align-items-center">
               Amount due now <div>£{{cart.pay_now_total.toFixed(2)}}</div>
             </b-list-group-item>
             <b-list-group-item v-if="(pay_all != 'y') && has_waiting" variant="primary" class="d-flex justify-content-between align-items-center">
               Amount due later <div>£{{(cart.transaction_fee + cart.total - cart.pay_now_total).toFixed(2)}}</div>
-            </b-list-group-item>
+            </b-list-group-item> -->
 
           </b-list-group>
           <b-alert show  v-if="has_waiting" variant="warning" class="mb-4 my-4">
-            <p><font-awesome icon="exclamation-triangle"/> Some of the items are on the waiting list. You have the following options:</p>
-            <b-form-group label="">
+            <p>
+              <font-awesome icon="exclamation-triangle"/> 
+              Some of the items are on the waiting list. 
+              You can cancel waiting list any time and ask for the 100% refund for the wait listed workshops.
+            </p>
+            <!-- <b-form-group label="">
               <b-form-radio-group v-model="pay_all" @input="requestCheckout" stacked>
                 <b-form-radio value="y">Pay 100% in advance now (can be refunded on request)</b-form-radio>
                 <b-form-radio value="">Let us process payment automatically when the place is available</b-form-radio>
               </b-form-radio-group>
-            </b-form-group>
+            </b-form-group> -->
           </b-alert>
           <button class="btn btn-success my-4" @click="doCheckout()" v-if="cart.checkout_enabled">
             <font-awesome icon="credit-card"/> Sign up and pay
@@ -106,6 +110,7 @@ export default {
   components: {FontAwesome},
   computed: {
     ...mapState(['cart', 'errors', 'payment_response', 'payment_processing_in_progress']),
+    ...mapGetters(['getTicketByKey']),
     has_waiting: function() {
       return this.cart.items.filter((i) => i.wait_listed).length > 0
     },
@@ -117,7 +122,7 @@ export default {
     itemFormat(item) {
       let values = [item.name]
       if (item.person) {values.push(item.person)}
-      if (item.dance_role) {values.push(item.dance_role)}
+      if (item.dance_role && this.getTicketByKey(item.key).waiting_list) {values.push(item.dance_role)}
       return values.join(' / ')
     },
     doCheckout() {

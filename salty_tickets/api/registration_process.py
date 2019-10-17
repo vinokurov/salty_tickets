@@ -24,7 +24,7 @@ from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create
     stripe_session_create, stripe_is_session_successful
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tasks import task_registration_confirmation_email, task_waiting_list_accept_email, \
-    task_balance_waiting_lists, task_update_event_numbers
+    task_balance_waiting_lists, task_update_event_numbers, task_group_created_email
 from salty_tickets.tokens import PartnerToken, PaymentId, DiscountToken, GroupToken, RegistrationToken
 from salty_tickets.validators import validate_registrations
 
@@ -502,7 +502,7 @@ def do_checkout(dao: TicketsDAO, event_key: str, url_success: str, url_cancel: s
 
             session['payment'] = pickle.dumps(payment)
             session['event_key'] = event_key
-            session['transaction'] = pickle.dumps(transaction)
+            # session['transaction'] = pickle.dumps(transaction)
             # pricing_result.checkout_success = not pricing_result.disable_checkout
             pricing_result.checkout_success = True
             pricing_result.stripe.session_id = transaction.stripe_session_id
@@ -510,14 +510,14 @@ def do_checkout(dao: TicketsDAO, event_key: str, url_success: str, url_cancel: s
 
 
 def do_payment_finalize(dao: TicketsDAO):
-    transaction_pickle = session.get('transaction', None)
+    # transaction_pickle = session.get('transaction', None)
     payment_pickle = session.get('payment', None)
-    if not (transaction_pickle or payment_pickle):
+    if not payment_pickle:
         error_message = 'Transaction information has expired. Please try again.'
         return PaymentResult(success=False, complete=True, error_message=error_message)
 
-    transaction = pickle.loads(transaction_pickle)
     payment = pickle.loads(payment_pickle)
+    transaction = payment.transactions[-1]
 
     event_key = session.get('event_key', None)
     if not event_key:
@@ -530,9 +530,11 @@ def do_payment_finalize(dao: TicketsDAO):
 
     if not stripe_is_session_successful(transaction, config.STRIPE_SK):
         payment.status = FAILED
+        transaction.status = FAILED
         success = False
     else:
         payment.status = SUCCESSFUL
+        transaction.status = SUCCESSFUL
         success = True
 
     dao.update_payment(payment)
@@ -556,6 +558,9 @@ def do_payment_finalize(dao: TicketsDAO):
 
     session.pop('payment')
     session.pop('event_key')
+    for item in payment.items:
+        item.is_paid = True
+
     for reg in payment.registrations:
         reg.active = True
         dao.update_registration(reg)
@@ -762,12 +767,13 @@ def do_create_registration_group(dao: TicketsDAO, event_key: str):
         else:
             registration_group = RegistrationGroup(
                 name=name,
-                location=form.location.data,
+                # location=form.location.data,
                 admin_email=form.email.data,
                 comment=form.comment.data,
             )
             dao.add_registration_group(event, registration_group)
             token_str = GroupToken().serialize(registration_group)
+            task_group_created_email.send(name, token_str, form.email.data)
             return CreateRegistrationGroupResult(success=True, token=token_str)
     errors.update(form.errors)
     return CreateRegistrationGroupResult(errors=errors)

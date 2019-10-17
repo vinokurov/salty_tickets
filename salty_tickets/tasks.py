@@ -70,6 +70,42 @@ def task_registration_confirmation_email(payment_id, event_key):
     return res
 
 
+@dramatiq.actor(priority=20)
+def task_group_created_email(group_name, group_token, email):
+    res = send_email(
+        EMAIL_FROM,
+        email,
+        'Mind the Shag 2020 - group created',
+        f'Hello, \n'
+        f'The new group "{group_name}" is created.\n'
+        f'Please use the following token: {group_token}\n'
+        f'\n'
+        f'Thank you\n'
+        f'Mind the Shag Team',
+        body_html=None,
+    )
+    logging.info(res)
+    return res
+
+
+@dramatiq.actor(priority=20)
+def task_discount_created_email(discount_code_info, token, email):
+    res = send_email(
+        EMAIL_FROM,
+        email,
+        'Mind the Shag 2020 - discount',
+        f'Hello, \n'
+        f'You have got a discount: "{discount_code_info}".\n'
+        f'Please use the following discount token: {token}\n'
+        f'\n'
+        f'Thank you\n'
+        f'Mind the Shag Team',
+        body_html=None,
+    )
+    logging.info(res)
+    return res
+
+
 @dramatiq.actor(priority=10)
 def task_balance_waiting_lists(event_key):
     dao = get_dao()

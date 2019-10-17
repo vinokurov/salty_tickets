@@ -147,7 +147,7 @@ export default new Vuex.Store({
 
   actions: {
     async initEvent ({context, state, dispatch}) {
-      const url = '/event/mind_the_shag_2019'
+      const url = '/event/mind_the_shag_2020'
       let response = await axios.get(url)
       state.layout = response.data.layout
       state.tickets = response.data.tickets
@@ -161,7 +161,7 @@ export default new Vuex.Store({
       }
     },
     async requestPrice({context, commit, state, getters, dispatch}) {
-      const url = '/price/mind_the_shag_2019'
+      const url = '/price/mind_the_shag_2020'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
@@ -171,7 +171,7 @@ export default new Vuex.Store({
     },
     async requestCheckout({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
-      const url = '/checkout/mind_the_shag_2019'
+      const url = '/checkout/mind_the_shag_2020'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {
@@ -181,7 +181,7 @@ export default new Vuex.Store({
     },
     async requestPriorRegistrations({context, commit, state, getters, dispatch}) {
       // const url = 'http://127.0.0.1:5000/price/salty_breezle'
-      const url = '/prior_registrations/mind_the_shag_2019'
+      const url = '/prior_registrations/mind_the_shag_2020'
       let params = getters.getPricingSubmitData
       let response = await dispatch('postRequest', {url, params})
       if (response) {

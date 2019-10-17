@@ -1,7 +1,12 @@
 from salty_tickets.config import MONGO
+from salty_tickets.tasks import task_discount_created_email
 from salty_tickets.tokens import GroupToken, DiscountToken
 from salty_tickets.models.registrations import DiscountCode
 from salty_tickets.dao import TicketsDAO
+
+from salty_tickets import create_app
+create_app()
+
 
 # discount_code = DiscountCode(
 #     discount_rule='free_party_pass',
@@ -25,6 +30,8 @@ from salty_tickets.dao import TicketsDAO
 #     comment='Pay later'
 # )
 
+
+
 discount_code = DiscountCode(
     discount_rule='free_full_pass',
     applies_to_couple=False,
@@ -40,4 +47,7 @@ dao = TicketsDAO(host=MONGO)
 event = dao.get_event_by_key('mind_the_shag_2019', get_registrations=False)
 dao.add_discount_code(event, discount_code)
 token = DiscountToken().serialize(discount_code)
+
+email='alexander.a.vinokurov@gmail.com'
+task_discount_created_email.send(discount_code.info, str(token), email=email)
 print(token)

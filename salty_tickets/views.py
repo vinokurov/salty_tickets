@@ -44,7 +44,7 @@ __author__ = 'vnkrv'
 @tickets_bp.route('/register')
 @tickets_bp.route('/register/')
 def register_index():
-    return redirect(url_for('event_index', event_key='mind_the_shag_2019'))
+    return redirect(url_for('event_index', event_key='mind_the_shag_2020'))
 
 
 @tickets_bp.route('/register/<string:event_key>', methods=['GET'])

@@ -52,6 +52,9 @@
                     <b-popover target="overseas-info" triggers="click blur">
                       For those who travel to Mind the Shag from another continent or require a visa to enter the UK.
                     </b-popover>
+                    <!-- <b-button @click="primaryDiscountCode='OVERSEAS'">
+                      Create New Group
+                    </b-button > -->
                   </span>
 
                     <h3 class="h3 my-4">Already registered?</h3>
@@ -124,6 +127,9 @@ export default {
     },
     registrationToken() {
       this.$store.dispatch('requestPriorRegistrations');
+    },
+    createGroup() {
+      this.$store.dispatch('postRequest', ('/prior_registrations/mind_the_shag_2020'))
     },
   }
 }
