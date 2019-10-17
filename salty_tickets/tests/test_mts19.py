@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import pytest
-from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
+from salty_tickets.api.registration_process import do_price, do_checkout, do_payment_finalize, do_get_payment_status, \
     do_check_partner_token, do_create_registration_group, do_validate_registration_group_token, \
     do_validate_discount_code_token
 from salty_tickets.constants import LEADER, COUPLE

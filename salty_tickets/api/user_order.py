@@ -2,6 +2,7 @@ from typing import List, Dict
 
 from dataclasses import dataclass, field
 from dataclasses_json import DataClassJsonMixin
+from salty_tickets.constants import SUCCESSFUL
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.models.discounts import DiscountProduct
 from salty_tickets.models.event import Event
@@ -130,7 +131,7 @@ class UserOrderInfo(DataClassJsonMixin):
         products = []
         discounts = []
         for payment in all_payments:
-            tickets += [RegistrationInfo.from_registration(r, event.tickets) for r in payment.registrations]
+            tickets += [RegistrationInfo.from_registration(r, event.tickets) for r in payment.registrations if r.active]
             products += [PurchaseInfo.from_purchase(r, event.products) for r in payment.purchases]
             discounts += [DiscountInfo.from_discount(r, event.discount_products) for r in payment.discounts]
         return cls(
@@ -142,7 +143,7 @@ class UserOrderInfo(DataClassJsonMixin):
             event_name=event.name,
             event_info=event.info,
             event_key=event.key,
-            payments=[PaymentInfo.from_payment(p) for p in all_payments],
+            payments=[PaymentInfo.from_payment(p) for p in all_payments if p.status == SUCCESSFUL],
             tickets=tickets,
             products=products,
             discounts=discounts,

@@ -31,6 +31,78 @@ def stripe_session(stripe_sk):
     stripe.api_key = None
 
 
+def make_line_items(transaction: TransactionDetails, payment: Payment):
+    line_items = [{
+        'name': payment.description,
+        # 'description': payment.description,
+        'images': [
+            'https://static.wixstatic.com/media/eb4a35_fe468602010940e3b81d45032c760bf8~mv2.jpg/v1/fill/w_851,h_315,al_c/eb4a35_fe468602010940e3b81d45032c760bf8~mv2.jpg'],
+        'amount': stripe_amount(0) + 1,
+        'currency': 'gbp',
+        'quantity': 1,
+    }]
+    line_items += [{'name': n, 'amount': stripe_amount(a) + 1, 'currency': 'gbp', 'quantity': 1} for (n, a) in payment.info_items]
+    line_items += [{
+        'name': 'Booking fee',
+        'amount': stripe_amount(transaction.transaction_fee),
+        'currency': 'gbp',
+        'quantity': 1,
+    }]
+    print(line_items)
+    return line_items
+
+
+def make_items_description(transaction: TransactionDetails, payment: Payment) -> str:
+    items = payment.info_items + [('Booking fee', transaction.transaction_fee)]
+    return '\r\n\r\n'.join(f'£{round(a,2)}\t{d}' for (d, a) in items)
+
+
+def stripe_session_create(transaction: TransactionDetails, payment: Payment, stripe_sk, url_success: str, url_cancel: str):
+    if transaction.price > 0:
+        amount = transaction.price + transaction.transaction_fee
+        with stripe_session(stripe_sk) as sp:
+            stripe_session_obj = sp.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'name': payment.description,
+                    # 'description': make_items_description(transaction, payment),
+                    'images': ['https://static.wixstatic.com/media/eb4a35_fe468602010940e3b81d45032c760bf8~mv2.jpg/v1/fill/w_851,h_315,al_c/eb4a35_fe468602010940e3b81d45032c760bf8~mv2.jpg'],
+                    'amount': stripe_amount(amount),
+                    'currency': 'gbp',
+                    'quantity': 1,
+                }],
+                success_url=url_success,
+                cancel_url=url_cancel,
+                customer_email=payment.paid_by.email,
+                client_reference_id=str(payment.id),
+                payment_intent_data=dict(
+                    metadata=dict(
+                        payment_id=str(payment.id),
+                        # items=', '.join(payment.info_items),
+                    ),
+                    receipt_email=payment.paid_by.email,
+                    description=payment.description,
+                )
+            )
+        transaction.stripe_session_obj = stripe_session_obj
+        transaction.stripe_session_id = stripe_session_obj['id']
+    payment.transactions.append(transaction)
+    return True
+
+
+def stripe_is_session_successful(transaction: TransactionDetails, stripe_sk):
+    with stripe_session(stripe_sk) as sp:
+        session_obj = sp.checkout.Session.retrieve(transaction.stripe_session_id)
+        intent = sp.PaymentIntent.retrieve(session_obj.payment_intent)
+        if intent.status == 'succeeded':
+            transaction.success = True
+            return True
+        else:
+            transaction.success = False
+            transaction.error_response = intent.last_payment_error
+            return False
+
+
 def stripe_charge(transaction: TransactionDetails, payment: Payment, stripe_sk):
     if transaction.price > 0:
         amount = transaction.price + transaction.transaction_fee

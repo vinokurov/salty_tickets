@@ -92,6 +92,7 @@ class PaymentStripeDetails:
     customer_id: str = None
     charges: List = field(default_factory=list)
     error_response: Dict = field(default_factory=dict)
+    session_id: str = None
 
 
 @dataclass
@@ -100,7 +101,8 @@ class TransactionDetails:
     price: float = 0
     transaction_fee: float = 0
     description: str = ''
-    stripe_charge_id: str = ''
+    stripe_session_id: str = ''
+    stripe_session_obj: Dict = field(default_factory=dict)
     success: bool = False
     error_response: Dict = field(default_factory=dict)
 

@@ -20,7 +20,8 @@ from salty_tickets.models.registrations import Payment, Person, PaymentStripeDet
     TransactionDetails
 from salty_tickets.models.tickets import WaitListedPartnerTicket, WorkshopTicket, Ticket, PartyTicket, \
     FestivalPassTicket
-from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer
+from salty_tickets.payments import transaction_fee, stripe_charge, stripe_create_customer, stripe_charge_customer, \
+    stripe_session_create, stripe_is_session_successful
 from salty_tickets.pricers import TicketPricer
 from salty_tickets.tasks import task_registration_confirmation_email, task_waiting_list_accept_email, \
     task_balance_waiting_lists, task_update_event_numbers
@@ -239,6 +240,7 @@ class OrderSummary(DataClassJsonMixin):
 class StripeData(DataClassJsonMixin):
     amount: int = 0
     email: str = ''
+    session_id: str = ''
 
     @classmethod
     def from_payment(cls, payment: Payment):
@@ -464,46 +466,57 @@ def get_prior_registrations(dao: TicketsDAO, event: Event, prior_registred_by):
     return prior_registrations
 
 
-def do_checkout(dao: TicketsDAO, event_key: str):
+def do_checkout(dao: TicketsDAO, event_key: str, url_success: str, url_cancel: str) -> PricingResult:
     event = dao.get_event_by_key(event_key)
     form = create_event_form(event)()
-    prior_registred_by = try_resolve_person_tokens_in_form(form, dao)
+    prior_registered_by = try_resolve_person_tokens_in_form(form, dao)
     valid = form.validate_on_submit()
 
-    prior_registrations = get_prior_registrations(dao, event, prior_registred_by)
+    prior_registrations = get_prior_registrations(dao, event, prior_registered_by)
     extra_registrations = get_extra_registrations_from_partner_token(dao, event, form)
     discount_product = get_discount_product_from_form(dao, event, form)
 
     payment = get_payment_from_form(event, form, extra_registrations=extra_registrations,
                                     prior_registrations=prior_registrations,
                                     discount_product=discount_product)
+    payment.description = event.name
 
     if payment:
         errors = {}
         errors.update(validate_registrations(event, payment.registrations + prior_registrations))
         errors.update(form.errors)
-        new_prices = get_new_prices(event, payment.paid_by or prior_registred_by,
+        new_prices = get_new_prices(event, payment.paid_by or prior_registered_by,
                                     payment.registrations + prior_registrations)
         pricing_result = PricingResult.from_payment(event, payment, errors, new_prices=new_prices)
         if valid and not errors and not pricing_result.disable_checkout:
+            dao.add_payment(payment, event, register=True)
+
+            transaction = TransactionDetails(
+                price=payment.price,
+                transaction_fee=payment.transaction_fee,
+                description='Card payment'
+            )
+
+            stripe_session_create(transaction, payment, config.STRIPE_SK, url_success, url_cancel)
+            dao.update_payment(payment)
+
             session['payment'] = pickle.dumps(payment)
             session['event_key'] = event_key
-            pricing_result.checkout_success = not pricing_result.disable_checkout
+            session['transaction'] = pickle.dumps(transaction)
+            # pricing_result.checkout_success = not pricing_result.disable_checkout
+            pricing_result.checkout_success = True
+            pricing_result.stripe.session_id = transaction.stripe_session_id
         return pricing_result
 
 
-def do_pay(dao: TicketsDAO):
-    form = StripeCheckoutForm()
-    valid = form.validate_on_submit()
-    if not valid:
-        error_message = 'API error. Please check your registration details.'
-        return PaymentResult(success=False, complete=True, error_message=error_message)
-
+def do_payment_finalize(dao: TicketsDAO):
+    transaction_pickle = session.get('transaction', None)
     payment_pickle = session.get('payment', None)
-    if not payment_pickle:
-        error_message = 'Payment information has expired. Please try again.'
+    if not (transaction_pickle or payment_pickle):
+        error_message = 'Transaction information has expired. Please try again.'
         return PaymentResult(success=False, complete=True, error_message=error_message)
 
+    transaction = pickle.loads(transaction_pickle)
     payment = pickle.loads(payment_pickle)
 
     event_key = session.get('event_key', None)
@@ -515,28 +528,27 @@ def do_pay(dao: TicketsDAO):
         error_message = 'Payment information has expired. Please try again.'
         return PaymentResult(success=False, error_message=error_message)
 
-    event = dao.get_event_by_key(event_key, get_registrations=False)
-    payment.description = event.name
-    stripe_token_id = form.stripe_token.data.get('id')
-    payment.stripe = PaymentStripeDetails(token_id=stripe_token_id)
-
-    if hasattr(payment, 'id') and payment.id:
-        dao.update_payment(payment)
+    if not stripe_is_session_successful(transaction, config.STRIPE_SK):
+        payment.status = FAILED
+        success = False
     else:
-        dao.add_payment(payment, event, register=True)
+        payment.status = SUCCESSFUL
+        success = True
+
+    dao.update_payment(payment)
+    event = dao.get_event_by_key(event_key, get_registrations=False)
 
     # if payment.price == 0:
     #     success = True
     #     payment.status = SUCCESSFUL
     # else:
-    success = process_first_payment(payment)
-    dao.update_payment(payment)
+
     session['payment'] = pickle.dumps(payment)
 
     if not success:
         error_message = 'Payment has been declined by the provider.'
         try:
-            error_message = error_message + ' ' + payment.stripe.error_response['error']['message']
+            error_message = error_message + ' ' + transaction.error_response['last_payment_error']['message']
         except Exception as err:
             pass
         return PaymentResult(success=False, complete=True,
@@ -569,6 +581,7 @@ def do_pay(dao: TicketsDAO):
 
 
 def process_first_payment(payment: Payment):
+    payment.pay_all_now = True
     if payment.price and (payment.pay_all_now or (payment.first_pay_amount == payment.price)):
         transaction = TransactionDetails(
             price=payment.price,

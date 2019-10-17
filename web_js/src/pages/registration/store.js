@@ -3,7 +3,7 @@ import Vuex from 'vuex';
 import axios from 'axios'
 import pathify from 'vuex-pathify';
 import { make } from 'vuex-pathify';
-import VueStripeCheckout from 'vue-stripe-checkout';
+// import VueStripeCheckout from 'vue-stripe-checkout';
 
 Vue.use(Vuex);
 
@@ -35,6 +35,7 @@ const my_state = {
     total: 0,
     transaction_fee:0,
     pay_now_total: 0,
+    stripe_session_id: '',
   },
   new_ticket_prices: [],
   stripe: {},
@@ -68,7 +69,8 @@ if (stripe_field) {
     panelLabel: 'Pay'
   }
 
-  Vue.use(VueStripeCheckout, checkout_base_options);
+  // Vue.use(VueStripeCheckout, checkout_base_options);
+  var stripe = Stripe(stripe_field.value);
 }
 
 const reg_token_field = document.getElementById("reg_token");
@@ -99,6 +101,7 @@ export default new Vuex.Store({
 
       if(state.cart.checkout_enabled && pricing_details.stripe) {
         state.stripe = pricing_details.stripe
+        state.cart.stripe_session_id = pricing_details.stripe.session_id
       } else {
         state.stripe = {}
       }
@@ -210,35 +213,46 @@ export default new Vuex.Store({
         panelLabel = 'Save card and pay'
       }
 
-      this._vm.$checkout.open({
-        amount: state.stripe.amount,
-        email: state.stripe.email,
-        name: 'Salty Jitterbugs Ltd.',
-        description: state.event_name,
-        currency: 'gbp',
-        zipCode: true,
-        billingAddress: true,
-        allowRememberMe: false,
-        panelLabel: panelLabel,
-        token: async (token) => {
-          const data = {
-            stripe_token: token,
-            csrf_token: getters.getCSRF,
-          }
-          const url = '/pay/'
-          commit('setPaymentInProgress', true)
-          try {
-            let response = await axios.post(url, data)
-            commit('setPaymentResponseDetails', response.data)
-          } catch(err) {
-            commit('setPaymentInProgress', false)
-            commit('setPaymentResponseDetails', {
-              success:false,
-              error_message: 'Server error while processing payment',
-            })
-          }
-        }
-      })
+      stripe.redirectToCheckout({
+        // Make the id field from the Checkout Session creation API response
+        // available to this file, so you can provide it as parameter here
+        // instead of the {{CHECKOUT_SESSION_ID}} placeholder.
+        sessionId: state.cart.stripe_session_id
+      }).then(function (result) {
+        // If `redirectToCheckout` fails due to a browser or network
+        // error, display the localized error message to your customer
+        // using `result.error.message`.
+      });
+
+      // this._vm.$checkout.open({
+      //   amount: state.stripe.amount,
+      //   email: state.stripe.email,
+      //   name: 'Salty Jitterbugs Ltd.',
+      //   description: state.event_name,
+      //   currency: 'gbp',
+      //   zipCode: true,
+      //   billingAddress: true,
+      //   allowRememberMe: false,
+      //   panelLabel: panelLabel,
+      //   token: async (token) => {
+      //     const data = {
+      //       stripe_token: token,
+      //       csrf_token: getters.getCSRF,
+      //     }
+      //     const url = '/pay/'
+      //     commit('setPaymentInProgress', true)
+      //     try {
+      //       let response = await axios.post(url, data)
+      //       commit('setPaymentResponseDetails', response.data)
+      //     } catch(err) {
+      //       commit('setPaymentInProgress', false)
+      //       commit('setPaymentResponseDetails', {
+      //         success:false,
+      //         error_message: 'Server error while processing payment',
+      //       })
+      //     }
+      //   }
+      // })
     },
   },
 

@@ -1,3 +1,5 @@
+import logging
+
 from flask import render_template, redirect, url_for, request, make_response, jsonify, Blueprint
 from flask_simplelogin import login_required
 from flask_wtf import FlaskForm
@@ -8,7 +10,7 @@ from salty_tickets import config
 from salty_tickets.actions.mailing_lists import do_email_unsubscribe
 from salty_tickets.api.admin import do_get_event_stats
 from salty_tickets.dao import TicketsDAO
-from salty_tickets.api.registration_process import do_price, do_checkout, do_pay, do_get_payment_status, \
+from salty_tickets.api.registration_process import do_price, do_checkout, do_payment_finalize, do_get_payment_status, \
     do_check_partner_token, EventInfo, balance_event_waiting_lists, do_validate_discount_code_token, \
     do_validate_registration_group_token, do_create_registration_group, do_get_prior_registrations
 from salty_tickets.api.user_order import do_get_user_order_info
@@ -74,15 +76,22 @@ def register_get_price(event_key):
 @tickets_bp.route('/checkout/<string:event_key>', methods=['POST'])
 def register_checkout(event_key):
     dao = current_app.config['dao']
-    return jsonify_dataclass(do_checkout(dao, event_key))
+    url_success = url_for('tickets_bp.register_payment_success', _external=True)
+    url_cancel = url_for('tickets_bp.event_index', event_key=event_key, _external=True)
+    return jsonify_dataclass(do_checkout(dao, event_key, url_success, url_cancel))
 
 
-@tickets_bp.route('/pay/', methods=['POST'])
-def register_pay():
+@tickets_bp.route('/payment_success', methods=['GET'])
+def register_payment_success():
     dao = current_app.config['dao']
-    return jsonify_dataclass(do_pay(dao))
+    res = do_payment_finalize(dao)
+    if res.success:
+        return redirect(url_for('tickets_bp.user_order_index', pmt_token=res.pmt_token))
+    else:
+        return res.error_message
 
 
+# TODO: Is it used?
 @tickets_bp.route('/payment_status', methods=['POST'])
 def payment_status():
     dao = current_app.config['dao']
