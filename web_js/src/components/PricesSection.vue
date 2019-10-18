@@ -45,12 +45,13 @@
             </thead>
             <tbody> -->
             <thead>
-              <th class="table-success">
-                Super Off Peak<br/><small> First 150 stations</small><br/>
-                <b-badge pill variant="success">CURRENT TARIFF</b-badge>
-              </th>
               <th class="table-secondary">
+                Super Off Peak<br/><small> First 150 stations</small><br/>
+                <b-badge pill variant="danger">SOLD OUT</b-badge>
+              </th>
+              <th class="table-success">
                 Off Peak<br/><small>150-450 stations</small><br/>
+                <b-badge pill variant="success">CURRENT TARIFF</b-badge>
               </th>
               <th class="table-secondary">
                 Rush Hour<br/><small>After 450 stations</small><br/>
@@ -60,35 +61,35 @@
               <tr>
                 <td>
                   <b-list-group>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Full Pass</small><br/>£150
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Party Pass</small><br/>-
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Extra station</small><br/>£25
                     </b-list-group-item>
-                    <b-list-group-item variant="success">
+                    <b-list-group-item variant="secondary">
                       <small>Shag beginners track</small><br/>£110
                     </b-list-group-item>
                   </b-list-group>
                 </td>
                 <td>
                   <b-list-group>
-                    <b-list-group-item variant="secondary">
+                    <b-list-group-item variant="success">
                       <small>Full Pass</small><br/>£160
                     </b-list-group-item>
-                    <b-list-group-item variant="secondary">
+                    <b-list-group-item variant="success">
                       <small>Party Pass</small><br/>£65
                     </b-list-group-item>
-                    <b-list-group-item variant="secondary">
+                    <b-list-group-item variant="success">
                       <small>Single/extra station</small><br/>£35 / £25
                     </b-list-group-item>
-                    <b-list-group-item variant="secondary">
+                    <b-list-group-item variant="success">
                       <small>Shag beginners track</small><br/>£115 / £55
                     </b-list-group-item>
-                    <b-list-group-item variant="secondary">
+                    <b-list-group-item variant="success">
                       <small>Single parties</small><br/>£20 /£25/ £20
                     </b-list-group-item>
                   </b-list-group>

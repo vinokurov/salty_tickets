@@ -70,7 +70,6 @@ if (stripe_field) {
   }
 
   // Vue.use(VueStripeCheckout, checkout_base_options);
-  var stripe = Stripe(stripe_field.value);
 }
 
 const reg_token_field = document.getElementById("reg_token");
@@ -213,6 +212,7 @@ export default new Vuex.Store({
         panelLabel = 'Save card and pay'
       }
 
+      var stripe = Stripe(stripe_field.value);
       stripe.redirectToCheckout({
         // Make the id field from the Checkout Session creation API response
         // available to this file, so you can provide it as parameter here

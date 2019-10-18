@@ -14,9 +14,8 @@
             <p class="card-text mb-3" style="max-width: 50rem;">
               Now in its 4th year, Mind the Shag is a one-of-a-kind celebration of dancing and music.
 Our wonderful teachers have provided blocks of 2-hour classes. Like last year, you can book these as a whole track or individual stations.
-And of course we will have parties.
-A truly exciting lineup of bands and DJs awaits you in some fantastic venues. Like the last two years,
-Mind the Shag is all about working hard on your new steps during the day and letting loose in a relaxed environment in the evenings.
+And of course we will have parties. This year we have also added daytime activities: a unique Regents canal boat trip with live band on board,
+and a Sunday roast. You can choose daytime activities and mix them with the stations.
             </p>
         </div>
 

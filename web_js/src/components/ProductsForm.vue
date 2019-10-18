@@ -12,12 +12,12 @@
                   :special_price="getSpecialPrice('full_pass')"
                 />
               </td>
-              <!-- <td style="border:none">
+              <td style="border:none">
                 <PassTicketCard
                   inputName='party_pass'
                   :special_price="getSpecialPrice('party_pass')"
                 />
-              </td> -->
+              </td>
             </tr>
             <tr>
               <td style="border:none">
@@ -26,12 +26,12 @@
                   :special_price="getSpecialPrice('shag_novice')"
                 />
               </td>
-              <!-- <td style="border:none">
+              <td style="border:none">
                 <PassTicketWithRoleCard
                   inputName='shag_novice_no_parties'
                   :special_price="getSpecialPrice('shag_novice_no_parties')"
                 />
-              </td> -->
+              </td>
             </tr>
           </tbody>
         </table>

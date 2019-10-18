@@ -43,6 +43,9 @@
                          <b-form-input v-model="primaryDiscountCode" class="form-control" placeholder="Discount/Group code" id="discount_code" name="discount_code"></b-form-input>
                          <b-btn @click="primaryDiscountCode=''" v-if="primaryDiscountCode"><font-awesome icon="times"/></b-btn>
                     </b-input-group>
+                    <p></p>
+                    <p>If you are coming to London from outside European continent (North or South America, Australia, Asia, Africa), 
+                    or if you need a visa to enter the UK, you can have an "overseas" discount. Please click below.</p>
                     <b-button-group>
                       <b-button @click="primaryDiscountCode='OVERSEAS'">
                         Apply an overseas discount
