@@ -184,6 +184,28 @@ class FreeFullPassDiscountRule(DiscountRule):
             )
 
 
+@dataclass
+class ShagJunctionDiscountRule(DiscountRule):
+    """30 GBP off the Full Pass ticket. I.e.: 130 GBP"""
+    discount_amount: float = 30
+
+    def get_discount(self, tickets: typing.Dict, payment: Payment, person: Person, form) -> Discount:
+        discount_price = 0
+        registrations = [r for r in payment.registrations if r.person == person]
+        for reg in registrations:
+            ticket = tickets[reg.ticket_key]
+            if 'pass' in ticket.tags:
+                discount_price = self.discount_amount
+                break
+
+        if discount_price:
+            return Discount(
+                person=person,
+                value=discount_price,
+                description=self.info,
+            )
+
+
 def get_discount_rule_from_code(discount_code: DiscountCode) -> DiscountRule:
     return DISCOUNT_RULES[discount_code.discount_rule](info=discount_code.info)
 
@@ -228,4 +250,5 @@ DISCOUNT_RULES = {
     'free_registration': FreeRegistrationDiscountRule,
     'free_party_pass': FreePartiesDiscountRule,
     'all_free': FreeAllDiscountRule,
+    'shag_junction': ShagJunctionDiscountRule,
 }
