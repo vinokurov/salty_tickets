@@ -689,10 +689,23 @@ def registration_post_process(dao: TicketsDAO, payment: Payment):
     """send emails, balance waiting lists"""
     event = dao.get_payment_event(payment)
     post_process_discounts(dao, payment, event)
-    task_update_event_numbers.send(event.key)
+
+    try:
+        task_update_event_numbers.send(event.key)
+    except Exception as e:
+        task_update_event_numbers(event.key)
+
     # send_registration_confirmation(payment, event)
-    task_registration_confirmation_email.send(str(payment.id), event.key)
-    task_balance_waiting_lists.send(event.key)
+
+    try:
+        task_registration_confirmation_email.send(str(payment.id), event.key)
+    except Exception as e:
+        task_registration_confirmation_email(str(payment.id), event.key)
+
+    try:
+        task_balance_waiting_lists.send(event.key)
+    except Exception as e:
+        task_balance_waiting_lists(event.key)
 
 
 def do_check_partner_token(dao: TicketsDAO):
