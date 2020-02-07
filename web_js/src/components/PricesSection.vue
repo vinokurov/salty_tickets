@@ -18,7 +18,7 @@
                 <small>Locations</small><br/><h2>{{locationsCount}}</h2>
               </b-col>
               <b-col col lg="2" class="border border-secondary border-left-0 rounded-right text-center bg-info text-light shadow">
-                <small>Current Tariff</small><br/><h3>Super&nbsp;Off&nbsp;Peak</h3>
+                <small>Current Tariff</small><br/><h2>Off&nbsp;Peak</h2>
               </b-col>
             </b-row>
           </b-container >
@@ -90,7 +90,7 @@
                       <small>Shag beginners track</small><br/>£115 / £55
                     </b-list-group-item>
                     <b-list-group-item variant="success">
-                      <small>Single parties</small><br/>£20 /£25/ £20
+                      <small>Single parties</small><br/>£25 /£30/ £20
                     </b-list-group-item>
                   </b-list-group>
                 </td>
@@ -145,6 +145,9 @@
       </div>
 
       <div class="container-fluid">
+        <!-- <div class="container my-5 text-center">
+          <b-img src="/static/MTS20_XMAS.jpg" fluid alt="Fluid image"></b-img>
+        </div> -->
 
         <!-- <div class="container my-5">
           <b-alert show variant="info">

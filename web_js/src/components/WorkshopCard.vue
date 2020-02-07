@@ -120,7 +120,7 @@ export default {
       }
     },
     availableWarningText: function () {
-      if (this.available > 10) {
+      if (this.available > 15) {
         return ''
       } else if (this.available <= 0) {
         return 'SOLD OUT...'
