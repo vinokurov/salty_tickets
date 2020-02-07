@@ -342,10 +342,11 @@ class EventEmailSettingsDocument(me.Document):
 
 class TicketsDAO:
     def __init__(self, host=None):
-        if host is None:
-            host = 'mongomock://localhost'
+        # if host is None:
+        #     host = 'mongomock://localhost'
 
-        me.connect(host=host)
+        if host is not None and me.DEFAULT_CONNECTION_NAME not in me.connection._connections:
+            me.connect(host=host)
         # from salty_tickets.utils.demo_db import salty_recipes
         # salty_recipes(self)
 
