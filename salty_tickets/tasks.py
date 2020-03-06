@@ -2,6 +2,7 @@ import logging
 import dramatiq
 from config import EMAIL_FROM
 from flask import render_template, url_for, current_app
+from salty_tickets.api.event_utils import get_event_active_registrations, calculate_registration_numbers
 from salty_tickets.dao import TicketsDAO
 from salty_tickets.emails import send_email
 from salty_tickets.models.event import Event
@@ -118,13 +119,16 @@ def task_balance_waiting_lists(event_key):
 
 
 def update_event_numbers(dao: TicketsDAO, event: Event):
-    ticket_registrations = dao.get_ticket_registrations(event)
+    registrations = get_event_active_registrations(dao, event)
+    event_numbers = calculate_registration_numbers(event, registrations)
 
-    ticket_numbers = {k: t.calculate_ticket_numbers(ticket_registrations[k])
+    def filter_registrations_by_ticket_key(ticket_key):
+        return [r for r in registrations if r.ticket_key == ticket_key]
+
+    ticket_numbers = {k: t.calculate_ticket_numbers(filter_registrations_by_ticket_key(k))
                       for k, t in event.tickets.items()}
-    event_numbers = event.calculate_registration_numbers(ticket_registrations)
-    dao.save_event_numbers(event.key, ticket_numbers, event_numbers)
 
+    dao.save_event_numbers(event.key, ticket_numbers, event_numbers)
 
 
 @dramatiq.actor(priority=0)

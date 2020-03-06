@@ -252,6 +252,7 @@ def mock_send_email(mocker):
 def mock_stripe(mocker):
     mock_stripe_session = mocker.patch('salty_tickets.payments.stripe_session')
     mock_sp = Mock()
+    mock_sp.checkout.Session.create.return_value = {'id': 'mock_stripe_session'}
     mock_stripe_session.return_value.__enter__.return_value = mock_sp
     return mock_sp
 

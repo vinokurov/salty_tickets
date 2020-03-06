@@ -494,6 +494,8 @@ class TicketsDAO:
             payment_doc.discounts.append(DiscountDocument.from_dataclass(discount))
 
         for transaction in payment.transactions:
+            if payment_doc.transactions is None:
+                payment_doc.transactions = []
             payment_doc.transactions.append(TransactionDocument.from_dataclass(transaction))
 
         # payment_doc.discounts = [DiscountDocument.from_dataclass(d) for d in payment.discounts]
@@ -525,8 +527,8 @@ class TicketsDAO:
             if payment_doc:
                 return payment_doc.to_dataclass()
 
-    def query_registrations(self, event: Event, person: Person=None, registered_by: Person=None,
-                            partner: Person=None, ticket=None) -> List[Registration]:
+    def query_registrations(self, event: Event, person: Person = None, registered_by: Person = None,
+                            partner: Person = None, ticket: typing.Union[str, Ticket] =None) -> List[Registration]:
         filters = {'event': self._get_event_id(event)}
         if person is not None:
             filters['person'] = self._get_doc(PersonDocument, person)

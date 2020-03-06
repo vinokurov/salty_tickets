@@ -156,6 +156,26 @@
             with the Full Pass or a Shag Novice ticket.
           </b-alert>
         </div> -->
+
+        <div class="container my-5">
+          <b-alert show variant="info">
+            <h3> <font-awesome icon="info-circle" /> Cancellation Policy </h3>
+              <p>Mind the Shag respects your right to change plans and cancel their participation. We allow you to re-sell your tickets via our main booking system. </p>
+
+              <ul>
+                <li>Send an email to <a href="mailto:salty.jitterbugs@gmail.com">salty.jitterbugs@gmail.com</a> that you no longer can attend the event and want to cancel your participation.</li>
+                <li>We will put your tickets back on sale</li>
+                <li>Once all of the components of your tickets are bought we refund you.</li>
+                <li>If before the event some of the components of your ticket aren’t sold we refund you the relevant proportion of your ticket.</li>
+                <li>We keep 25% of the refunded ticket as a cancellation fee, because this operation requires manual efforts from our team.</li>
+                <li>The deadline is 15-March-2020. After this date we no longer accept cancellation requests. You can still notify us that you cannot come, but there won’t be any refund.</li>
+              </ul>
+
+              <p>We encourage you not to re-sell tickets yourself. First it is difficult because each ticket is a bespoke combination of stations. Second, recently there have been a lot of fake resellers.</p>
+
+              <p>If you think you have special circumstances for cancelling your participation, please write to us.</p>
+          </b-alert>
+        </div>
       </div>
 
     </div>
